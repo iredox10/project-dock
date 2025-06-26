@@ -48,7 +48,7 @@ const DownloadPage = () => {
   }
 
   const whatsappMessage = `Hello, I'm interested in the project titled "${project.title}". Please guide me on how to proceed with the payment of ₦${project.priceNGN}.`;
-  const whatsappLink = `https://wa.me/2348012345678?text=${encodeURIComponent(whatsappMessage)}`; // Replace with your WhatsApp number
+  const whatsappLink = `https://wa.me/2348112580260?text=${encodeURIComponent(whatsappMessage)}`; // Replace with your WhatsApp number
 
   return (
     <div className="bg-gray-100 min-h-screen py-12 px-4 sm:px-6 lg:px-8">
