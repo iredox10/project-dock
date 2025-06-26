@@ -53,7 +53,7 @@ const ContactPage = () => {
                 <FaMapMarkerAlt className="text-2xl mt-1 text-indigo-200" />
                 <div>
                   <h3 className="font-bold">Address</h3>
-                  <p className="text-indigo-100">123 Project Dock Avenue, Abuja, Nigeria</p>
+                  <p className="text-indigo-100">Kano, Nigeria</p>
                 </div>
               </li>
               <li className="flex items-start gap-4">
@@ -67,7 +67,7 @@ const ContactPage = () => {
                 <FaEnvelope className="text-2xl mt-1 text-indigo-200" />
                 <div>
                   <h3 className="font-bold">Email</h3>
-                  <p className="text-indigo-100">support@projectdock.com</p>
+                  <p className="text-indigo-100">iredoxtech@gmail.com</p>
                 </div>
               </li>
             </ul>
