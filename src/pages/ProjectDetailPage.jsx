@@ -105,7 +105,7 @@ const ProjectDetailPage = () => {
 
               <div className="mt-6 pt-6 border-t">
                 <p className="text-sm text-center text-gray-600 mb-4">Preview Abstract and Chapter One on the left</p>
-                <Link to={`/download/${projectId}`} className="w-full flex items-center justify-center gap-3 bg-indigo-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-indigo-700 transition duration-300 text-lg">
+                <Link to={`/projects/${projectId}/download`} className="w-full flex items-center justify-center gap-3 bg-indigo-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-indigo-700 transition duration-300 text-lg">
                   <FaDownload />
                   <span>Download Project</span>
                 </Link>
