@@ -1,33 +1,10 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaSearch, FaUniversity } from 'react-icons/fa';
+import { FaSearch, FaUniversity, FaSpinner } from 'react-icons/fa';
+import { db } from '../firebase/config'; // Your Firebase config
+import { collection, getDocs, query } from 'firebase/firestore';
 
-
-// ===================================================================================
-// MOCK DATA GENERATION - In a real MERN app, this data would come from your API.
-// ===================================================================================
-const generateMockData = () => {
-  const departmentsList = [
-    'Computer Science', 'Electrical Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Chemical Engineering',
-    'Architecture', 'Economics', 'Sociology', 'Psychology', 'Biochemistry',
-    'Microbiology', 'Physics', 'Geology', 'Mathematics', 'Medicine & Surgery',
-    'Nursing', 'Pharmacy', 'Law', 'Accounting',
-    'Business Administration', 'Marketing', 'Banking & Finance', 'Fine & Applied Arts', 'History & International Studies'
-  ];
-  let projects = [];
-  let idCounter = 1;
-  departmentsList.forEach(dept => {
-    const projectCount = Math.floor(Math.random() * 30) + 5; // 5 to 35 projects
-    for (let i = 0; i < projectCount; i++) {
-      projects.push({ id: idCounter++, department: dept });
-    }
-  });
-  return projects;
-}
-
-const mockProjects = generateMockData();
-// ===================================================================================
 
 const DepartmentCard = ({ name, count }) => (
   <Link
@@ -54,12 +31,35 @@ const DepartmentCard = ({ name, count }) => (
 
 
 const AllDepartmentsPage = () => {
+  const [allProjects, setAllProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const DEPARTMENTS_PER_PAGE = 9;
 
+  // Fetch all projects to aggregate department data
+  useEffect(() => {
+    const fetchAllProjects = async () => {
+      setIsLoading(true);
+      try {
+        const projectsRef = collection(db, 'projects');
+        const q = query(projectsRef); // You can add orderBy here if needed
+        const querySnapshot = await getDocs(q);
+        const fetchedProjects = querySnapshot.docs.map(doc => doc.data());
+        setAllProjects(fetchedProjects);
+      } catch (error) {
+        console.error("Error fetching all projects for department aggregation: ", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchAllProjects();
+  }, []);
+
+
   const departments = useMemo(() => {
-    const departmentCounts = mockProjects.reduce((acc, project) => {
+    if (isLoading) return [];
+    const departmentCounts = allProjects.reduce((acc, project) => {
       acc[project.department] = (acc[project.department] || 0) + 1;
       return acc;
     }, {});
@@ -67,7 +67,7 @@ const AllDepartmentsPage = () => {
     return Object.entries(departmentCounts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, []);
+  }, [allProjects, isLoading]);
 
   const filteredDepartments = useMemo(() => {
     return departments.filter(dept => dept.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -81,8 +81,10 @@ const AllDepartmentsPage = () => {
   );
 
   const handlePageChange = (page) => {
-    setCurrentPage(page);
-    window.scrollTo(0, 0);
+    if (page > 0 && page <= totalPages) {
+      setCurrentPage(page);
+      window.scrollTo(0, 0);
+    }
   }
 
   return (
@@ -108,7 +110,9 @@ const AllDepartmentsPage = () => {
           <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
         </div>
 
-        {paginatedDepartments.length > 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20"><FaSpinner className="animate-spin text-5xl text-indigo-600" /></div>
+        ) : paginatedDepartments.length > 0 ? (
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {paginatedDepartments.map(dept => <DepartmentCard key={dept.name} {...dept} />)}
           </div>

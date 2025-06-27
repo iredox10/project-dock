@@ -19,7 +19,7 @@ import SignupPage from './pages/SignupPage';
 import AdminLayout from './admin/components/AdminLayout';
 import DashboardHomePage from './admin/pages/DashboardHomePage';
 import { ProjectsAdminPage } from './admin/pages/ProjectsAdminPage';
-import UsersAdminPage from './admin/pages/UsersAdminPage';
+import { UsersAdminPage } from './admin/pages/UsersAdminPage';
 import { AddProjectPage } from './admin/pages/AddProjectPage'; // Import AddProjectPage
 import { BulkUploadPage } from './admin/pages/BulkUploadPage'
 

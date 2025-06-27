@@ -1,18 +1,10 @@
 
-import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { FaSearch, FaFilePdf, FaCode, FaChevronRight, FaBook } from 'react-icons/fa';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { FaSearch, FaFilePdf, FaCode, FaChevronRight, FaBook, FaSpinner } from 'react-icons/fa';
+import { db } from '../firebase/config'; // Your Firebase config
+import { collection, getDocs, query, orderBy, limit, startAfter } from 'firebase/firestore';
 
-// Mock data for projects - replace with API call in a real app
-const mockProjects = [
-  { id: 1, title: 'AI-Powered E-commerce Chatbot', department: 'Computer Science', year: 2023, author: 'Bello Adekunle', tags: ['AI', 'React'], fileType: 'PDF' },
-  { id: 2, title: 'Smart Irrigation System using IoT', department: 'Electrical Engineering', year: 2023, author: 'Fatima Yusuf', tags: ['IoT', 'Arduino'], fileType: 'Code' },
-  { id: 3, title: 'Analysis of Financial Market Trends', department: 'Economics', year: 2022, author: 'Obinna Okoro', tags: ['Finance', 'Python'], fileType: 'PDF' },
-  { id: 4, title: 'Portable Water Purification Device', department: 'Mechanical Engineering', year: 2023, author: 'Aisha Ibrahim', tags: ['Health', 'CAD'], fileType: 'PDF' },
-  { id: 5, title: 'Student Attendance Management System', department: 'Computer Science', year: 2022, author: 'Emeka Nwosu', tags: ['Web', 'PHP'], fileType: 'Code' },
-  { id: 6, title: 'Effect of Monetary Policy on Inflation', department: 'Economics', year: 2023, author: 'Ngozi Eze', tags: ['Economics', 'Stata'], fileType: 'PDF' },
-  { id: 7, title: 'Reinforced Concrete Beam Design', department: 'Civil Engineering', year: 2023, author: 'David Akpan', tags: ['Structural', 'AutoCAD'], fileType: 'PDF' },
-];
 
 const departmentColors = {
   'Computer Science': 'border-t-4 border-blue-500',
@@ -27,18 +19,11 @@ const ProjectCard = ({ project }) => (
     <div className="p-6 flex-grow">
       <div className="flex justify-between items-start mb-4">
         <span className="text-sm font-semibold text-gray-600">{project.department}</span>
-        {project.fileType === 'PDF' ?
-          <FaFilePdf className="text-red-500 text-2xl" /> :
-          <FaCode className="text-gray-700 text-2xl" />
-        }
+        {/* Assuming fileType is stored; otherwise, this can be removed or adapted */}
+        {project.formats?.includes('PDF') ? <FaFilePdf className="text-red-500 text-2xl" /> : <FaCode className="text-gray-700 text-2xl" />}
       </div>
       <h3 className="text-xl font-bold text-gray-900 h-16">{project.title}</h3>
       <p className="text-gray-500 mt-2 text-sm">By {project.author} - {project.year}</p>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {project.tags.map(tag => (
-          <span key={tag} className="text-xs font-semibold text-indigo-700 bg-indigo-100 px-2 py-1 rounded-full">{tag}</span>
-        ))}
-      </div>
     </div>
     <div className="p-4 bg-gray-50 border-t">
       <Link to={`/projects/${project.id}`} className="w-full text-center block bg-indigo-600 text-white font-bold px-4 py-2.5 rounded-lg hover:bg-indigo-700 transition duration-150 ease-in-out">
@@ -49,21 +34,60 @@ const ProjectCard = ({ project }) => (
 );
 
 const ProjectsPage = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [departmentSearchTerm, setDepartmentSearchTerm] = useState('');
+  const [searchParams] = useSearchParams();
+  const initialSearchTerm = searchParams.get('search') || '';
 
-  const departments = useMemo(() => {
-    const uniqueDepartments = [...new Set(mockProjects.map(p => p.department))];
-    return uniqueDepartments.sort();
+  const [allProjects, setAllProjects] = useState([]);
+  const [filteredProjects, setFilteredProjects] = useState([]);
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
+  const [departmentSearchTerm, setDepartmentSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch all projects on initial load.
+  // NOTE: For very large datasets (10,000+ projects), a more advanced search solution like Algolia is recommended
+  // as fetching all documents upfront can become slow and costly. This approach is excellent for up to a few thousand projects.
+  useEffect(() => {
+    const fetchProjects = async () => {
+      setIsLoading(true);
+      try {
+        const projectsRef = collection(db, 'projects');
+        const q = query(projectsRef, orderBy('createdAt', 'desc'));
+        const querySnapshot = await getDocs(q);
+        const fetchedProjects = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setAllProjects(fetchedProjects);
+      } catch (error) {
+        console.error("Error fetching projects: ", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProjects();
   }, []);
 
-  const handleSearch = (e) => setSearchTerm(e.target.value);
-  const handleDepartmentSearch = (e) => setDepartmentSearchTerm(e.target.value);
+  // Effect to filter projects whenever the main list or search term changes
+  useEffect(() => {
+    let projectsToFilter = [...allProjects];
 
-  const filteredProjects = mockProjects.filter(p =>
-    p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.author.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    if (searchTerm) {
+      projectsToFilter = projectsToFilter.filter(p =>
+        p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.department.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    setFilteredProjects(projectsToFilter);
+  }, [searchTerm, allProjects]);
+
+  useEffect(() => {
+    setSearchTerm(initialSearchTerm);
+  }, [initialSearchTerm]);
+
+
+  const departments = useMemo(() => {
+    const uniqueDepartments = [...new Set(allProjects.map(p => p.department))];
+    return uniqueDepartments.sort();
+  }, [allProjects]);
 
   const filteredDepartments = departments.filter(dept =>
     dept.toLowerCase().includes(departmentSearchTerm.toLowerCase())
@@ -91,7 +115,7 @@ const ProjectsPage = () => {
                   type="text"
                   placeholder="Search departments..."
                   value={departmentSearchTerm}
-                  onChange={handleDepartmentSearch}
+                  onChange={(e) => setDepartmentSearchTerm(e.target.value)}
                   className="w-full px-3 py-2 pl-8 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
                 />
                 <FaSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
@@ -119,15 +143,17 @@ const ProjectsPage = () => {
             <div className="mb-8 relative">
               <input
                 type="text"
-                placeholder="Search by project title or author..."
+                placeholder="Search by project title, author, or department..."
                 value={searchTerm}
-                onChange={handleSearch}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-5 py-4 pl-12 rounded-full text-gray-800 border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
               />
               <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
             </div>
 
-            {filteredProjects.length > 0 ? (
+            {isLoading ? (
+              <div className="flex justify-center items-center py-20"><FaSpinner className="animate-spin text-4xl text-indigo-600" /></div>
+            ) : filteredProjects.length > 0 ? (
               <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredProjects.map(project => <ProjectCard key={project.id} project={project} />)}
               </div>

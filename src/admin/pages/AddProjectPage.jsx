@@ -2,25 +2,59 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaCloudUploadAlt, FaSave } from 'react-icons/fa';
+import { db } from '../../firebase/config'; // Import your Firebase config
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export const AddProjectPage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    title: '', department: '', author: '', year: new Date().getFullYear(),
-    priceNGN: '', level: 'BSc', abstract: '', chapterOne: '',
+    title: '',
+    department: '',
+    author: '',
+    year: new Date().getFullYear(),
+    priceNGN: '',
+    level: 'BSc',
+    abstract: '',
+    chapterOne: '',
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // In a real app, you would handle an API submission here.
-    console.log('Form Data Submitted:', formData);
-    alert(`Project "${formData.title}" has been added successfully!`);
-    navigate('/admin/projects'); // Redirect back to the projects list
+    if (!formData.title || !formData.department || !formData.priceNGN) {
+      alert('Please fill out all required fields.');
+      return;
+    }
+    setIsLoading(true);
+
+    try {
+      // Prepare the data for Firestore
+      const projectData = {
+        ...formData,
+        year: Number(formData.year),
+        priceNGN: Number(formData.priceNGN),
+        downloadCount: 0,
+        createdAt: serverTimestamp() // Add a server-side timestamp
+      };
+
+      // Get a reference to the 'projects' collection and add a new document
+      const projectsCollectionRef = collection(db, 'projects');
+      await addDoc(projectsCollectionRef, projectData);
+
+      alert(`Project "${formData.title}" has been added successfully!`);
+      navigate('/admin/projects'); // Redirect back to the projects list
+
+    } catch (error) {
+      console.error("Error adding document: ", error);
+      alert('Failed to add project. Please check the console for errors.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -63,9 +97,9 @@ export const AddProjectPage = () => {
         </div>
 
         <div className="flex justify-end">
-          <button type="submit" className="flex items-center gap-2 bg-indigo-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-indigo-700 transition-all duration-300">
+          <button type="submit" disabled={isLoading} className="flex items-center gap-2 bg-indigo-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-indigo-700 transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed">
             <FaSave />
-            <span>Save Project</span>
+            <span>{isLoading ? 'Saving...' : 'Save Project'}</span>
           </button>
         </div>
       </form>
