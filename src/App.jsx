@@ -31,6 +31,7 @@ const EditProjectPage = () => {
 };
 import { useParams } from 'react-router-dom';
 import AboutPage from './pages/AboutPage';
+import { OrdersAdminPage } from './admin/pages/OrdersAdminPage';
 
 
 function App() {
@@ -45,6 +46,7 @@ function App() {
           <Route path="projects/edit/:projectId" element={<EditProjectPage />} /> {/* Placeholder route */}
           <Route path="projects/bulk-upload" element={<BulkUploadPage />} />
           <Route path="users" element={<UsersAdminPage />} />
+          <Route path="orders" element={<OrdersAdminPage />} />
         </Route>
 
         {/* Public/User-Facing Routes */}
