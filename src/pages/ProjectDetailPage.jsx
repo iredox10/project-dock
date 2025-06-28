@@ -6,6 +6,18 @@ import { db, auth } from '../firebase/config';
 import { getDoc, doc, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
+// --- Helper function to handle data that might be a string or an array ---
+const toArray = (value) => {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    return value.split(',').map(item => item.trim());
+  }
+  return []; // Return empty array if it's neither
+};
+
+
 // --- Reusable Components ---
 const StarRating = ({ rating, size = 'text-md' }) => (
   <div className="flex items-center">
@@ -95,10 +107,8 @@ const ProjectDetailPage = () => {
         const fetchedReviews = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         setReviews(fetchedReviews);
 
-        // Calculate average rating
         if (fetchedReviews.length > 0) {
-          const totalRating = fetchedReviews.reduce((acc, review) => acc + review.rating, 0);
-          projectData.averageRating = totalRating / fetchedReviews.length;
+          projectData.averageRating = fetchedReviews.reduce((acc, review) => acc + review.rating, 0) / fetchedReviews.length;
           projectData.ratingCount = fetchedReviews.length;
         }
       } else {
@@ -131,6 +141,10 @@ const ProjectDetailPage = () => {
   if (isLoading) return <div className="flex justify-center items-center h-screen"><FaSpinner className="animate-spin text-5xl text-indigo-600" /></div>;
   if (error) return <div className="text-center py-20"><h2 className="text-2xl font-bold text-red-600">{error}</h2><Link to="/projects" className="text-indigo-600 hover:underline mt-4">Back to Projects</Link></div>;
   if (!project) return null;
+
+  // Safely process the 'includes' and 'formats' fields
+  const projectIncludes = toArray(project.includes);
+  const projectFormats = toArray(project.formats);
 
   return (
     <div className="bg-gray-50 py-12">
@@ -166,16 +180,16 @@ const ProjectDetailPage = () => {
             <div className="sticky top-24 bg-white p-6 rounded-2xl shadow-2xl border">
               <h3 className="text-xl font-bold text-gray-900 mb-4 border-b pb-3">Project Information</h3>
               <ul className="space-y-4 text-gray-700">
-                {project.formats?.includes('PDF') && <li className="flex items-center gap-3"><FaFilePdf className="text-red-500 text-xl w-6" /><span>Format: PDF Available</span></li>}
-                {project.formats?.includes('DOCX') && <li className="flex items-center gap-3"><FaFileWord className="text-blue-500 text-xl w-6" /><span>Format: MS-Word DOC Available</span></li>}
+                {projectFormats.includes('PDF') && <li className="flex items-center gap-3"><FaFilePdf className="text-red-500 text-xl w-6" /><span>Format: PDF Available</span></li>}
+                {projectFormats.includes('DOCX') && <li className="flex items-center gap-3"><FaFileWord className="text-blue-500 text-xl w-6" /><span>Format: MS-Word DOC Available</span></li>}
                 <li className="flex items-center gap-3"><FaHashtag className="text-gray-500 text-xl w-6" /><span>Pages: {project.pages || 'N/A'}</span></li>
                 <li className="flex items-center gap-3"><FaDatabase className="text-gray-500 text-xl w-6" /><span>File Size: {project.fileSize || 'N/A'}</span></li>
                 <li className="flex items-center gap-3"><FaBookOpen className="text-gray-500 text-xl w-6" /><span>Chapters: {project.chapters || 'N/A'}</span></li>
               </ul>
-              {project.includes && (
+              {projectIncludes.length > 0 && (
                 <div className="mt-6 pt-6 border-t">
                   <ul className="space-y-3">
-                    {project.includes.map(item => <li key={item} className="flex items-center gap-3 text-gray-800"><FaCheckCircle className="text-green-500 text-xl w-6" /><span>With {item}</span></li>)}
+                    {projectIncludes.map(item => <li key={item} className="flex items-center gap-3 text-gray-800"><FaCheckCircle className="text-green-500 text-xl w-6" /><span>With {item}</span></li>)}
                   </ul>
                 </div>
               )}
