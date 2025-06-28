@@ -14,6 +14,7 @@ import AllDepartmentsPage from './pages/AllDepartmentsPage';
 import DownloadPage from './pages/DownloadPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
+import HireWriterPage from './pages/HireWriterPage'
 
 // Import admin components
 import AdminLayout from './admin/components/AdminLayout';
@@ -29,6 +30,7 @@ const EditProjectPage = () => {
   return <h1 className="text-2xl">Editing Project ID: {projectId}</h1>;
 };
 import { useParams } from 'react-router-dom';
+import AboutPage from './pages/AboutPage';
 
 
 function App() {
@@ -69,6 +71,8 @@ const MainApp = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/get-started" element={<SignupPage />} />
+          <Route path="/about-us" element={<AboutPage />} />
+          <Route path="/hire-writer" element={<HireWriterPage />} />
         </Routes>
       </main>
       <Footer />
