@@ -37,6 +37,7 @@ import UserDashboardLayout from './dashboard/components/UserDashboardLayout';
 import { UserDashboardHomePage } from './dashboard/pages/DashboardHomePage';
 import { MyProjectsPage } from './dashboard/pages/MyProjectsPage';
 import { ProfilePage } from './dashboard/pages/ProfilePage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 
 
 function App() {
@@ -88,6 +89,8 @@ const MainApp = () => {
           <Route path="/get-started" element={<SignupPage />} />
           <Route path="/about-us" element={<AboutPage />} />
           <Route path="/hire-writer" element={<HireWriterPage />} />
+
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         </Routes>
       </main>
       <Footer />
