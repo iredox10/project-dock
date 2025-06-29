@@ -32,6 +32,13 @@ import { ReviewsAdminPage } from './admin/pages/ReviewsAdminPage';
 import { EditProjectPage } from './admin/pages/EditProjectPage';
 
 
+// Import user dashboard components
+import UserDashboardLayout from './dashboard/components/UserDashboardLayout';
+import { UserDashboardHomePage } from './dashboard/pages/DashboardHomePage';
+import { MyProjectsPage } from './dashboard/pages/MyProjectsPage';
+import { ProfilePage } from './dashboard/pages/ProfilePage';
+
+
 function App() {
   return (
     <Router>
@@ -46,6 +53,13 @@ function App() {
           <Route path="users" element={<UsersAdminPage />} />
           <Route path="orders" element={<OrdersAdminPage />} />
           <Route path="reviews" element={<ReviewsAdminPage />} />
+        </Route>
+
+        {/* User Dashboard Routes */}
+        <Route path="/dashboard" element={<UserDashboardLayout />}>
+          <Route index element={<UserDashboardHomePage />} />
+          <Route path="my-projects" element={<MyProjectsPage />} />
+          <Route path="profile" element={<ProfilePage />} />
         </Route>
 
         {/* Public/User-Facing Routes */}

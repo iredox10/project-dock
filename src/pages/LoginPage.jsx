@@ -40,7 +40,7 @@ const LoginPage = () => {
         if (userData.role === 'admin') {
           navigate('/admin'); // Redirect admins to the dashboard
         } else {
-          navigate('/'); // Redirect regular users to the homepage
+          navigate('/dashboard'); // Redirect regular users to the homepage
         }
       } else {
         // Fallback in case the user document doesn't exist
