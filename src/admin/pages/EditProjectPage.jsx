@@ -1,19 +1,45 @@
 
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaCloudUploadAlt, FaSave, FaBook, FaInfoCircle, FaDollarSign, FaFileAlt, FaSpinner } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { FaArrowLeft, FaSave, FaBook, FaInfoCircle, FaDollarSign, FaFileAlt, FaSpinner } from 'react-icons/fa';
 import { db } from '../../firebase/config';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
-export const AddProjectPage = () => {
+export const EditProjectPage = () => {
+  const { projectId } = useParams();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    title: '', department: '', author: '', year: new Date().getFullYear(),
-    priceNGN: '', level: 'BSc', abstract: '', chapterOne: '',
-    pages: '', fileSize: '', formats: 'PDF, DOCX', chapters: '1-5',
-    includes: 'References, Questionnaire'
-  });
-  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchProject = async () => {
+      setIsLoading(true);
+      try {
+        const projectRef = doc(db, 'projects', projectId);
+        const docSnap = await getDoc(projectRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          // Convert arrays back to comma-separated strings for the form inputs
+          setFormData({
+            ...data,
+            formats: Array.isArray(data.formats) ? data.formats.join(', ') : data.formats,
+            includes: Array.isArray(data.includes) ? data.includes.join(', ') : data.includes,
+          });
+        } else {
+          console.error("No such project!");
+          navigate('/admin/projects'); // Redirect if project not found
+        }
+      } catch (error) {
+        console.error("Error fetching project:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProject();
+  }, [projectId, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,33 +52,36 @@ export const AddProjectPage = () => {
       alert('Please fill out Title, Department, and Price.');
       return;
     }
-    setIsLoading(true);
+    setIsSaving(true);
 
     try {
+      const projectRef = doc(db, 'projects', projectId);
       const projectData = {
         ...formData,
         year: Number(formData.year),
         priceNGN: Number(formData.priceNGN),
         pages: Number(formData.pages) || 0,
-        // Split comma-separated strings into arrays for clean data storage
         formats: formData.formats.split(',').map(item => item.trim()),
         includes: formData.includes.split(',').map(item => item.trim()),
-        downloadCount: 0,
-        createdAt: serverTimestamp()
+        updatedAt: serverTimestamp() // Add an updated timestamp
       };
 
-      await addDoc(collection(db, 'projects'), projectData);
+      await updateDoc(projectRef, projectData);
 
-      alert(`Project "${formData.title}" has been added successfully!`);
+      alert(`Project "${formData.title}" has been updated successfully!`);
       navigate('/admin/projects');
 
     } catch (error) {
-      console.error("Error adding document: ", error);
-      alert('Failed to add project. Please check the console for errors.');
+      console.error("Error updating document: ", error);
+      alert('Failed to update project. Please check the console for errors.');
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-full"><FaSpinner className="animate-spin text-4xl text-indigo-600" /></div>;
+  }
 
   return (
     <div>
@@ -63,11 +92,7 @@ export const AddProjectPage = () => {
         </Link>
       </div>
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-extrabold text-gray-900">Create a New Project</h1>
-        <Link to="/admin/projects/bulk-upload" className="flex items-center gap-2 bg-green-600 text-white font-bold px-5 py-3 rounded-lg hover:bg-green-700 transition-all duration-300">
-          <FaCloudUploadAlt />
-          <span>Bulk Upload Projects</span>
-        </Link>
+        <h1 className="text-4xl font-extrabold text-gray-900">Edit Project</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -113,9 +138,9 @@ export const AddProjectPage = () => {
             </div>
           </div>
           <div>
-            <button type="submit" disabled={isLoading} className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold px-6 py-4 rounded-lg hover:bg-indigo-700 transition-all duration-300 disabled:bg-gray-400">
-              {isLoading ? <FaSpinner className="animate-spin" /> : <FaSave />}
-              <span>{isLoading ? 'Saving...' : 'Save & Publish Project'}</span>
+            <button type="submit" disabled={isSaving} className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold px-6 py-4 rounded-lg hover:bg-indigo-700 transition-all duration-300 disabled:bg-gray-400">
+              {isSaving ? <FaSpinner className="animate-spin" /> : <FaSave />}
+              <span>{isSaving ? 'Saving Changes...' : 'Save & Publish Changes'}</span>
             </button>
           </div>
         </div>

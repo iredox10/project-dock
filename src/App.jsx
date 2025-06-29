@@ -25,14 +25,11 @@ import { AddProjectPage } from './admin/pages/AddProjectPage'; // Import AddProj
 import { BulkUploadPage } from './admin/pages/BulkUploadPage'
 
 // A placeholder for the Edit page. You would build this similar to AddProjectPage.
-const EditProjectPage = () => {
-  const { projectId } = useParams();
-  return <h1 className="text-2xl">Editing Project ID: {projectId}</h1>;
-};
 import { useParams } from 'react-router-dom';
 import AboutPage from './pages/AboutPage';
 import { OrdersAdminPage } from './admin/pages/OrdersAdminPage';
 import { ReviewsAdminPage } from './admin/pages/ReviewsAdminPage';
+import { EditProjectPage } from './admin/pages/EditProjectPage';
 
 
 function App() {
@@ -48,7 +45,7 @@ function App() {
           <Route path="projects/bulk-upload" element={<BulkUploadPage />} />
           <Route path="users" element={<UsersAdminPage />} />
           <Route path="orders" element={<OrdersAdminPage />} />
-          <Route path="review" element={<ReviewsAdminPage />} />
+          <Route path="reviews" element={<ReviewsAdminPage />} />
         </Route>
 
         {/* Public/User-Facing Routes */}

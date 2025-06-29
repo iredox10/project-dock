@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
-import { FaTachometerAlt, FaFolder, FaUsers, FaSignOutAlt, FaFolderOpen, FaFileInvoiceDollar } from 'react-icons/fa';
+import { FaTachometerAlt, FaFolder, FaUsers, FaSignOutAlt, FaFolderOpen, FaFileInvoiceDollar, FaComments } from 'react-icons/fa';
 import { auth } from '../../firebase/config';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
@@ -30,28 +30,14 @@ const AdminSidebar = () => {
         </Link>
       </div>
       <nav className="flex-grow p-4 space-y-2">
-        <NavLink to="/admin" end className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}>
-          <FaTachometerAlt />
-          <span>Dashboard</span>
-        </NavLink>
-        <NavLink to="/admin/orders" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}>
-          <FaFileInvoiceDollar />
-          <span>Manage Orders</span>
-        </NavLink>
-        <NavLink to="/admin/projects" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}>
-          <FaFolder />
-          <span>Manage Projects</span>
-        </NavLink>
-        <NavLink to="/admin/users" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}>
-          <FaUsers />
-          <span>Manage Users</span>
-        </NavLink>
+        <NavLink to="/admin" end className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}><FaTachometerAlt /><span>Dashboard</span></NavLink>
+        <NavLink to="/admin/orders" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}><FaFileInvoiceDollar /><span>Manage Orders</span></NavLink>
+        <NavLink to="/admin/projects" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}><FaFolder /><span>Manage Projects</span></NavLink>
+        <NavLink to="/admin/reviews" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}><FaComments /><span>Manage Reviews</span></NavLink>
+        <NavLink to="/admin/users" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}><FaUsers /><span>Manage Users</span></NavLink>
       </nav>
       <div className="p-4 border-t border-gray-700">
-        <button onClick={handleLogout} className={`${linkClasses} w-full`}>
-          <FaSignOutAlt />
-          <span>Back to Main Site</span>
-        </button>
+        <button onClick={handleLogout} className={`${linkClasses} w-full`}><FaSignOutAlt /><span>Back to Main Site</span></button>
       </div>
     </aside>
   );
