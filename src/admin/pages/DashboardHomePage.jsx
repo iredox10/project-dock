@@ -1,6 +1,10 @@
 
-import React from 'react';
-import { FaFolder, FaUsers, FaDownload, FaMoneyBillWave } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaFolder, FaUsers } from 'react-icons/fa';
+import { databases } from '../../appwrite/config';
+
+const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;
+const COLLECTION_ID = import.meta.env.VITE_APPWRITE_COLLECTION_ID_PROJECTS;
 
 const StatCard = ({ icon, title, value, color }) => (
   <div className={`bg-white p-6 rounded-xl shadow-lg flex items-center gap-6 border-l-4 ${color}`}>
@@ -13,16 +17,40 @@ const StatCard = ({ icon, title, value, color }) => (
 );
 
 const DashboardHomePage = () => {
+  const [projectCount, setProjectCount] = useState(0);
+  const [userCount, setUserCount] = useState(0); // Placeholder for user count
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await databases.listDocuments(DATABASE_ID, COLLECTION_ID);
+        setProjectCount(response.total);
+      } catch (error) {
+        console.error('Failed to fetch projects:', error);
+      }
+    };
+
+    // In a real app, you would fetch user data here.
+    // For now, we'll use a placeholder value.
+    const fetchUsers = () => {
+      // This is where you would call your backend to get the user count.
+      // Since we can't do this from the client-side SDK directly,
+      // we will leave it as a placeholder.
+      setUserCount('N/A');
+    };
+
+    fetchProjects();
+    fetchUsers();
+  }, []);
+
   return (
     <div>
       <h1 className="text-4xl font-extrabold text-gray-900 mb-6">Admin Dashboard</h1>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard icon={<FaFolder />} title="Total Projects" value="1,258" color="border-blue-500" />
-        <StatCard icon={<FaUsers />} title="Total Users" value="8,492" color="border-purple-500" />
-        <StatCard icon={<FaDownload />} title="Total Downloads" value="2,130" color="border-green-500" />
-        <StatCard icon={<FaMoneyBillWave />} title="Total Revenue" value="₦1,500,000" color="border-yellow-500" />
+        <StatCard icon={<FaFolder />} title="Total Projects" value={projectCount} color="border-blue-500" />
+        <StatCard icon={<FaUsers />} title="Total Users" value={userCount} color="border-purple-500" />
       </div>
 
       {/* Recent Activity Section */}

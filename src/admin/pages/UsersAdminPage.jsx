@@ -1,19 +1,45 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { FaSearch, FaEye, FaUserSlash, FaTrash } from 'react-icons/fa';
-
-// Mock Data - In a real app, this would come from your API.
-const initialUsers = [
-  { id: 1, name: 'Aminu Abubakar', email: 'aminu.a@example.com', registrationDate: '2023-10-25', status: 'Active', projectCount: 5 },
-  { id: 2, name: 'Chiamaka Igwe', email: 'chiamaka.i@example.com', registrationDate: '2023-10-22', status: 'Active', projectCount: 2 },
-  { id: 3, name: 'David Ojo', email: 'david.o@example.com', registrationDate: '2023-09-15', status: 'Suspended', projectCount: 0 },
-  { id: 4, name: 'Ngozi Eze', email: 'ngozi.e@example.com', registrationDate: '2023-08-01', status: 'Active', projectCount: 8 },
-  { id: 5, name: 'Bello Adekunle', email: 'bello.a@example.com', registrationDate: '2023-07-30', status: 'Active', projectCount: 1 },
-];
+import { teams } from '../../appwrite/config';
 
 const UsersAdminPage = () => {
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        // Step 1: Find the team by name to get its ID
+        const teamList = await teams.list({ search: 'Admins' });
+
+        if (teamList.teams.length === 0) {
+          throw new Error("The 'Admins' team could not be found. Please create it in your Appwrite console.");
+        }
+
+        const adminTeam = teamList.teams[0];
+        const adminTeamId = adminTeam.$id;
+
+        // Step 2: Use the team ID to get the list of members
+        const response = await teams.listMemberships(adminTeamId);
+
+        const userList = response.memberships.map(membership => ({
+          id: membership.userId,
+          name: membership.userName,
+          email: membership.userEmail,
+          registrationDate: new Date(membership.joined).toLocaleDateString(),
+          status: 'Active', // Placeholder
+          projectCount: 0, // Placeholder
+        }));
+        setUsers(userList);
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+        alert(error.message);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const filteredUsers = useMemo(() => {
     return users.filter(user =>
@@ -23,23 +49,17 @@ const UsersAdminPage = () => {
   }, [users, searchTerm]);
 
   const handleSuspend = (userId) => {
-    // In a real app, you'd make an API call here.
     alert(`Suspending user with ID: ${userId}. This would trigger an API call.`);
-    setUsers(users.map(user =>
-      user.id === userId ? { ...user, status: user.status === 'Active' ? 'Suspended' : 'Active' } : user
-    ));
   };
 
   const handleDelete = (userId) => {
-    if (window.confirm('Are you sure you want to permanently delete this user? This action cannot be undone.')) {
-      // In a real app, you'd make an API call here.
+    if (window.confirm('Are you sure you want to permanently delete this user?')) {
       alert(`Deleting user with ID: ${userId}. This would trigger an API call.`);
-      setUsers(users.filter(user => user.id !== userId));
     }
   };
 
   const handleViewActivity = (userId) => {
-    alert(`Viewing activity for user with ID: ${userId}. This would typically navigate to a detailed user activity page.`);
+    alert(`Viewing activity for user with ID: ${userId}.`);
   }
 
   return (

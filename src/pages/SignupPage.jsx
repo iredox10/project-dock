@@ -1,9 +1,27 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaFolderOpen, FaUser, FaEnvelope, FaLock, FaArrowRight } from 'react-icons/fa';
+import { account } from '../appwrite/config';
+import { ID } from 'appwrite';
 
 const SignupPage = () => {
+  const navigate = useNavigate();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await account.create(ID.unique(), email, password, name);
+      navigate('/login');
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
   return (
     <div className="min-h-screen flex">
       {/* Left Column: Branding and Welcome Message */}
@@ -45,24 +63,25 @@ const SignupPage = () => {
             </p>
           </div>
 
-          <form className="mt-8 space-y-6" action="#" method="POST">
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            {error && <p className="text-red-500">{error}</p>}
             <div className="space-y-4">
               <div className="relative">
                 <label htmlFor="full-name" className="sr-only">Full Name</label>
                 <FaUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input id="full-name" name="name" type="text" autoComplete="name" required className="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Full Name" />
+                <input id="full-name" name="name" type="text" autoComplete="name" required className="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Full Name" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
 
               <div className="relative">
                 <label htmlFor="email-address" className="sr-only">Email address</label>
                 <FaEnvelope className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input id="email-address" name="email" type="email" autoComplete="email" required className="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Email address" />
+                <input id="email-address" name="email" type="email" autoComplete="email" required className="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
 
               <div className="relative">
                 <label htmlFor="password" className="sr-only">Password</label>
                 <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input id="password" name="password" type="password" autoComplete="new-password" required className="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Password" />
+                <input id="password" name="password" type="password" autoComplete="new-password" required className="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
             </div>
 

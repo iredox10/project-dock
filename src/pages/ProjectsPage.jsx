@@ -1,18 +1,11 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaSearch, FaFilePdf, FaCode, FaChevronRight, FaBook } from 'react-icons/fa';
+import { databases } from '../appwrite/config';
 
-// Mock data for projects - replace with API call in a real app
-const mockProjects = [
-  { id: 1, title: 'AI-Powered E-commerce Chatbot', department: 'Computer Science', year: 2023, author: 'Bello Adekunle', tags: ['AI', 'React'], fileType: 'PDF' },
-  { id: 2, title: 'Smart Irrigation System using IoT', department: 'Electrical Engineering', year: 2023, author: 'Fatima Yusuf', tags: ['IoT', 'Arduino'], fileType: 'Code' },
-  { id: 3, title: 'Analysis of Financial Market Trends', department: 'Economics', year: 2022, author: 'Obinna Okoro', tags: ['Finance', 'Python'], fileType: 'PDF' },
-  { id: 4, title: 'Portable Water Purification Device', department: 'Mechanical Engineering', year: 2023, author: 'Aisha Ibrahim', tags: ['Health', 'CAD'], fileType: 'PDF' },
-  { id: 5, title: 'Student Attendance Management System', department: 'Computer Science', year: 2022, author: 'Emeka Nwosu', tags: ['Web', 'PHP'], fileType: 'Code' },
-  { id: 6, title: 'Effect of Monetary Policy on Inflation', department: 'Economics', year: 2023, author: 'Ngozi Eze', tags: ['Economics', 'Stata'], fileType: 'PDF' },
-  { id: 7, title: 'Reinforced Concrete Beam Design', department: 'Civil Engineering', year: 2023, author: 'David Akpan', tags: ['Structural', 'AutoCAD'], fileType: 'PDF' },
-];
+const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;
+const COLLECTION_ID = import.meta.env.VITE_APPWRITE_COLLECTION_ID_PROJECTS;
 
 const departmentColors = {
   'Computer Science': 'border-t-4 border-blue-500',
@@ -27,21 +20,16 @@ const ProjectCard = ({ project }) => (
     <div className="p-6 flex-grow">
       <div className="flex justify-between items-start mb-4">
         <span className="text-sm font-semibold text-gray-600">{project.department}</span>
-        {project.fileType === 'PDF' ?
-          <FaFilePdf className="text-red-500 text-2xl" /> :
-          <FaCode className="text-gray-700 text-2xl" />
-        }
+        <span className="text-sm font-bold text-indigo-600 bg-indigo-100 px-2 py-1 rounded-full">{project.level}</span>
       </div>
-      <h3 className="text-xl font-bold text-gray-900 h-16">{project.title}</h3>
-      <p className="text-gray-500 mt-2 text-sm">By {project.author} - {project.year}</p>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {project.tags.map(tag => (
-          <span key={tag} className="text-xs font-semibold text-indigo-700 bg-indigo-100 px-2 py-1 rounded-full">{tag}</span>
-        ))}
-      </div>
+      <h3 className="text-xl font-bold text-gray-900 mb-2 h-24 overflow-hidden">{project.title}</h3>
+      <p className="text-gray-500 text-sm font-medium">By {project.author} - {project.year}</p>
+      <p className="text-gray-600 mt-4 text-sm h-20 overflow-hidden">
+        {project.abstract ? `${project.abstract.substring(0, 120)}...` : 'No abstract available.'}
+      </p>
     </div>
     <div className="p-4 bg-gray-50 border-t">
-      <Link to={`/projects/${project.id}`} className="w-full text-center block bg-indigo-600 text-white font-bold px-4 py-2.5 rounded-lg hover:bg-indigo-700 transition duration-150 ease-in-out">
+      <Link to={`/projects/${project.$id}`} className="w-full text-center block bg-indigo-600 text-white font-bold px-4 py-2.5 rounded-lg hover:bg-indigo-700 transition duration-150 ease-in-out">
         View Details
       </Link>
     </div>
@@ -49,20 +37,36 @@ const ProjectCard = ({ project }) => (
 );
 
 const ProjectsPage = () => {
+  const [projects, setProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentSearchTerm, setDepartmentSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      setIsLoading(true);
+      try {
+        const response = await databases.listDocuments(DATABASE_ID, COLLECTION_ID);
+        setProjects(response.documents);
+      } catch (error) {
+        console.error("Failed to fetch projects:", error);
+      }
+      setIsLoading(false);
+    };
+    fetchProjects();
+  }, []);
 
   const departments = useMemo(() => {
-    const uniqueDepartments = [...new Set(mockProjects.map(p => p.department))];
+    const uniqueDepartments = [...new Set(projects.map(p => p.department))];
     return uniqueDepartments.sort();
-  }, []);
+  }, [projects]);
 
   const handleSearch = (e) => setSearchTerm(e.target.value);
   const handleDepartmentSearch = (e) => setDepartmentSearchTerm(e.target.value);
 
-  const filteredProjects = mockProjects.filter(p =>
-    p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.author.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProjects = projects.filter(p =>
+    (p.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (p.author?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
   const filteredDepartments = departments.filter(dept =>
@@ -127,9 +131,13 @@ const ProjectsPage = () => {
               <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
             </div>
 
-            {filteredProjects.length > 0 ? (
+            {isLoading ? (
+              <div className="text-center py-16">
+                <p>Loading projects...</p>
+              </div>
+            ) : filteredProjects.length > 0 ? (
               <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredProjects.map(project => <ProjectCard key={project.id} project={project} />)}
+                {filteredProjects.map(project => <ProjectCard key={project.$id} project={project} />)}
               </div>
             ) : (
               <div className="text-center py-16 bg-white rounded-xl shadow-md">

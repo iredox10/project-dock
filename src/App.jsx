@@ -14,6 +14,9 @@ import AllDepartmentsPage from './pages/AllDepartmentsPage';
 import DownloadPage from './pages/DownloadPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
+import UserDashboardPage from './pages/UserDashboardPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // Import admin components
 import AdminLayout from './admin/components/AdminLayout';
@@ -22,13 +25,9 @@ import { ProjectsAdminPage } from './admin/pages/ProjectsAdminPage';
 import UsersAdminPage from './admin/pages/UsersAdminPage';
 import { AddProjectPage } from './admin/pages/AddProjectPage'; // Import AddProjectPage
 import { BulkUploadPage } from './admin/pages/BulkUploadPage'
-
-// A placeholder for the Edit page. You would build this similar to AddProjectPage.
-const EditProjectPage = () => {
-  const { projectId } = useParams();
-  return <h1 className="text-2xl">Editing Project ID: {projectId}</h1>;
-};
-import { useParams } from 'react-router-dom';
+import AdminRoute from './components/AdminRoute';
+import EditProjectPage from './admin/pages/EditProjectPage';
+import DataExtractorPage from './admin/pages/DataExtractorPage';
 
 
 function App() {
@@ -36,13 +35,16 @@ function App() {
     <Router>
       <Routes>
         {/* Admin Routes */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<DashboardHomePage />} />
-          <Route path="projects" element={<ProjectsAdminPage />} />
-          <Route path="projects/add" element={<AddProjectPage />} />
-          <Route path="projects/edit/:projectId" element={<EditProjectPage />} /> {/* Placeholder route */}
-          <Route path="projects/bulk-upload" element={<BulkUploadPage />} />
-          <Route path="users" element={<UsersAdminPage />} />
+        <Route element={<AdminRoute />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<DashboardHomePage />} />
+            <Route path="projects" element={<ProjectsAdminPage />} />
+            <Route path="projects/add" element={<AddProjectPage />} />
+            <Route path="projects/edit/:projectId" element={<EditProjectPage />} />
+            <Route path="projects/bulk-upload" element={<BulkUploadPage />} />
+            <Route path="users" element={<UsersAdminPage />} />
+            <Route path="extractor" element={<DataExtractorPage />} />
+          </Route>
         </Route>
 
         {/* Public/User-Facing Routes */}
@@ -69,6 +71,9 @@ const MainApp = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/get-started" element={<SignupPage />} />
+          <Route path="/dashboard" element={<UserDashboardPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Routes>
       </main>
       <Footer />

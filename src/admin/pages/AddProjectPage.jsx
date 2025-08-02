@@ -2,6 +2,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaCloudUploadAlt, FaSave } from 'react-icons/fa';
+import { databases } from '../../appwrite/config';
+import { ID } from 'appwrite';
+
+const DATABASE_ID = 'project-dock';
+const COLLECTION_ID = 'projects';
 
 export const AddProjectPage = () => {
   const navigate = useNavigate();
@@ -9,18 +14,27 @@ export const AddProjectPage = () => {
     title: '', department: '', author: '', year: new Date().getFullYear(),
     priceNGN: '', level: 'BSc', abstract: '', chapterOne: '',
   });
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // In a real app, you would handle an API submission here.
-    console.log('Form Data Submitted:', formData);
-    alert(`Project "${formData.title}" has been added successfully!`);
-    navigate('/admin/projects'); // Redirect back to the projects list
+    try {
+      await databases.createDocument(DATABASE_ID, COLLECTION_ID, ID.unique(), {
+        ...formData,
+        year: parseInt(formData.year),
+        priceNGN: parseFloat(formData.priceNGN),
+      });
+      alert(`Project "${formData.title}" has been added successfully!`);
+      navigate('/admin/projects'); // Redirect back to the projects list
+    } catch (error) {
+      setError(error.message);
+      console.error('Failed to add project:', error);
+    }
   };
 
   return (
@@ -40,6 +54,7 @@ export const AddProjectPage = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded-xl shadow-lg space-y-8">
+        {error && <p className="text-red-500">{error}</p>}
         {/* Section 1: Basic Information */}
         <div className="p-6 border rounded-lg">
           <h3 className="text-xl font-bold mb-4 text-gray-700">Basic Information</h3>

@@ -1,17 +1,32 @@
 
 import React, { useState, useEffect } from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useLocation } from 'react-router-dom';
 import { FaFolderOpen, FaArrowRight, FaBars, FaTimes } from 'react-icons/fa';
+import { account } from '../appwrite/config';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        await account.get();
+        setIsLoggedIn(true);
+      } catch (error) {
+        setIsLoggedIn(false);
+      }
+    };
+
+    checkLoginStatus();
+
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [location.pathname]);
+
 
   const navLinkClasses = "block py-2 px-4 text-lg md:text-base relative font-semibold text-gray-700 hover:text-indigo-600 transition-colors duration-300";
   const activeNavLinkClasses = "text-indigo-600";
@@ -34,12 +49,18 @@ const Navbar = () => {
             <NavLink to="/contact" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>Contact</NavLink>
           </div>
 
-          {/* Get Started Button (Desktop) */}
+          {/* Auth Buttons (Desktop) */}
           <div className="hidden md:flex items-center">
-            <Link to="/signup" className="group flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold px-5 py-3 rounded-lg shadow-md hover:shadow-lg hover:bg-indigo-700 transition-all">
-              <span>Get Started</span>
-              <FaArrowRight className="transition-transform group-hover:translate-x-1" />
-            </Link>
+            {isLoggedIn ? (
+              <Link to="/dashboard" className="group flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold px-5 py-3 rounded-lg shadow-md hover:shadow-lg hover:bg-indigo-700 transition-all">
+                <span>Dashboard</span>
+              </Link>
+            ) : (
+              <Link to="/signup" className="group flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold px-5 py-3 rounded-lg shadow-md hover:shadow-lg hover:bg-indigo-700 transition-all">
+                <span>Get Started</span>
+                <FaArrowRight className="transition-transform group-hover:translate-x-1" />
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -60,10 +81,16 @@ const Navbar = () => {
             <NavLink to="/departments" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`} onClick={() => setIsMenuOpen(false)}>Departments</NavLink>
             <NavLink to="/contact" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`} onClick={() => setIsMenuOpen(false)}>Contact</NavLink>
             <div className="pt-4">
-              <Link to="/signup" className="group w-full flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold px-5 py-3 rounded-lg shadow-md">
-                <span>Get Started</span>
-                <FaArrowRight />
-              </Link>
+              {isLoggedIn ? (
+                <Link to="/dashboard" className="group w-full flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold px-5 py-3 rounded-lg shadow-md">
+                  <span>Dashboard</span>
+                </Link>
+              ) : (
+                <Link to="/signup" className="group w-full flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold px-5 py-3 rounded-lg shadow-md">
+                  <span>Get Started</span>
+                  <FaArrowRight />
+                </Link>
+              )}
             </div>
           </div>
         </div>

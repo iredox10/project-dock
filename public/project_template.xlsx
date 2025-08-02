@@ -1,0 +1,2 @@
+title,department,author,year,priceNGN,level,abstract,chapterOne,pages,fileSize,formats,chapters,includes
+"Sample Project Title","Sample Department","Sample Author",2023,10000,"BSc","This is a sample abstract.","This is a sample chapter one.",150,2.5,"PDF, DOCX","Chapter 1-5","Full Source Code"

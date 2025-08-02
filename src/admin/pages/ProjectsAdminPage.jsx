@@ -1,16 +1,28 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaPlus, FaSearch, FaEdit, FaTrash } from 'react-icons/fa';
+import { databases } from '../../appwrite/config';
 
-const initialProjects = [
-  { id: 1, title: 'AI-Powered E-commerce Chatbot', department: 'Computer Science', year: 2023, author: 'Bello Adekunle', priceNGN: 5000, level: 'BSc' },
-  { id: 2, title: 'Smart Irrigation System using IoT', department: 'Electrical Engineering', year: 2023, author: 'Fatima Yusuf', priceNGN: 4500, level: 'MSc' },
-];
+const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;
+const COLLECTION_ID = import.meta.env.VITE_APPWRITE_COLLECTION_ID_PROJECTS;
 
 export const ProjectsAdminPage = () => {
-  const [projects, setProjects] = useState(initialProjects);
+  const [projects, setProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await databases.listDocuments(DATABASE_ID, COLLECTION_ID);
+        setProjects(response.documents);
+      } catch (error) {
+        console.error('Failed to fetch projects:', error);
+      }
+    };
+
+    fetchProjects();
+  }, []);
 
   const filteredProjects = useMemo(() => {
     return projects.filter(p =>
@@ -19,9 +31,14 @@ export const ProjectsAdminPage = () => {
     );
   }, [projects, searchTerm]);
 
-  const handleDelete = (projectId) => {
+  const handleDelete = async (projectId) => {
     if (window.confirm('Are you sure you want to delete this project?')) {
-      setProjects(projects.filter(p => p.id !== projectId));
+      try {
+        await databases.deleteDocument(DATABASE_ID, COLLECTION_ID, projectId);
+        setProjects(projects.filter(p => p.$id !== projectId));
+      } catch (error) {
+        console.error('Failed to delete project:', error);
+      }
     }
   };
 
@@ -60,14 +77,14 @@ export const ProjectsAdminPage = () => {
             </thead>
             <tbody>
               {filteredProjects.map(project => (
-                <tr key={project.id} className="border-b hover:bg-gray-50">
+                <tr key={project.$id} className="border-b hover:bg-gray-50">
                   <td className="p-3 font-semibold">{project.title}</td>
                   <td className="p-3">{project.department}</td>
                   <td className="p-3">{project.year}</td>
                   <td className="p-3">₦{project.priceNGN.toLocaleString()}</td>
                   <td className="p-3 text-center">
-                    <Link to={`/admin/projects/edit/${project.id}`} className="text-blue-500 hover:text-blue-700 mr-4"><FaEdit /></Link>
-                    <button onClick={() => handleDelete(project.id)} className="text-red-500 hover:text-red-700"><FaTrash /></button>
+                    <Link to={`/admin/projects/edit/${project.$id}`} className="text-blue-500 hover:text-blue-700 mr-4"><FaEdit /></Link>
+                    <button onClick={() => handleDelete(project.$id)} className="text-red-500 hover:text-red-700"><FaTrash /></button>
                   </td>
                 </tr>
               ))}

@@ -1,11 +1,22 @@
 
 import React from 'react';
-import { NavLink, Outlet, Link } from 'react-router-dom';
-import { FaTachometerAlt, FaFolder, FaUsers, FaSignOutAlt, FaFolderOpen } from 'react-icons/fa';
+import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
+import { FaTachometerAlt, FaFolder, FaUsers, FaSignOutAlt, FaFolderOpen, FaMagic } from 'react-icons/fa';
+import { account } from '../../appwrite/config';
 
 const AdminSidebar = () => {
+  const navigate = useNavigate();
   const linkClasses = "flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-colors";
   const activeLinkClasses = "bg-gray-700 text-white";
+
+  const handleLogout = async () => {
+    try {
+      await account.deleteSession('current');
+      navigate('/');
+    } catch (error) {
+      console.error('Failed to logout', error);
+    }
+  };
 
   return (
     <aside className="w-64 bg-gray-800 text-white flex flex-col h-screen">
@@ -28,8 +39,16 @@ const AdminSidebar = () => {
           <FaUsers />
           <span>Manage Users</span>
         </NavLink>
+        <NavLink to="/admin/extractor" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}>
+          <FaMagic />
+          <span>Data Extractor</span>
+        </NavLink>
       </nav>
-      <div className="p-4 border-t border-gray-700">
+      <div className="p-4 border-t border-gray-700 space-y-2">
+        <button onClick={handleLogout} className={`${linkClasses} w-full`}>
+          <FaSignOutAlt />
+          <span>Logout</span>
+        </button>
         <Link to="/" className={`${linkClasses}`}>
           <FaSignOutAlt />
           <span>Back to Main Site</span>
