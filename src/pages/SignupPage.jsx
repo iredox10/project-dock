@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaFolderOpen, FaUser, FaEnvelope, FaLock, FaArrowRight, FaSpinner } from 'react-icons/fa';
-import { auth, db } from '../firebase/config.js'; // Import your Firebase config
+import { FaFolderOpen, FaUser, FaEnvelope, FaLock, FaSpinner, FaRocket, FaShieldAlt, FaStar } from 'react-icons/fa';
+import { auth, db } from '../firebase/config.js';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 
@@ -26,30 +26,26 @@ const SignupPage = () => {
     setError('');
 
     try {
-      // 1. Create user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
-      // 2. Create a user document in the 'users' collection in Firestore
       await setDoc(doc(db, 'users', user.uid), {
         name: formData.name,
         email: formData.email,
-        role: 'user', // Default role
+        role: 'user',
         createdAt: serverTimestamp(),
         purchasedProjects: []
       });
 
-      // 3. Redirect to homepage on success
       navigate('/');
 
     } catch (err) {
-      // Handle Firebase errors
       if (err.code === 'auth/email-already-in-use') {
-        setError('This email address is already in use.');
+        setError('This email is already registered.');
       } else if (err.code === 'auth/weak-password') {
-        setError('Password should be at least 6 characters long.');
+        setError('Password must be at least 6 characters.');
       } else {
-        setError('Failed to create an account. Please try again.');
+        setError('Failed to create account. Please try again.');
         console.error("Signup error:", err);
       }
     } finally {
@@ -57,50 +53,170 @@ const SignupPage = () => {
     }
   };
 
+  const benefits = [
+    { icon: FaRocket, text: 'Instant Access to Projects' },
+    { icon: FaShieldAlt, text: 'Secure & Private' },
+    { icon: FaStar, text: 'Premium Resources' },
+  ];
+
   return (
     <div className="min-h-screen flex">
-      {/* Left Column */}
-      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-indigo-600 to-blue-500 items-center justify-center p-12 text-white relative overflow-hidden">
-        <div className="absolute -top-16 -left-16 w-64 h-64 bg-white/10 rounded-full"></div>
-        <div className="absolute -bottom-24 -right-10 w-72 h-72 bg-white/10 rounded-full"></div>
-        <div className="relative z-10 text-center">
-          <Link to="/" className="inline-block mb-8"><FaFolderOpen className="mx-auto h-16 w-auto text-white" /></Link>
-          <h1 className="text-4xl font-extrabold tracking-tight mb-4">Join Project Dock Today</h1>
-          <p className="text-lg text-indigo-100 max-w-md">Unlock access to thousands of projects, get inspired, and kickstart your academic success.</p>
+      {/* Left Column - Branding */}
+      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-600 items-center justify-center p-12 relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <svg width="100%" height="100%">
+            <defs>
+              <pattern id="signup-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+                <circle cx="20" cy="20" r="1" fill="white"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#signup-pattern)" />
+          </svg>
+        </div>
+
+        {/* Decorative Circles */}
+        <div className="absolute -top-16 -left-16 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-24 -right-10 w-72 h-72 bg-white/10 rounded-full blur-3xl"></div>
+
+        <div className="relative z-10 text-center max-w-md">
+          <Link to="/" className="inline-block mb-8">
+            <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-3xl flex items-center justify-center border-2 border-white/30">
+              <FaFolderOpen className="text-white text-4xl" />
+            </div>
+          </Link>
+          <h1 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight">
+            Join Us Today!
+          </h1>
+          <p className="text-lg text-indigo-100 mb-8">
+            Start your academic journey with thousands of verified projects
+          </p>
+
+          {/* Benefits */}
+          <div className="space-y-4">
+            {benefits.map((benefit, index) => {
+              const Icon = benefit.icon;
+              return (
+                <div key={index} className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                    <Icon className="text-white" />
+                  </div>
+                  <span className="text-white font-semibold">{benefit.text}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Right Column: Signup Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-gray-50 p-8 sm:p-12">
+      {/* Right Column - Signup Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-slate-50 p-8 sm:p-12">
         <div className="max-w-md w-full">
-          <div className="lg:hidden text-center mb-8"><Link to="/"><FaFolderOpen className="mx-auto h-12 w-auto text-indigo-600" /></Link></div>
-          <div>
-            <h2 className="text-3xl font-extrabold text-gray-900">Create your account</h2>
-            <p className="mt-2 text-sm text-gray-600">Already have an account?{' '}<Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500 hover:underline">Sign in here</Link></p>
+          {/* Mobile Logo */}
+          <div className="lg:hidden text-center mb-8">
+            <Link to="/">
+              <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto">
+                <FaFolderOpen className="text-white text-2xl" />
+              </div>
+            </Link>
           </div>
 
-          <form onSubmit={handleSignup} className="mt-8 space-y-6">
-            {error && <p className="bg-red-100 text-red-700 p-3 rounded-lg text-center font-semibold">{error}</p>}
-            <div className="space-y-4">
-              <div className="relative">
-                <FaUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input id="name" name="name" type="text" value={formData.name} onChange={handleChange} required className="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Full Name" />
+          <div className="mb-8">
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900">Create Account</h2>
+            <p className="mt-2 text-slate-600">
+              Already have an account?{' '}
+              <Link to="/login" className="font-bold text-indigo-600 hover:text-indigo-700 hover:underline">
+                Sign in
+              </Link>
+            </p>
+          </div>
+
+          <form onSubmit={handleSignup} className="space-y-6">
+            {error && (
+              <div className="bg-red-50 border-2 border-red-200 text-red-700 p-4 rounded-xl font-semibold text-sm">
+                {error}
               </div>
-              <div className="relative">
-                <FaEnvelope className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input id="email" name="email" type="email" value={formData.email} onChange={handleChange} required className="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Email address" />
-              </div>
-              <div className="relative">
-                <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input id="password" name="password" type="password" value={formData.password} onChange={handleChange} required className="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Password" />
-              </div>
-            </div>
-            <div className="text-xs text-gray-500">By creating an account, you agree to our <a href="#" className="font-medium hover:underline">Terms of Service</a>.</div>
+            )}
+
             <div>
-              <button type="submit" disabled={isLoading} className="group relative w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent text-lg font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 disabled:bg-gray-400">
-                {isLoading ? <FaSpinner className="animate-spin" /> : <><span>Create Account</span><FaArrowRight className="transition-transform duration-300 group-hover:translate-x-1" /></>}
-              </button>
+              <label htmlFor="name" className="block text-sm font-bold text-slate-700 mb-2">
+                Full Name
+              </label>
+              <div className="relative">
+                <FaUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+                  placeholder="John Doe"
+                />
+              </div>
             </div>
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-bold text-slate-700 mb-2">
+                Email Address
+              </label>
+              <div className="relative">
+                <FaEnvelope className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+                  placeholder="you@example.com"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-bold text-slate-700 mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+                  placeholder="••••••••"
+                />
+              </div>
+              <p className="text-xs text-slate-500 mt-2">Must be at least 6 characters</p>
+            </div>
+
+            <div className="text-xs text-slate-600">
+              By creating an account, you agree to our{' '}
+              <a href="#" className="font-bold text-indigo-600 hover:underline">
+                Terms of Service
+              </a>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full flex justify-center items-center gap-3 py-4 px-6 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-bold rounded-xl hover:from-indigo-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+            >
+              {isLoading ? (
+                <>
+                  <FaSpinner className="animate-spin" />
+                  <span>Creating account...</span>
+                </>
+              ) : (
+                <span>Create Account</span>
+              )}
+            </button>
           </form>
         </div>
       </div>

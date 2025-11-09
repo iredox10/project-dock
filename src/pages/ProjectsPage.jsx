@@ -43,7 +43,7 @@ const ProjectCard = ({ project }) => {
         </div>
 
         {/* Title */}
-        <h3 className="text-xl font-bold text-slate-900 mb-3 leading-tight line-clamp-2 group-hover:text-indigo-700 transition-colors">
+        <h3 className="text-xl font-bold text-slate-900 mb-3 leading-tight group-hover:text-indigo-700 transition-colors min-h-[3.5rem]">
           {project.title}
         </h3>
 
