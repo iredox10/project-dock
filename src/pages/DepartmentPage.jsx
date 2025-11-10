@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { FaFilePdf, FaCode, FaBook, FaSearch, FaArrowLeft, FaSpinner, FaUniversity, FaGraduationCap, FaFilter, FaCalendar, FaUser, FaEye, FaStar, FaChevronDown, FaLaptopCode, FaFlask, FaChartLine, FaBriefcase, FaNewspaper, FaHeart, FaBuilding, FaCalculator } from 'react-icons/fa';
 import { db } from '../firebase/config';
 import { collection, query, where, getDocs, orderBy, limit, startAfter } from 'firebase/firestore';
@@ -143,10 +143,11 @@ const ProjectCard = ({ project, deptColors }) => (
 
 const DepartmentPage = () => {
   const { departmentName } = useParams();
+  const [searchParams] = useSearchParams();
   const decodedDeptName = decodeURIComponent(departmentName);
 
   const [projects, setProjects] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [levelFilter, setLevelFilter] = useState('All');
   const [yearFilter, setYearFilter] = useState('All');
   const [isLoading, setIsLoading] = useState(true);
@@ -186,6 +187,14 @@ const DepartmentPage = () => {
   useEffect(() => {
     fetchDepartmentProjects();
   }, [fetchDepartmentProjects]);
+
+  // Update search term when URL parameter changes
+  useEffect(() => {
+    const searchParam = searchParams.get('search');
+    if (searchParam !== null) {
+      setSearchTerm(searchParam);
+    }
+  }, [searchParams]);
 
   const fetchMoreProjects = async () => {
     if (!hasMore || !lastVisible) return;

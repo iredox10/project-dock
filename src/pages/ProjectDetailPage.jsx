@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { FaDownload, FaStar, FaArrowLeft, FaUserGraduate, FaCalendarAlt, FaSpinner, FaPaperPlane, FaFilePdf, FaFileWord, FaHashtag, FaBookOpen, FaCheckCircle, FaDatabase, FaUniversity, FaEye, FaShieldAlt, FaClock, FaQuoteLeft } from 'react-icons/fa';
+import { FaDownload, FaStar, FaArrowLeft, FaUserGraduate, FaCalendarAlt, FaSpinner, FaPaperPlane, FaFilePdf, FaFileWord, FaHashtag, FaBookOpen, FaCheckCircle, FaDatabase, FaUniversity, FaEye, FaShieldAlt, FaClock, FaQuoteLeft, FaHeart } from 'react-icons/fa';
 import { db, auth } from '../firebase/config';
-import { getDoc, doc, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy } from 'firebase/firestore';
+import { getDoc, doc, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
 // --- Helper function to handle data that might be a string or an array ---
@@ -113,6 +113,7 @@ const ProjectDetailPage = () => {
   const [error, setError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [hasPurchased, setHasPurchased] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
   const [showFloatingButton, setShowFloatingButton] = useState(false);
 
   // Handle scroll to show/hide floating download button on mobile
@@ -174,12 +175,36 @@ const ProjectDetailPage = () => {
       const checkPurchase = async () => {
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
         if (userDoc.exists()) {
-          setHasPurchased(userDoc.data().purchasedProjects?.includes(projectId));
+          const userData = userDoc.data();
+          setHasPurchased(userData.purchasedProjects?.includes(projectId));
+          setIsFavorite(userData.favoriteProjects?.includes(projectId));
         }
       };
       checkPurchase();
     }
   }, [currentUser, project, projectId]);
+
+  const toggleFavorite = async () => {
+    if (!currentUser) {
+      // Redirect to login
+      window.location.href = `/login?redirect=/projects/${projectId}`;
+      return;
+    }
+
+    const userRef = doc(db, 'users', currentUser.uid);
+    
+    if (isFavorite) {
+      await updateDoc(userRef, {
+        favoriteProjects: arrayRemove(projectId)
+      });
+      setIsFavorite(false);
+    } else {
+      await updateDoc(userRef, {
+        favoriteProjects: arrayUnion(projectId)
+      });
+      setIsFavorite(true);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -284,13 +309,26 @@ const ProjectDetailPage = () => {
                 <div className="text-3xl font-bold text-white mb-1">₦{project.priceNGN?.toLocaleString() || 'N/A'}</div>
                 <div className="text-xs text-white/70">One-time payment</div>
               </div>
-              <Link
-                to={`/projects/${projectId}/download`}
-                className="inline-flex items-center gap-3 bg-white text-indigo-600 font-bold px-8 py-4 rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-2xl hover:shadow-3xl hover:scale-105 transform"
-              >
-                <FaDownload className="text-xl" />
-                <span className="text-lg">Download Now</span>
-              </Link>
+              <div className="flex gap-3">
+                <button
+                  onClick={toggleFavorite}
+                  className={`inline-flex items-center justify-center w-14 h-14 rounded-xl transition-all duration-300 shadow-2xl hover:scale-105 transform ${
+                    isFavorite
+                      ? 'bg-red-500 text-white hover:bg-red-600'
+                      : 'bg-white text-gray-600 hover:bg-gray-100'
+                  }`}
+                  title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                >
+                  <FaHeart className="text-2xl" />
+                </button>
+                <Link
+                  to={`/projects/${projectId}/payment`}
+                  className="inline-flex items-center gap-3 bg-white text-indigo-600 font-bold px-8 py-4 rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-2xl hover:shadow-3xl hover:scale-105 transform"
+                >
+                  <FaDownload className="text-xl" />
+                  <span className="text-lg">Download Now</span>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -490,7 +528,7 @@ const ProjectDetailPage = () => {
       {/* Floating Download Button - Mobile Only */}
       {showFloatingButton && (
         <Link
-          to={`/projects/${projectId}/download`}
+          to={`/projects/${projectId}/payment`}
           className="md:hidden fixed bottom-6 right-6 z-40 flex items-center justify-center w-16 h-16 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-2xl hover:shadow-3xl hover:scale-110 transform transition-all duration-300 animate-bounce"
         >
           <FaDownload className="text-2xl" />

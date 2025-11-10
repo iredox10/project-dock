@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaRobot, FaFileUpload, FaCheckCircle, FaTimesCircle, FaSpinner, FaPlus, FaTimes } from 'react-icons/fa';
 import { db } from '../../firebase/config';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { extractProjectFromFile, batchExtractProjects } from '../../api/aiExtractionService';
 import { getStandardizedDepartment } from '../../api/departmentService';
+import { uploadProjectFile } from '../../api/fileStorageService';
 
 // Modal Component
 const Modal = ({ isOpen, onClose, title, message, type = 'info' }) => {
@@ -60,6 +61,8 @@ const Modal = ({ isOpen, onClose, title, message, type = 'info' }) => {
 export const AIProjectUploadPage = () => {
   const navigate = useNavigate();
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [originalFile, setOriginalFile] = useState(null); // Store the original file for upload
+  const [originalFilesMap, setOriginalFilesMap] = useState(new Map()); // Store batch files
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentFile, setCurrentFile] = useState('');
   const [progress, setProgress] = useState({ current: 0, total: 0 });
@@ -91,6 +94,7 @@ export const AIProjectUploadPage = () => {
 
     setIsProcessing(true);
     setCurrentFile(selectedFiles[0].name);
+    setOriginalFile(selectedFiles[0]); // Store original file for later upload
 
     try {
       const data = await extractProjectFromFile(selectedFiles[0]);
@@ -110,12 +114,17 @@ export const AIProjectUploadPage = () => {
       showModal('No Files Selected', 'Please select files first', 'warning');
       return;
     }
-      return;
-    }
 
     setIsProcessing(true);
     setResults([]);
     setProgress({ current: 0, total: selectedFiles.length });
+
+    // Create a map to store original files by their name
+    const filesMap = new Map();
+    selectedFiles.forEach(file => {
+      filesMap.set(file.name, file);
+    });
+    setOriginalFilesMap(filesMap);
 
     try {
       const batchResults = await batchExtractProjects(
@@ -150,11 +159,19 @@ export const AIProjectUploadPage = () => {
       return;
     }
 
+    if (!originalFile) {
+      showModal('No File', 'Original file not found. Please re-extract the file.', 'error');
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
+      console.log('Starting save process...', { extractedData, originalFile });
+      
       // Standardize department name to avoid duplicates
       const standardizedDepartment = await getStandardizedDepartment(extractedData.department);
+      console.log('Standardized department:', standardizedDepartment);
       
       const projectData = {
         ...extractedData,
@@ -172,17 +189,44 @@ export const AIProjectUploadPage = () => {
         createdAt: serverTimestamp()
       };
 
-      await addDoc(collection(db, 'projects'), projectData);
-      showModal('Project Saved!', `Project "${extractedData.title}" saved successfully with department: ${standardizedDepartment}!`, 'success');
+      console.log('Saving project to database...', projectData);
+      // Add project to database first to get the project ID
+      const docRef = await addDoc(collection(db, 'projects'), projectData);
+      const projectId = docRef.id;
+      console.log('Project saved to database with ID:', projectId);
+
+      // Upload the original file to storage
+      const fileType = originalFile.name.toLowerCase().endsWith('.pdf') ? 'pdf' : 'docx';
+      console.log('Uploading file to storage...', { fileType, fileName: originalFile.name });
+      const uploadResult = await uploadProjectFile(originalFile, projectId, fileType);
+      console.log('File uploaded successfully:', uploadResult);
+
+      // Update project with file URL
+      console.log('Updating project with file URL...');
+      await updateDoc(docRef, {
+        fileUrl: uploadResult.url,
+        filePath: uploadResult.path,
+        fileName: uploadResult.fileName,
+        fileType: fileType
+      });
+      console.log('Project updated with file info');
+
+      showModal('Project Saved!', `Project "${extractedData.title}" saved successfully with file uploaded to storage!`, 'success');
       
       // Reset form after a short delay
       setTimeout(() => {
         setExtractedData(null);
         setSelectedFiles([]);
+        setOriginalFile(null);
       }, 2000);
       
     } catch (error) {
       console.error('Error saving project:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
       showModal('Save Failed', 'Failed to save project: ' + error.message, 'error');
     } finally {
       setIsProcessing(false);
@@ -222,11 +266,34 @@ export const AIProjectUploadPage = () => {
           createdAt: serverTimestamp()
         };
 
-        await addDoc(collection(db, 'projects'), projectData);
+        // Add project to database first to get the project ID
+        const docRef = await addDoc(collection(db, 'projects'), projectData);
+        const projectId = docRef.id;
+
+        // Upload the original file to storage if available
+        const originalFile = originalFilesMap.get(result.fileName);
+        if (originalFile) {
+          try {
+            const fileType = originalFile.name.toLowerCase().endsWith('.pdf') ? 'pdf' : 'docx';
+            const uploadResult = await uploadProjectFile(originalFile, projectId, fileType);
+
+            // Update project with file URL
+            await updateDoc(docRef, {
+              fileUrl: uploadResult.url,
+              filePath: uploadResult.path,
+              fileName: uploadResult.fileName,
+              fileType: fileType
+            });
+          } catch (uploadError) {
+            console.error('Error uploading file for project:', result.fileName, uploadError);
+            // Continue even if upload fails - project data is already saved
+          }
+        }
+
         savedCount++;
       }
 
-      showModal('Batch Save Complete!', `Successfully saved ${savedCount} projects to database!`, 'success');
+      showModal('Batch Save Complete!', `Successfully saved ${savedCount} projects to database with files uploaded!`, 'success');
       
       setTimeout(() => {
         navigate('/admin/projects');

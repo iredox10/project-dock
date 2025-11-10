@@ -85,7 +85,7 @@ const DepartmentCard = ({ name, count }) => {
 
   return (
     <Link
-      to={`/department/${encodeURIComponent(name)}`}
+      to={`/department/${encodeURIComponent(name)}/topics`}
       className={`group relative block bg-white rounded-2xl border-2 ${colors.border} ${colors.hover} shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden`}
     >
       {/* Gradient accent bar */}

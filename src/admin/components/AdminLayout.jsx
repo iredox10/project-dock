@@ -33,6 +33,7 @@ const AdminSidebar = () => {
         <NavLink to="/admin" end className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}><FaTachometerAlt /><span>Dashboard</span></NavLink>
         <NavLink to="/admin/orders" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}><FaFileInvoiceDollar /><span>Manage Orders</span></NavLink>
         <NavLink to="/admin/projects" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}><FaFolder /><span>Manage Projects</span></NavLink>
+        <NavLink to="/admin/projects/ai-generate" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}><FaFolderOpen /><span>AI Generate Projects</span></NavLink>
         <NavLink to="/admin/reviews" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}><FaComments /><span>Manage Reviews</span></NavLink>
         <NavLink to="/admin/users" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}><FaUsers /><span>Manage Users</span></NavLink>
       </nav>

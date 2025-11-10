@@ -1,8 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FaPaperPlane, FaUserGraduate, FaClipboardCheck, FaClock, FaShieldAlt, FaCheckCircle, FaPenFancy } from 'react-icons/fa';
 
 const HireWriterPage = () => {
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
     topic: '',
     name: '',
@@ -11,6 +13,22 @@ const HireWriterPage = () => {
     level: 'BSc',
     requirements: ''
   });
+
+  useEffect(() => {
+    // Update form data when URL parameters change
+    const topic = searchParams.get('topic') || '';
+    const department = searchParams.get('department') || '';
+    const level = searchParams.get('level') || 'BSc';
+    
+    setFormData(prev => ({
+      ...prev,
+      topic: topic,
+      level: level,
+      requirements: department 
+        ? `Project requested from ${department} department` 
+        : prev.requirements
+    }));
+  }, [searchParams]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

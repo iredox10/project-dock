@@ -49,20 +49,41 @@ export const ProfilePage = () => {
   }
 
   return (
-    <div>
-      <h1 className="text-4xl font-extrabold text-gray-900 mb-6">Profile Settings</h1>
-      <div className="bg-white p-8 rounded-xl shadow-lg max-w-lg">
-        <form onSubmit={handleUpdateProfile} className="space-y-6">
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl md:text-4xl font-extrabold text-gray-900 mb-2">Profile Settings</h1>
+        <p className="text-sm md:text-base text-gray-600">Update your account information</p>
+      </div>
+      <div className="bg-white p-4 md:p-8 rounded-xl shadow-lg max-w-2xl">
+        <form onSubmit={handleUpdateProfile} className="space-y-4 md:space-y-6">
           <div>
-            <label className="block font-semibold text-gray-700 mb-1">Full Name</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full p-3 border rounded-lg" />
+            <label className="block font-semibold text-gray-700 mb-1 text-sm md:text-base">Full Name</label>
+            <input 
+              type="text" 
+              value={name} 
+              onChange={(e) => setName(e.target.value)} 
+              className="w-full p-2 md:p-3 border rounded-lg text-sm md:text-base" 
+            />
           </div>
           <div>
-            <label className="block font-semibold text-gray-700 mb-1">Email Address</label>
-            <input type="email" value={user?.email || ''} disabled className="w-full p-3 border rounded-lg bg-gray-100 cursor-not-allowed" />
+            <label className="block font-semibold text-gray-700 mb-1 text-sm md:text-base">Email Address</label>
+            <input 
+              type="email" 
+              value={user?.email || ''} 
+              disabled 
+              className="w-full p-2 md:p-3 border rounded-lg bg-gray-100 cursor-not-allowed text-sm md:text-base" 
+            />
           </div>
-          {successMessage && <p className="text-green-600 font-semibold">{successMessage}</p>}
-          <button type="submit" disabled={isSaving} className="flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400">
+          {successMessage && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 md:p-4">
+              <p className="text-green-600 font-semibold text-sm md:text-base">{successMessage}</p>
+            </div>
+          )}
+          <button 
+            type="submit" 
+            disabled={isSaving} 
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold px-4 md:px-6 py-2 md:py-3 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 text-sm md:text-base"
+          >
             {isSaving ? <FaSpinner className="animate-spin" /> : <FaSave />}
             Save Changes
           </button>

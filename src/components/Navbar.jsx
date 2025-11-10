@@ -1,16 +1,28 @@
 
 import React, { useState, useEffect } from 'react';
-import { NavLink, Link } from 'react-router-dom';
-import { FaFolderOpen, FaArrowRight, FaBars, FaTimes, FaHome, FaLayerGroup, FaBuilding, FaPen, FaEnvelope, FaUserPlus } from 'react-icons/fa';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
+import { FaFolderOpen, FaArrowRight, FaBars, FaTimes, FaHome, FaLayerGroup, FaBuilding, FaPen, FaEnvelope, FaUserPlus, FaUserCircle, FaSignOutAlt, FaTachometerAlt } from 'react-icons/fa';
+import { auth } from '../firebase/config';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
   }, []);
 
   // Close menu when clicking outside
@@ -19,10 +31,23 @@ const Navbar = () => {
       if (isMenuOpen && !e.target.closest('nav')) {
         setIsMenuOpen(false);
       }
+      if (showUserMenu && !e.target.closest('.user-menu-container')) {
+        setShowUserMenu(false);
+      }
     };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, [isMenuOpen]);
+  }, [isMenuOpen, showUserMenu]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/');
+      setShowUserMenu(false);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const navLinkClasses = "flex items-center gap-3 py-3 px-4 text-base relative font-medium text-gray-700 hover:text-indigo-600 transition-all duration-200 rounded-lg hover:bg-indigo-50";
   const activeNavLinkClasses = "text-indigo-600 bg-indigo-50";
@@ -82,6 +107,14 @@ const Navbar = () => {
               Departments
             </NavLink>
             <NavLink 
+              to="/departments" 
+              className={({ isActive }) => `${isScrolled ? navLinkClasses : desktopNavLinkClasses} ${
+                isActive ? (isScrolled ? activeNavLinkClasses : desktopActiveNavLinkClasses) : ''
+              }`}
+            >
+              Project Topics
+            </NavLink>
+            <NavLink 
               to="/hire-writer" 
               className={({ isActive }) => `${isScrolled ? navLinkClasses : desktopNavLinkClasses} ${
                 isActive ? (isScrolled ? activeNavLinkClasses : desktopActiveNavLinkClasses) : ''
@@ -99,33 +132,101 @@ const Navbar = () => {
             </NavLink>
           </div>
 
-          {/* Get Started Button (Desktop) */}
+          {/* User Menu or Get Started Button (Desktop) */}
           <div className="hidden md:flex items-center">
-            <Link 
-              to="/signup" 
-              className={`group flex items-center justify-center gap-2 font-bold px-6 py-3 rounded-xl shadow-lg transition-all duration-200 ${
-                isScrolled
-                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl hover:scale-105'
-                  : 'bg-white text-indigo-600 hover:bg-indigo-50 hover:shadow-xl hover:scale-105'
-              }`}
-            >
-              <span>Get Started</span>
-              <FaArrowRight className="transition-transform group-hover:translate-x-1" />
-            </Link>
+            {user ? (
+              <div className="relative user-menu-container">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-200 ${
+                    isScrolled
+                      ? 'bg-gray-100 hover:bg-gray-200 text-gray-900'
+                      : 'bg-white/20 hover:bg-white/30 text-white'
+                  }`}
+                >
+                  <FaUserCircle className="text-2xl" />
+                  <div className="text-left">
+                    <div className="text-sm font-semibold">{user.displayName || user.email?.split('@')[0]}</div>
+                    <div className={`text-xs ${isScrolled ? 'text-gray-600' : 'text-white/80'}`}>My Account</div>
+                  </div>
+                </button>
+
+                {/* Dropdown Menu */}
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl overflow-hidden z-50 border border-gray-100">
+                    <div className="p-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+                      <div className="font-semibold truncate">{user.displayName || 'User'}</div>
+                      <div className="text-xs text-indigo-100 truncate">{user.email}</div>
+                    </div>
+                    <div className="py-2">
+                      <Link
+                        to="/dashboard"
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <FaTachometerAlt className="text-indigo-600" />
+                        <span>Dashboard</span>
+                      </Link>
+                      <Link
+                        to="/dashboard/my-library"
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <FaFolderOpen className="text-indigo-600" />
+                        <span>My Library</span>
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-red-600 transition-colors"
+                      >
+                        <FaSignOutAlt />
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link 
+                to="/signup" 
+                className={`group flex items-center justify-center gap-2 font-bold px-6 py-3 rounded-xl shadow-lg transition-all duration-200 ${
+                  isScrolled
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl hover:scale-105'
+                    : 'bg-white text-indigo-600 hover:bg-indigo-50 hover:shadow-xl hover:scale-105'
+                }`}
+              >
+                <span>Get Started</span>
+                <FaArrowRight className="transition-transform group-hover:translate-x-1" />
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-2">
-            <Link 
-              to="/signup" 
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                isScrolled
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white/20 text-white backdrop-blur-sm'
-              }`}
-            >
-              Sign Up
-            </Link>
+            {user ? (
+              <Link
+                to="/dashboard"
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
+                  isScrolled
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-white/20 text-white backdrop-blur-sm'
+                }`}
+              >
+                <FaUserCircle />
+                Dashboard
+              </Link>
+            ) : (
+              <Link 
+                to="/signup" 
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                  isScrolled
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-white/20 text-white backdrop-blur-sm'
+                }`}
+              >
+                Sign Up
+              </Link>
+            )}
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)} 
               className={`p-2 rounded-lg transition-all ${
@@ -174,6 +275,14 @@ const Navbar = () => {
               <span>Departments</span>
             </NavLink>
             <NavLink 
+              to="/departments" 
+              className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`} 
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <FaBuilding className="h-5 w-5" />
+              <span>Project Topics</span>
+            </NavLink>
+            <NavLink 
               to="/hire-writer" 
               className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`} 
               onClick={() => setIsMenuOpen(false)}
@@ -190,17 +299,55 @@ const Navbar = () => {
               <span>Contact</span>
             </NavLink>
             
-            <div className="pt-4 pb-2">
-              <Link 
-                to="/signup" 
-                className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold px-6 py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <FaUserPlus className="h-5 w-5" />
-                <span>Get Started Free</span>
-                <FaArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
+            {/* User Section */}
+            {user ? (
+              <>
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="px-4 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg mb-2">
+                    <div className="text-sm font-semibold text-gray-900">{user.displayName || 'User'}</div>
+                    <div className="text-xs text-gray-600">{user.email}</div>
+                  </div>
+                  <NavLink 
+                    to="/dashboard" 
+                    className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`} 
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <FaTachometerAlt className="h-5 w-5" />
+                    <span>Dashboard</span>
+                  </NavLink>
+                  <NavLink 
+                    to="/dashboard/my-library" 
+                    className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`} 
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <FaFolderOpen className="h-5 w-5" />
+                    <span>My Library</span>
+                  </NavLink>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                  >
+                    <FaSignOutAlt className="h-5 w-5" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="pt-4 pb-2">
+                <Link 
+                  to="/signup" 
+                  className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold px-6 py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <FaUserPlus className="h-5 w-5" />
+                  <span>Get Started Free</span>
+                  <FaArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>
