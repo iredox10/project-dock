@@ -23,6 +23,7 @@ import { ProjectsAdminPage } from './admin/pages/ProjectsAdminPage';
 import { UsersAdminPage } from './admin/pages/UsersAdminPage';
 import { AddProjectPage } from './admin/pages/AddProjectPage'; // Import AddProjectPage
 import { BulkUploadPage } from './admin/pages/BulkUploadPage'
+import { AIProjectUploadPage } from './admin/pages/AIProjectUploadPage';
 
 // A placeholder for the Edit page. You would build this similar to AddProjectPage.
 import { useParams } from 'react-router-dom';
@@ -51,6 +52,7 @@ function App() {
           <Route path="projects/add" element={<AddProjectPage />} />
           <Route path="projects/edit/:projectId" element={<EditProjectPage />} /> {/* Placeholder route */}
           <Route path="projects/bulk-upload" element={<BulkUploadPage />} />
+          <Route path="projects/ai-upload" element={<AIProjectUploadPage />} />
           <Route path="users" element={<UsersAdminPage />} />
           <Route path="orders" element={<OrdersAdminPage />} />
           <Route path="reviews" element={<ReviewsAdminPage />} />

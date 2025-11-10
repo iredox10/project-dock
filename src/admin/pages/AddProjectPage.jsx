@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaCloudUploadAlt, FaSave, FaBook, FaInfoCircle, FaDollarSign, FaFileAlt, FaSpinner } from 'react-icons/fa';
+import { FaArrowLeft, FaCloudUploadAlt, FaSave, FaBook, FaInfoCircle, FaDollarSign, FaFileAlt, FaSpinner, FaRobot } from 'react-icons/fa';
 import { db } from '../../firebase/config';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -64,10 +64,16 @@ export const AddProjectPage = () => {
       </div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-extrabold text-gray-900">Create a New Project</h1>
-        <Link to="/admin/projects/bulk-upload" className="flex items-center gap-2 bg-green-600 text-white font-bold px-5 py-3 rounded-lg hover:bg-green-700 transition-all duration-300">
-          <FaCloudUploadAlt />
-          <span>Bulk Upload Projects</span>
-        </Link>
+        <div className="flex gap-3">
+          <Link to="/admin/projects/ai-upload" className="flex items-center gap-2 bg-indigo-600 text-white font-bold px-5 py-3 rounded-lg hover:bg-indigo-700 transition-all duration-300">
+            <FaRobot />
+            <span>AI Extract from PDF/DOCX</span>
+          </Link>
+          <Link to="/admin/projects/bulk-upload" className="flex items-center gap-2 bg-green-600 text-white font-bold px-5 py-3 rounded-lg hover:bg-green-700 transition-all duration-300">
+            <FaCloudUploadAlt />
+            <span>Bulk Upload CSV/Excel</span>
+          </Link>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
