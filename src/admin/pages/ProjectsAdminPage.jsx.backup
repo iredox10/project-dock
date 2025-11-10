@@ -1,6 +1,5 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Modal, useModal } from '../../components/Modal';
 import { Link } from 'react-router-dom';
 import { FaPlus, FaSearch, FaEdit, FaTrash, FaSpinner, FaRobot } from 'react-icons/fa';
 import { db } from '../../firebase/config'; // Your Firebase config
@@ -13,8 +12,6 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-      <Modal {...modal} onClose={closeModal} />
-      
       <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-center">
         <h2 className="text-2xl font-bold mb-4 text-gray-900">{title}</h2>
         <p className="text-gray-600 mb-6">{message}</p>
@@ -47,7 +44,6 @@ const BulkConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, cou
 };
 
 export const ProjectsAdminPage = () => {
-    const { modal, showModal, closeModal } = useModal();
   const [projects, setProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -120,7 +116,7 @@ export const ProjectsAdminPage = () => {
       setProjectToDelete(null);
     } catch (error) {
       console.error("Error deleting project: ", error);
-      showModal("Error", "Failed to delete project.", "error");
+      alert("Failed to delete project.");
     }
   };
 
@@ -158,7 +154,7 @@ export const ProjectsAdminPage = () => {
       setShowBulkConfirmModal(false);
     } catch (error) {
       console.error("Error deleting projects: ", error);
-      showModal("Error", "Failed to delete some or all projects.", "error");
+      alert("Failed to delete some or all projects.");
     }
   };
 

@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { Modal, useModal } from '../../components/Modal';
 import { FaSearch, FaEye, FaUserSlash, FaTrash, FaSpinner } from 'react-icons/fa';
 import { db } from '../../firebase/config'; // Your Firebase config
 import { collection, getDocs, deleteDoc, doc, updateDoc, query, orderBy, limit, startAfter } from 'firebase/firestore';
@@ -25,6 +26,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, confirm
 };
 
 export const UsersAdminPage = () => {
+  const { modal, showModal, closeModal: closeNotificationModal } = useModal();
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -113,6 +115,8 @@ export const UsersAdminPage = () => {
 
   return (
     <div>
+      <Modal {...modal} onClose={closeNotificationModal} />
+      
       <h1 className="text-4xl font-extrabold text-gray-900 mb-6">Manage Users</h1>
 
       <div className="bg-white p-6 rounded-xl shadow-lg">
@@ -134,7 +138,7 @@ export const UsersAdminPage = () => {
                     <td className="p-3 text-gray-600">{user.createdAt?.toDate().toLocaleDateString() || 'N/A'}</td>
                     <td className="p-3"><span className={`px-3 py-1 text-xs font-bold rounded-full ${user.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{user.status}</span></td>
                     <td className="p-3 text-center space-x-4">
-                      <button onClick={() => alert('This would navigate to a user activity page.')} className="text-gray-500 hover:text-gray-700" title="View Activity"><FaEye /></button>
+                      <button onClick={() => showModal('Feature Info', 'This would navigate to a user activity page.', 'info')} className="text-gray-500 hover:text-gray-700" title="View Activity"><FaEye /></button>
                       <button onClick={() => openModal('suspend', user)} className="text-yellow-500 hover:text-yellow-700" title={user.status === 'Active' ? 'Suspend User' : 'Activate User'}><FaUserSlash /></button>
                       <button onClick={() => openModal('delete', user)} className="text-red-500 hover:text-red-700" title="Delete User"><FaTrash /></button>
                     </td>

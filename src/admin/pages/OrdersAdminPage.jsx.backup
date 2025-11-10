@@ -1,12 +1,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Modal, useModal } from '../../components/Modal';
 import { FaCheckCircle, FaSpinner } from 'react-icons/fa';
 import { db } from '../../firebase/config';
 import { collection, query, getDocs, doc, writeBatch, orderBy } from 'firebase/firestore';
 
 export const OrdersAdminPage = () => {
-    const { modal, showModal, closeModal } = useModal();
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(null); // Store the ID of the order being updated
@@ -70,7 +68,7 @@ export const OrdersAdminPage = () => {
 
     } catch (error) {
       console.error("Error confirming payment: ", error);
-      showModal("Error", "Failed to confirm payment. Please check the console for errors.", "error");
+      alert("Failed to confirm payment. Please check the console for errors.");
     } finally {
       setIsUpdating(null);
     }
@@ -78,8 +76,6 @@ export const OrdersAdminPage = () => {
 
   return (
     <div>
-      <Modal {...modal} onClose={closeModal} />
-      
       <h1 className="text-4xl font-extrabold text-gray-900 mb-6">Manage Orders</h1>
       <div className="bg-white p-6 rounded-xl shadow-lg">
         <div className="overflow-x-auto">

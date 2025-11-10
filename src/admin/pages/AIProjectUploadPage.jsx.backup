@@ -1,61 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaRobot, FaFileUpload, FaCheckCircle, FaTimesCircle, FaSpinner, FaPlus, FaTimes } from 'react-icons/fa';
+import { FaArrowLeft, FaRobot, FaFileUpload, FaCheckCircle, FaTimesCircle, FaSpinner, FaPlus } from 'react-icons/fa';
 import { db } from '../../firebase/config';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { extractProjectFromFile, batchExtractProjects } from '../../api/aiExtractionService';
 import { getStandardizedDepartment } from '../../api/departmentService';
-
-// Modal Component
-const Modal = ({ isOpen, onClose, title, message, type = 'info' }) => {
-  if (!isOpen) return null;
-
-  const typeStyles = {
-    success: 'bg-green-50 border-green-500 text-green-900',
-    error: 'bg-red-50 border-red-500 text-red-900',
-    info: 'bg-blue-50 border-blue-500 text-blue-900',
-    warning: 'bg-yellow-50 border-yellow-500 text-yellow-900',
-  };
-
-  const iconStyles = {
-    success: <FaCheckCircle className="text-green-600 text-3xl" />,
-    error: <FaTimesCircle className="text-red-600 text-3xl" />,
-    info: <FaCheckCircle className="text-blue-600 text-3xl" />,
-    warning: <FaCheckCircle className="text-yellow-600 text-3xl" />,
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
-        <div className={`p-6 border-l-4 ${typeStyles[type]}`}>
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 mt-1">
-              {iconStyles[type]}
-            </div>
-            <div className="flex-1">
-              <h3 className="text-xl font-bold mb-2">{title}</h3>
-              <p className="text-sm leading-relaxed">{message}</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <FaTimes className="text-xl" />
-            </button>
-          </div>
-        </div>
-        <div className="p-4 bg-gray-50 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-semibold transition-all"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export const AIProjectUploadPage = () => {
   const navigate = useNavigate();
@@ -66,15 +15,6 @@ export const AIProjectUploadPage = () => {
   const [results, setResults] = useState([]);
   const [extractedData, setExtractedData] = useState(null);
   const [isSingleMode, setIsSingleMode] = useState(true);
-  const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });
-
-  const showModal = (title, message, type = 'info') => {
-    setModal({ isOpen: true, title, message, type });
-  };
-
-  const closeModal = () => {
-    setModal({ ...modal, isOpen: false });
-  };
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
@@ -85,7 +25,7 @@ export const AIProjectUploadPage = () => {
 
   const handleSingleFileExtraction = async () => {
     if (selectedFiles.length === 0) {
-      showModal('No File Selected', 'Please select a file first', 'warning');
+      alert('Please select a file first');
       return;
     }
 
@@ -95,9 +35,9 @@ export const AIProjectUploadPage = () => {
     try {
       const data = await extractProjectFromFile(selectedFiles[0]);
       setExtractedData(data);
-      showModal('Success!', 'Project data extracted successfully! Review and adjust if needed, then save.', 'success');
+      alert('Project data extracted successfully! Review and adjust if needed, then save.');
     } catch (error) {
-      showModal('Extraction Failed', 'Error extracting data: ' + error.message, 'error');
+      alert('Error extracting data: ' + error.message);
       console.error(error);
     } finally {
       setIsProcessing(false);
@@ -107,9 +47,7 @@ export const AIProjectUploadPage = () => {
 
   const handleBatchExtraction = async () => {
     if (selectedFiles.length === 0) {
-      showModal('No Files Selected', 'Please select files first', 'warning');
-      return;
-    }
+      alert('Please select files first');
       return;
     }
 
@@ -128,13 +66,9 @@ export const AIProjectUploadPage = () => {
       );
 
       const successCount = batchResults.filter(r => r.success).length;
-      showModal(
-        'Batch Processing Complete', 
-        `Successfully processed ${successCount} out of ${batchResults.length} files.`, 
-        successCount > 0 ? 'success' : 'error'
-      );
+      alert(`Batch processing complete! ${successCount}/${batchResults.length} files processed successfully.`);
     } catch (error) {
-      showModal('Batch Processing Failed', 'Error in batch processing: ' + error.message, 'error');
+      alert('Error in batch processing: ' + error.message);
       console.error(error);
     } finally {
       setIsProcessing(false);
@@ -146,7 +80,7 @@ export const AIProjectUploadPage = () => {
     if (!extractedData) return;
 
     if (!extractedData.title || !extractedData.department) {
-      showModal('Missing Information', 'Please ensure Title and Department are filled.', 'warning');
+      alert('Please ensure Title and Department are filled.');
       return;
     }
 
@@ -173,17 +107,15 @@ export const AIProjectUploadPage = () => {
       };
 
       await addDoc(collection(db, 'projects'), projectData);
-      showModal('Project Saved!', `Project "${extractedData.title}" saved successfully with department: ${standardizedDepartment}!`, 'success');
+      alert(`Project "${extractedData.title}" saved successfully with department: ${standardizedDepartment}!`);
       
-      // Reset form after a short delay
-      setTimeout(() => {
-        setExtractedData(null);
-        setSelectedFiles([]);
-      }, 2000);
+      // Reset form
+      setExtractedData(null);
+      setSelectedFiles([]);
       
     } catch (error) {
       console.error('Error saving project:', error);
-      showModal('Save Failed', 'Failed to save project: ' + error.message, 'error');
+      alert('Failed to save project: ' + error.message);
     } finally {
       setIsProcessing(false);
     }
@@ -193,7 +125,7 @@ export const AIProjectUploadPage = () => {
     const successfulResults = results.filter(r => r.success);
     
     if (successfulResults.length === 0) {
-      showModal('No Projects to Save', 'No successful extractions to save', 'warning');
+      alert('No successful extractions to save');
       return;
     }
 
@@ -226,15 +158,12 @@ export const AIProjectUploadPage = () => {
         savedCount++;
       }
 
-      showModal('Batch Save Complete!', `Successfully saved ${savedCount} projects to database!`, 'success');
-      
-      setTimeout(() => {
-        navigate('/admin/projects');
-      }, 2000);
+      alert(`Successfully saved ${savedCount} projects to database!`);
+      navigate('/admin/projects');
       
     } catch (error) {
       console.error('Error saving projects:', error);
-      showModal('Save Failed', 'Failed to save projects: ' + error.message, 'error');
+      alert('Failed to save projects: ' + error.message);
     } finally {
       setIsProcessing(false);
     }

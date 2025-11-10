@@ -4,12 +4,10 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { FaArrowLeft, FaSave, FaBook, FaInfoCircle, FaDollarSign, FaFileAlt, FaSpinner } from 'react-icons/fa';
 import { db } from '../../firebase/config';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { Modal, useModal } from '../../components/Modal';
 
 export const EditProjectPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const { modal, showModal, closeModal } = useModal();
   const [formData, setFormData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -51,7 +49,7 @@ export const EditProjectPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.department || !formData.priceNGN) {
-      showModal('Missing Information', 'Please fill out Title, Department, and Price.', 'warning');
+      alert('Please fill out Title, Department, and Price.');
       return;
     }
     setIsSaving(true);
@@ -70,12 +68,12 @@ export const EditProjectPage = () => {
 
       await updateDoc(projectRef, projectData);
 
-      showModal("Success!", `Project "${formData.title}" has been updated successfully!`, "success"); setTimeout(() => navigate("/admin/projects"), 2000);
+      alert(`Project "${formData.title}" has been updated successfully!`);
       navigate('/admin/projects');
 
     } catch (error) {
       console.error("Error updating document: ", error);
-      showModal('Error', 'Failed to update project. Please check the console for errors.', 'error');
+      alert('Failed to update project. Please check the console for errors.');
     } finally {
       setIsSaving(false);
     }
@@ -87,8 +85,6 @@ export const EditProjectPage = () => {
 
   return (
     <div>
-      <Modal {...modal} onClose={closeModal} />
-      
       <div className="mb-6">
         <Link to="/admin/projects" className="flex items-center gap-2 text-gray-600 hover:text-indigo-600 font-semibold">
           <FaArrowLeft />

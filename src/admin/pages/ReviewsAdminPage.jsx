@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { Modal, useModal } from '../../components/Modal';
 import { FaCheck, FaTrash, FaSpinner } from 'react-icons/fa';
 import { db } from '../../firebase/config';
 import { collectionGroup, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
@@ -9,6 +10,7 @@ import { collectionGroup, query, where, getDocs, doc, updateDoc, deleteDoc, orde
 // The index will be on the 'reviews' collection group, for the field 'isApproved'.
 
 export const ReviewsAdminPage = () => {
+    const { modal, showModal, closeModal } = useModal();
   const [reviews, setReviews] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('pending'); // 'pending' or 'approved'
@@ -29,7 +31,7 @@ export const ReviewsAdminPage = () => {
       console.error("Error fetching reviews: ", error);
       // This is likely an index error. Check the console for a link to create the index.
       if (error.code === 'failed-precondition') {
-        alert("Firestore requires an index for this query. Please check the browser console for a link to create it.");
+        showModal("Index Required", "Firestore requires an index for this query. Please check the browser console for a link to create it.", "warning");
       }
     } finally {
       setIsLoading(false);
@@ -60,6 +62,8 @@ export const ReviewsAdminPage = () => {
 
   return (
     <div>
+      <Modal {...modal} onClose={closeModal} />
+      
       <h1 className="text-4xl font-extrabold text-gray-900 mb-6">Manage Reviews</h1>
       <div className="bg-white p-6 rounded-xl shadow-lg">
         <div className="mb-4 border-b pb-4">

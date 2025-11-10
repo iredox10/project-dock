@@ -4,9 +4,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaCloudUploadAlt, FaSave, FaBook, FaInfoCircle, FaDollarSign, FaFileAlt, FaSpinner, FaRobot } from 'react-icons/fa';
 import { db } from '../../firebase/config';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { Modal, useModal } from '../../components/Modal';
 
 export const AddProjectPage = () => {
   const navigate = useNavigate();
+  const { modal, showModal, closeModal } = useModal();
   const [formData, setFormData] = useState({
     title: '', department: '', author: '', year: new Date().getFullYear(),
     priceNGN: '', level: 'BSc', abstract: '', chapterOne: '',
@@ -23,7 +25,7 @@ export const AddProjectPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.department || !formData.priceNGN) {
-      alert('Please fill out Title, Department, and Price.');
+      showModal('Missing Information', 'Please fill out Title, Department, and Price.', 'warning');
       return;
     }
     setIsLoading(true);
@@ -43,12 +45,12 @@ export const AddProjectPage = () => {
 
       await addDoc(collection(db, 'projects'), projectData);
 
-      alert(`Project "${formData.title}" has been added successfully!`);
-      navigate('/admin/projects');
+      showModal('Success!', `Project "${formData.title}" has been added successfully!`, 'success');
+      setTimeout(() => navigate('/admin/projects'), 2000);
 
     } catch (error) {
       console.error("Error adding document: ", error);
-      alert('Failed to add project. Please check the console for errors.');
+      showModal('Error', 'Failed to add project. Please check the console for errors.', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -56,6 +58,8 @@ export const AddProjectPage = () => {
 
   return (
     <div>
+      <Modal {...modal} onClose={closeModal} />
+      
       <div className="mb-6">
         <Link to="/admin/projects" className="flex items-center gap-2 text-gray-600 hover:text-indigo-600 font-semibold">
           <FaArrowLeft />
