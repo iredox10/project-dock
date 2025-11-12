@@ -6,20 +6,20 @@ import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom
 import CleanNavbar from './components/CleanNavbar';
 import CleanFooter from './components/CleanFooter';
 import HomePage from './pages/HomePage';
-import ContactPage from './pages/ContactPage';
+import CleanContactPage from './pages/CleanContactPage';
 import CleanProjectsPage from './pages/CleanProjectsPage';
 import CleanProjectDetailPage from './pages/CleanProjectDetailPage';
-import DepartmentPage from './pages/DepartmentPage';
-import AllDepartmentsPage from './pages/AllDepartmentsPage';
+import CleanDepartmentPage from './pages/CleanDepartmentPage';
+import CleanDepartmentsPage from './pages/CleanDepartmentsPage';
 import DownloadPage from './pages/DownloadPage';
 import DownloadFilePage from './pages/DownloadFilePage';
 import PaymentPage from './pages/PaymentPage';
 import PaymentVerificationPage from './pages/PaymentVerificationPage';
 import DemoPaymentPage from './pages/DemoPaymentPage';
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
-import HireWriterPage from './pages/HireWriterPage'
-import ProjectTopicsPage from './pages/ProjectTopicsPage';
+import CleanLoginPage from './pages/CleanLoginPage';
+import CleanSignupPage from './pages/CleanSignupPage';
+import CleanHireWriterPage from './pages/CleanHireWriterPage';
+import CleanProjectTopicsPage from './pages/CleanProjectTopicsPage';
 
 // Import admin components
 import AdminLayout from './admin/components/AdminLayout';
@@ -32,7 +32,7 @@ import { AIProjectUploadPage } from './admin/pages/AIProjectUploadPage';
 import AIDepartmentProjectGenerator from './admin/pages/AIDepartmentProjectGenerator';
 
 // A placeholder for the Edit page. You would build this similar to AddProjectPage.
-import AboutPage from './pages/AboutPage';
+import CleanAboutPage from './pages/CleanAboutPage';
 import { OrdersAdminPage } from './admin/pages/OrdersAdminPage';
 import { ReviewsAdminPage } from './admin/pages/ReviewsAdminPage';
 import { EditProjectPage } from './admin/pages/EditProjectPage';
@@ -42,7 +42,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 // Import additional pages
 import ResetPasswordPage from './pages/ResetPasswordPage';
-import NotFoundPage from './pages/NotFoundPage';
+import CleanNotFoundPage from './pages/NotFoundPage';
 
 // Import user dashboard components
 import UserDashboardLayout from './dashboard/components/UserDashboardLayout';
@@ -89,12 +89,12 @@ function App() {
 // A component to group all non-admin routes under the main layout
 const MainApp = () => {
   return (
-    <div className="bg-gray-50 text-gray-800" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="bg-gray-50 text-gray-800">
       <CleanNavbar />
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/contact" element={<CleanContactPage />} />
           <Route path="/projects" element={<CleanProjectsPage />} />
           <Route path="/projects/:projectId" element={<CleanProjectDetailPage />} />
           <Route path="/projects/:projectId/download" element={<DownloadPage />} />
@@ -102,20 +102,20 @@ const MainApp = () => {
           <Route path="/projects/:projectId/payment" element={<PaymentPage />} />
           <Route path="/payment/verify" element={<PaymentVerificationPage />} />
           <Route path="/payment/demo" element={<DemoPaymentPage />} />
-          <Route path="/departments" element={<AllDepartmentsPage />} />
-          <Route path="/department/:departmentName" element={<DepartmentPage />} />
-          <Route path="/department/:departmentName/topics" element={<ProjectTopicsPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/get-started" element={<SignupPage />} />
-          <Route path="/about-us" element={<AboutPage />} />
-          <Route path="/hire-writer" element={<HireWriterPage />} />
+          <Route path="/departments" element={<CleanDepartmentsPage />} />
+          <Route path="/department/:departmentName" element={<CleanDepartmentPage />} />
+          <Route path="/department/:departmentName/topics" element={<CleanProjectTopicsPage />} />
+          <Route path="/login" element={<CleanLoginPage />} />
+          <Route path="/signup" element={<CleanSignupPage />} />
+          <Route path="/get-started" element={<CleanSignupPage />} />
+          <Route path="/about-us" element={<CleanAboutPage />} />
+          <Route path="/hire-writer" element={<CleanHireWriterPage />} />
 
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           
           {/* Catch-all route for 404 - should be the last route */}
-          <Route path="*" element={<NotFoundPage />} />
+          <Route path="*" element={<CleanNotFoundPage />} />
         </Routes>
       </main>
       <CleanFooter />

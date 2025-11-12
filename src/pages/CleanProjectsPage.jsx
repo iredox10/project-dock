@@ -33,16 +33,16 @@ const ProjectCard = ({ project }) => {
         </div>
       </div>
 
-      <h3 className="text-lg font-semibold text-gray-900 mb-3 line-clamp-2">
+      <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 line-clamp-2">
         {project.title}
       </h3>
 
       <div className="space-y-2 mb-4">
-        <div className="flex items-center text-sm text-gray-600">
+        <div className="flex items-center text-sm md:text-base text-gray-600">
           <FaUser className="mr-2 text-gray-400" />
           <span>{project.author}</span>
         </div>
-        <div className="flex items-center text-sm text-gray-600">
+        <div className="flex items-center text-sm md:text-base text-gray-600">
           <FaCalendar className="mr-2 text-gray-400" />
           <span>{project.year || 'N/A'}</span>
         </div>
@@ -55,7 +55,7 @@ const ProjectCard = ({ project }) => {
               <FaStar key={i} className={i < Math.floor(project.rating) ? 'fill-current' : 'text-gray-300'} />
             ))}
           </div>
-          <span className="text-sm text-gray-600">({project.rating.toFixed(1)})</span>
+          <span className="text-sm md:text-base text-gray-600">({project.rating.toFixed(1)})</span>
         </div>
       )}
 
@@ -135,7 +135,7 @@ const ProjectsPage = () => {
       <div className="bg-white border-b border-gray-200 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Project Library</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Project Library</h1>
             <p className="text-lg text-gray-600">
               Browse {allProjects.length.toLocaleString()}+ academic projects
             </p>

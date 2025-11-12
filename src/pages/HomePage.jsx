@@ -8,7 +8,7 @@ const MinimalHero = () => {
     <section className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
             Academic Projects
             <span className="block text-indigo-600">Repository</span>
           </h1>
@@ -80,8 +80,8 @@ const MinimalFeatures = () => {
           {features.map((feature, index) => (
             <div key={index} className="bg-white p-8 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
               <div className="mb-4">{feature.icon}</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
-              <p className="text-gray-600">{feature.description}</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+              <p className="text-gray-600 text-base">{feature.description}</p>
             </div>
           ))}
         </div>
@@ -112,8 +112,8 @@ const MinimalHowItWorks = () => {
               <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-indigo-600 font-bold text-lg">{step.number}</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">{step.title}</h3>
-              <p className="text-gray-600">{step.description}</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{step.title}</h3>
+              <p className="text-gray-600 text-base">{step.description}</p>
             </div>
           ))}
         </div>
@@ -154,7 +154,7 @@ const MinimalTestimonials = () => {
           {testimonials.map((testimonial, index) => (
             <div key={index} className="bg-white p-6 rounded-xl border border-gray-200">
               <div className="text-yellow-400 mb-4">★★★★★</div>
-              <p className="text-gray-700 mb-4">"{testimonial.quote}"</p>
+              <p className="text-gray-700 text-base mb-4">"{testimonial.quote}"</p>
               <div>
                 <div className="font-semibold text-gray-900">{testimonial.author}</div>
                 <div className="text-sm text-gray-600">{testimonial.role}</div>
@@ -170,7 +170,7 @@ const MinimalTestimonials = () => {
 // Main homepage component
 const HomePage = () => {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white font-sans">
       <MinimalHero />
       <MinimalFeatures />
       <MinimalHowItWorks />

@@ -112,22 +112,22 @@ const CleanProjectDetailPage = () => {
             <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 mb-2">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs md:text-sm font-medium bg-indigo-100 text-indigo-800 mb-2">
                     <FaBook className="mr-1" />
                     {project.department}
                   </span>
-                  <h1 className="text-2xl font-bold text-gray-900 mb-2">{project.title}</h1>
+                  <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">{project.title}</h1>
                   <div className="flex items-center space-x-4 text-sm text-gray-600">
-                    <div className="flex items-center">
+                    <div className="flex items-center text-sm md:text-base">
                       <FaUser className="mr-1" />
                       <span>{project.author}</span>
                     </div>
-                    <div className="flex items-center">
+                    <div className="flex items-center text-sm md:text-base">
                       <FaCalendar className="mr-1" />
                       <span>{project.year || 'N/A'}</span>
                     </div>
                     {project.rating && (
-                      <div className="flex items-center">
+                      <div className="flex items-center text-sm md:text-base">
                         <FaStar className="text-yellow-400 mr-1" />
                         <span>{project.rating.toFixed(1)} ({reviews.length} reviews)</span>
                       </div>
@@ -164,16 +164,16 @@ const CleanProjectDetailPage = () => {
 
             {/* Abstract Section */}
             <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Abstract</h2>
-              <div className="prose max-w-none text-gray-700">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">Abstract</h2>
+              <div className="prose max-w-none text-gray-700 text-base">
                 <p>{project.abstractFileId}</p>
               </div>
             </div>
 
             {/* Chapter One Preview */}
             <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Chapter One Preview</h2>
-              <div className="prose max-w-none text-gray-700">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">Chapter One Preview</h2>
+              <div className="prose max-w-none text-gray-700 text-base">
                 <p>{project.chapterOneFileId}</p>
               </div>
             </div>
@@ -200,7 +200,7 @@ const CleanProjectDetailPage = () => {
                           </div>
                         </div>
                       </div>
-                      <p className="text-gray-700">{review.comment}</p>
+                      <p className="text-gray-700 text-base">{review.comment}</p>
                     </div>
                   ))}
                 </div>
@@ -214,7 +214,7 @@ const CleanProjectDetailPage = () => {
           <div className="space-y-6">
             {/* Project Information */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Project Details</h3>
+              <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4">Project Details</h3>
               <ul className="space-y-3">
                 <li className="flex justify-between">
                   <span className="text-gray-600">Format</span>
@@ -255,15 +255,15 @@ const CleanProjectDetailPage = () => {
 
             {/* Related Projects */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Related Projects</h3>
+              <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4">Related Projects</h3>
               <div className="space-y-3">
                 <div className="p-3 border border-gray-200 rounded-md">
-                  <div className="text-sm font-medium text-gray-900">Project Title</div>
-                  <div className="text-xs text-gray-600">Department</div>
+                  <div className="text-sm md:text-base font-medium text-gray-900">Project Title</div>
+                  <div className="text-xs md:text-sm text-gray-600">Department</div>
                 </div>
                 <div className="p-3 border border-gray-200 rounded-md">
-                  <div className="text-sm font-medium text-gray-900">Project Title</div>
-                  <div className="text-xs text-gray-600">Department</div>
+                  <div className="text-sm md:text-base font-medium text-gray-900">Project Title</div>
+                  <div className="text-xs md:text-sm text-gray-600">Department</div>
                 </div>
               </div>
             </div>
