@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaHeart, FaDownload, FaBook, FaSpinner, FaStar, FaCalendar, FaEye, FaHeartBroken } from 'react-icons/fa';
-import { db, auth } from '../../firebase/config';
-import { doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
+import { getAllProjects, getProjectById, createProject, updateProject, deleteProject, getProjectsByDepartment, getProjectsByLevel, getAllUsers, getUserById, createUser, updateUser, deleteUser, getUserByEmail } from '../../api/projectServices';
+import { authService } from '../../appwrite/auth';
+import { Query } from 'appwrite';
 
 const MyLibraryPage = () => {
   const [user, setUser] = useState(null);

@@ -2,8 +2,8 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { FaSearch, FaFilePdf, FaCode, FaChevronRight, FaBook, FaSpinner, FaUniversity, FaFilter, FaStar, FaCalendar, FaUser, FaDownload, FaEye, FaGraduationCap } from 'react-icons/fa';
-import { db } from '../firebase/config'; // Your Firebase config
-import { collection, getDocs, query, orderBy, limit, startAfter } from 'firebase/firestore';
+import { getAllProjects, getProjectsByDepartment, getProjectsByLevel } from '../api/projectServices';
+import { Query } from 'appwrite';
 
 
 const departmentColors = {
@@ -100,10 +100,16 @@ const ProjectsPage = () => {
     const fetchProjects = async () => {
       setIsLoading(true);
       try {
-        const projectsRef = collection(db, 'projects');
-        const q = query(projectsRef, orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
-        const fetchedProjects = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const response = await getAllProjects({
+          limit: 100 // Adjust limit as needed
+        });
+        
+        // Appwrite returns documents with $id as the ID field
+        const fetchedProjects = response.documents.map(doc => ({ 
+          id: doc.$id, 
+          ...doc 
+        }));
+        
         setAllProjects(fetchedProjects);
       } catch (error) {
         console.error("Error fetching projects: ", error);

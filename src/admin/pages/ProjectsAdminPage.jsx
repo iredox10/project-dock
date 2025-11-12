@@ -1,10 +1,10 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Modal, useModal } from '../../components/Modal';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaPlus, FaSearch, FaEdit, FaTrash, FaSpinner, FaRobot } from 'react-icons/fa';
-import { db } from '../../firebase/config'; // Your Firebase config
-import { collection, getDocs, deleteDoc, doc, query, orderBy, limit, startAfter } from 'firebase/firestore';
+import { getAllProjects, getProjectById, createProject, updateProject, deleteProject, getProjectsByDepartment, getProjectsByLevel } from '../../api/projectServices';
+import { Query } from 'appwrite';
 
 
 // Reusable Confirmation Modal
@@ -64,16 +64,19 @@ export const ProjectsAdminPage = () => {
   const fetchProjects = useCallback(async () => {
     setIsLoading(true);
     try {
-      const projectsRef = collection(db, 'projects');
-      const q = query(projectsRef, orderBy('createdAt', 'desc'), limit(PROJECTS_PER_PAGE));
-      const documentSnapshots = await getDocs(q);
+      const response = await getAllProjects({
+        limit: PROJECTS_PER_PAGE
+      });
 
-      const fetchedProjects = documentSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      const lastDoc = documentSnapshots.docs[documentSnapshots.docs.length - 1];
+      // Appwrite returns documents with $id as the ID field
+      const fetchedProjects = response.documents.map(doc => ({ 
+        id: doc.$id, 
+        ...doc 
+      }));
 
       setProjects(fetchedProjects);
-      setLastVisible(lastDoc);
-      setHasMore(fetchedProjects.length === PROJECTS_PER_PAGE);
+      // Appwrite doesn't use a cursor system like Firebase, so we'll just check if we got the full page
+      setHasMore(response.documents.length === PROJECTS_PER_PAGE);
     } catch (error) {
       console.error("Error fetching projects: ", error);
     } finally {
@@ -86,19 +89,24 @@ export const ProjectsAdminPage = () => {
   }, [fetchProjects]);
 
   const fetchMoreProjects = async () => {
-    if (!hasMore || !lastVisible) return;
+    if (!hasMore) return;
     setIsMoreLoading(true);
     try {
-      const projectsRef = collection(db, 'projects');
-      const q = query(projectsRef, orderBy('createdAt', 'desc'), startAfter(lastVisible), limit(PROJECTS_PER_PAGE));
-      const documentSnapshots = await getDocs(q);
+      // For now, just get the next page with offset
+      // Note: Implementing proper pagination with Appwrite would require using offset or cursors
+      // This is a simplified approach for now
+      const response = await getAllProjects({
+        limit: PROJECTS_PER_PAGE,
+        offset: projects.length
+      });
 
-      const newProjects = documentSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      const lastDoc = documentSnapshots.docs[documentSnapshots.docs.length - 1];
+      const newProjects = response.documents.map(doc => ({ 
+        id: doc.$id, 
+        ...doc 
+      }));
 
       setProjects(prev => [...prev, ...newProjects]);
-      setLastVisible(lastDoc);
-      setHasMore(newProjects.length === PROJECTS_PER_PAGE);
+      setHasMore(response.documents.length === PROJECTS_PER_PAGE);
     } catch (error) {
       console.error("Error fetching more projects: ", error);
     } finally {
@@ -114,7 +122,7 @@ export const ProjectsAdminPage = () => {
   const confirmDelete = async () => {
     if (!projectToDelete) return;
     try {
-      await deleteDoc(doc(db, 'projects', projectToDelete));
+      await deleteProject(projectToDelete);
       setProjects(projects.filter(p => p.id !== projectToDelete));
       setShowConfirmModal(false);
       setProjectToDelete(null);
@@ -146,7 +154,7 @@ export const ProjectsAdminPage = () => {
     try {
       // Delete all selected projects
       const deletePromises = selectedProjects.map(projectId => 
-        deleteDoc(doc(db, 'projects', projectId))
+        deleteProject(projectId)
       );
       await Promise.all(deletePromises);
 

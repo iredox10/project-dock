@@ -2,9 +2,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaFolderOpen, FaEnvelope, FaLock, FaSpinner, FaGraduationCap, FaBook, FaUsers } from 'react-icons/fa';
-import { auth, db } from '../firebase/config.js';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { getDoc, doc } from 'firebase/firestore';
+import { authService } from '../appwrite/auth';
+import { usersService } from '../appwrite/database';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -26,26 +25,39 @@ const LoginPage = () => {
     setError('');
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
-      const user = userCredential.user;
-
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDocSnap = await getDoc(userDocRef);
-
-      if (userDocSnap.exists()) {
-        const userData = userDocSnap.data();
-        if (userData.role === 'admin') {
-          navigate('/admin');
+      const result = await authService.login(formData.email, formData.password);
+      
+      if (result.success) {
+        // Get redirect URL from query param or fallback to default navigation
+        const searchParams = new URLSearchParams(window.location.search);
+        const redirect = searchParams.get('redirect');
+        
+        if (redirect) {
+          // If there's a redirect parameter, use it directly
+          navigate(redirect);
         } else {
-          navigate('/dashboard');
+          // Otherwise, determine navigation based on user role
+          // Get user details to determine role
+          const user = result.user;
+          
+          // Check if user exists in the database to get role
+          try {
+            const userData = await usersService.getUserById(user.$id);
+            if (userData && userData.role === 'admin') {
+              navigate('/admin');
+            } else {
+              navigate('/dashboard');
+            }
+          } catch (dbError) {
+            // If user doesn't exist in the database, still navigate to homepage
+            // This can happen if the user was created directly via Appwrite
+            navigate('/');
+          }
         }
-      } else {
-        console.error("No user document found for this user!");
-        navigate('/');
       }
 
     } catch (err) {
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+      if (err.message.includes('Invalid credentials') || err.message.includes('user not found') || err.message.includes('password')) {
         setError('Invalid email or password.');
       } else {
         setError('Failed to sign in. Please try again.');

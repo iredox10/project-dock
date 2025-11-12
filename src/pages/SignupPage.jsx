@@ -2,9 +2,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaFolderOpen, FaUser, FaEnvelope, FaLock, FaSpinner, FaRocket, FaShieldAlt, FaStar } from 'react-icons/fa';
-import { auth, db } from '../firebase/config.js';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { authService } from '../appwrite/auth';
 
 const SignupPage = () => {
   const navigate = useNavigate();
@@ -26,24 +24,20 @@ const SignupPage = () => {
     setError('');
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-      const user = userCredential.user;
-
-      await setDoc(doc(db, 'users', user.uid), {
-        name: formData.name,
-        email: formData.email,
-        role: 'user',
-        createdAt: serverTimestamp(),
-        purchasedProjects: []
-      });
-
-      navigate('/');
+      const result = await authService.register(formData.email, formData.password, formData.name);
+      
+      if (result.success) {
+        // Get redirect URL from query param or fallback to homepage
+        const searchParams = new URLSearchParams(window.location.search);
+        const redirect = searchParams.get('redirect') || '/';
+        navigate(redirect);
+      }
 
     } catch (err) {
-      if (err.code === 'auth/email-already-in-use') {
+      if (err.message.includes('duplicate')) {
         setError('This email is already registered.');
-      } else if (err.code === 'auth/weak-password') {
-        setError('Password must be at least 6 characters.');
+      } else if (err.message.includes('password')) {
+        setError('Password must be at least 8 characters.');
       } else {
         setError('Failed to create account. Please try again.');
         console.error("Signup error:", err);

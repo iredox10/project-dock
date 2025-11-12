@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaRobot, FaFileUpload, FaCheckCircle, FaTimesCircle, FaSpinner, FaPlus, FaTimes } from 'react-icons/fa';
-import { db } from '../../firebase/config';
-import { collection, addDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { extractProjectFromFile, batchExtractProjects } from '../../api/aiExtractionService';
 import { getStandardizedDepartment } from '../../api/departmentService';
 import { uploadProjectFile } from '../../api/fileStorageService';
+import { createProject, updateProject } from '../../api/projectServices';
 
 // Modal Component
 const Modal = ({ isOpen, onClose, title, message, type = 'info' }) => {
@@ -174,25 +173,29 @@ export const AIProjectUploadPage = () => {
       console.log('Standardized department:', standardizedDepartment);
       
       const projectData = {
-        ...extractedData,
+        title: extractedData.title,
+        author: extractedData.author,
         department: standardizedDepartment, // Use standardized department name
-        priceNGN: Number(extractedData.priceNGN) || 0,
+        level: extractedData.level,
+        abstractFileId: extractedData.abstract, // Map 'abstract' to 'abstractFileId' field in your db
+        chapterOneFileId: extractedData.chapterOne, // Map 'chapterOne' to 'chapterOneFileId' field in your db
         year: Number(extractedData.year),
         pages: Number(extractedData.pages) || 0,
+        priceNGN: Number(extractedData.priceNGN) || 0,
         formats: typeof extractedData.formats === 'string' 
-          ? extractedData.formats.split(',').map(item => item.trim())
-          : extractedData.formats || ['PDF', 'DOCX'],
+          ? extractedData.formats
+          : Array.isArray(extractedData.formats) ? extractedData.formats.join(', ') : 'PDF, DOCX',
         includes: typeof extractedData.includes === 'string'
-          ? extractedData.includes.split(',').map(item => item.trim())
-          : extractedData.includes || ['References', 'Questionnaire'],
+          ? extractedData.includes
+          : Array.isArray(extractedData.includes) ? extractedData.includes.join(', ') : 'References, Questionnaire',
         downloadCount: 0,
-        createdAt: serverTimestamp()
+        isActive: true
       };
 
       console.log('Saving project to database...', projectData);
       // Add project to database first to get the project ID
-      const docRef = await addDoc(collection(db, 'projects'), projectData);
-      const projectId = docRef.id;
+      const createdProject = await createProject(projectData);
+      const projectId = createdProject.$id; // Appwrite returns $id as the document ID
       console.log('Project saved to database with ID:', projectId);
 
       // Upload the original file to storage
@@ -201,15 +204,17 @@ export const AIProjectUploadPage = () => {
       const uploadResult = await uploadProjectFile(originalFile, projectId, fileType);
       console.log('File uploaded successfully:', uploadResult);
 
-      // Update project with file URL
-      console.log('Updating project with file URL...');
-      await updateDoc(docRef, {
+      // Update project with file information
+      console.log('Updating project with file info...');
+      const updatedProject = await updateProject(projectId, {
+        ...createdProject,
         fileUrl: uploadResult.url,
-        filePath: uploadResult.path,
-        fileName: uploadResult.fileName,
-        fileType: fileType
+        fileName: originalFile.name,
+        filePath: uploadResult.fileId, // Store the file ID from Appwrite storage
+        fileType: fileType,
+        mainFileId: uploadResult.fileId // Using mainFileId as the primary file reference
       });
-      console.log('Project updated with file info');
+      console.log('Project updated with file info:', updatedProject);
 
       showModal('Project Saved!', `Project "${extractedData.title}" saved successfully with file uploaded to storage!`, 'success');
       
@@ -224,8 +229,9 @@ export const AIProjectUploadPage = () => {
       console.error('Error saving project:', error);
       console.error('Error details:', {
         message: error.message,
-        code: error.code,
-        stack: error.stack
+        code: error?.code,
+        type: error?.type,
+        stack: error?.stack
       });
       showModal('Save Failed', 'Failed to save project: ' + error.message, 'error');
     } finally {
@@ -251,24 +257,31 @@ export const AIProjectUploadPage = () => {
         const standardizedDepartment = await getStandardizedDepartment(result.data.department);
         
         const projectData = {
-          ...result.data,
+          title: result.data.title,
+          author: result.data.author,
           department: standardizedDepartment, // Use standardized department name
-          priceNGN: Number(result.data.priceNGN) || 0,
+          level: result.data.level,
+          abstractFileId: result.data.abstract, // Map 'abstract' to 'abstractFileId' field in your db
+          chapterOneFileId: result.data.chapterOne, // Map 'chapterOne' to 'chapterOneFileId' field in your db
           year: Number(result.data.year),
           pages: Number(result.data.pages) || 0,
+          priceNGN: Number(result.data.priceNGN) || 0,
           formats: typeof result.data.formats === 'string'
-            ? result.data.formats.split(',').map(item => item.trim())
-            : result.data.formats || ['PDF', 'DOCX'],
+            ? result.data.formats
+            : Array.isArray(result.data.formats) ? result.data.formats.join(', ') : 'PDF, DOCX',
           includes: typeof result.data.includes === 'string'
-            ? result.data.includes.split(',').map(item => item.trim())
-            : result.data.includes || ['References', 'Questionnaire'],
+            ? result.data.includes
+            : Array.isArray(result.data.includes) ? result.data.includes.join(', ') : 'References, Questionnaire',
+          chapters: result.data.chapters,
+          mainFileId: result.data.mainFileId,
+          projectId: result.data.projectId,
           downloadCount: 0,
-          createdAt: serverTimestamp()
+          isActive: true
         };
 
         // Add project to database first to get the project ID
-        const docRef = await addDoc(collection(db, 'projects'), projectData);
-        const projectId = docRef.id;
+        const createdProject = await createProject(projectData);
+        const projectId = createdProject.$id; // Appwrite returns $id as the document ID
 
         // Upload the original file to storage if available
         const originalFile = originalFilesMap.get(result.fileName);
@@ -277,12 +290,14 @@ export const AIProjectUploadPage = () => {
             const fileType = originalFile.name.toLowerCase().endsWith('.pdf') ? 'pdf' : 'docx';
             const uploadResult = await uploadProjectFile(originalFile, projectId, fileType);
 
-            // Update project with file URL
-            await updateDoc(docRef, {
+            // Update project with file information
+            await updateProject(projectId, {
+              ...createdProject,
               fileUrl: uploadResult.url,
-              filePath: uploadResult.path,
-              fileName: uploadResult.fileName,
-              fileType: fileType
+              fileName: originalFile.name,
+              filePath: uploadResult.fileId, // Store the file ID from Appwrite storage
+              fileType: fileType,
+              mainFileId: uploadResult.fileId // Using mainFileId as the primary file reference
             });
           } catch (uploadError) {
             console.error('Error uploading file for project:', result.fileName, uploadError);

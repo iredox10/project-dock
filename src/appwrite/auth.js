@@ -1,4 +1,4 @@
-import { account, users } from './config';
+import { account } from './config';
 import { ID } from 'appwrite';
 
 /**
@@ -55,6 +55,7 @@ const register = async (email, password, name) => {
         {
           email,
           name,
+          role: 'user', // Default role is 'user'
           joinYear: new Date().getFullYear()
         }
       );
@@ -121,15 +122,12 @@ const logout = async () => {
 
 // Get current user
 const getCurrentUser = async () => {
-  if (currentUser) {
-    return currentUser;
-  }
-  
   try {
-    currentUser = await account.get();
-    return currentUser;
+    const user = await account.get();
+    currentUser = user; // Update cached user
+    return user;
   } catch (error) {
-    currentUser = null;
+    currentUser = null; // Clear cached user if not authenticated
     return null;
   }
 };

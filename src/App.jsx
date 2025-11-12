@@ -37,6 +37,8 @@ import { OrdersAdminPage } from './admin/pages/OrdersAdminPage';
 import { ReviewsAdminPage } from './admin/pages/ReviewsAdminPage';
 import { EditProjectPage } from './admin/pages/EditProjectPage';
 
+// Import protected route component
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Import user dashboard components
 import UserDashboardLayout from './dashboard/components/UserDashboardLayout';
@@ -52,7 +54,7 @@ function App() {
     <Router>
       <Routes>
         {/* Admin Routes */}
-        <Route path="/admin" element={<AdminLayout />}>
+        <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
           <Route index element={<DashboardHomePage />} />
           <Route path="projects" element={<ProjectsAdminPage />} />
           <Route path="projects/add" element={<AddProjectPage />} />

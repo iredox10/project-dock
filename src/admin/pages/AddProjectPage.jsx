@@ -2,8 +2,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaCloudUploadAlt, FaSave, FaBook, FaInfoCircle, FaDollarSign, FaFileAlt, FaSpinner, FaRobot } from 'react-icons/fa';
-import { db } from '../../firebase/config';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getStandardizedDepartment } from '../../api/departmentService';
+import { createProject, updateProject } from '../../api/projectServices';
 import { Modal, useModal } from '../../components/Modal';
 
 export const AddProjectPage = () => {
@@ -31,26 +31,38 @@ export const AddProjectPage = () => {
     setIsLoading(true);
 
     try {
+      // Standardize department name to avoid duplicates
+      const standardizedDepartment = await getStandardizedDepartment(formData.department);
+
       const projectData = {
-        ...formData,
+        title: formData.title,
+        author: formData.author,
+        department: standardizedDepartment, // Use standardized department name
+        level: formData.level,
+        abstractFileId: formData.abstract, // Map 'abstract' to 'abstractFileId' field in your db
+        chapterOneFileId: formData.chapterOne, // Map 'chapterOne' to 'chapterOneFileId' field in your db
         year: Number(formData.year),
         priceNGN: Number(formData.priceNGN),
         pages: Number(formData.pages) || 0,
         // Split comma-separated strings into arrays for clean data storage
-        formats: formData.formats.split(',').map(item => item.trim()),
-        includes: formData.includes.split(',').map(item => item.trim()),
+        formats: typeof formData.formats === 'string' 
+          ? formData.formats
+          : Array.isArray(formData.formats) ? formData.formats.join(', ') : formData.formats,
+        includes: typeof formData.includes === 'string'
+          ? formData.includes
+          : Array.isArray(formData.includes) ? formData.includes.join(', ') : formData.includes,
         downloadCount: 0,
-        createdAt: serverTimestamp()
+        isActive: true
       };
 
-      await addDoc(collection(db, 'projects'), projectData);
+      await createProject(projectData);
 
       showModal('Success!', `Project "${formData.title}" has been added successfully!`, 'success');
       setTimeout(() => navigate('/admin/projects'), 2000);
 
     } catch (error) {
-      console.error("Error adding document: ", error);
-      showModal('Error', 'Failed to add project. Please check the console for errors.', 'error');
+      console.error("Error adding project: ", error);
+      showModal('Error', `Failed to add project: ${error.message}`, 'error');
     } finally {
       setIsLoading(false);
     }

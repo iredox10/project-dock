@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { FaDownload, FaStar, FaArrowLeft, FaUserGraduate, FaCalendarAlt, FaSpinner, FaPaperPlane, FaFilePdf, FaFileWord, FaHashtag, FaBookOpen, FaCheckCircle, FaDatabase, FaUniversity, FaEye, FaShieldAlt, FaClock, FaQuoteLeft, FaHeart } from 'react-icons/fa';
-import { db, auth } from '../firebase/config';
-import { getDoc, doc, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
+import { getProjectById, getReviewsByProject, getReviewsByUser, createReview, updateReview, deleteReview, getAllOrders, createOrder, updateOrder, deleteOrder, getUserById, updateUser } from '../api/projectServices';
+import { authService } from '../appwrite/auth';
+import { Query } from 'appwrite';
 
 // --- Helper function to handle data that might be a string or an array ---
 const toArray = (value) => {
@@ -39,12 +39,20 @@ const ReviewForm = ({ projectId, onReviewSubmitted }) => {
     setIsSubmitting(true);
     setError('');
     try {
-      const user = auth.currentUser;
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      const userName = userDoc.exists() ? userDoc.data().name : 'Anonymous';
+      const user = await authService.getCurrentUser();
+      const userDoc = await getUserById(user.$id);
+      const userName = userDoc?.name || user?.name || 'Anonymous';
 
-      const reviewData = { userId: user.uid, userName, rating, comment, isApproved: false, createdAt: serverTimestamp() };
-      await addDoc(collection(db, 'projects', projectId, 'reviews'), reviewData);
+      const reviewData = { 
+        userId: user.$id, 
+        userName, 
+        projectId: projectId, 
+        rating, 
+        comment, 
+        isApproved: false, 
+        createdAt: new Date().toISOString() 
+      };
+      await createReview(reviewData);
 
       onReviewSubmitted();
       setComment('');
@@ -131,28 +139,45 @@ const ProjectDetailPage = () => {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => setCurrentUser(user));
-    return () => unsubscribe();
+    // In Appwrite, we need to manually check authentication status periodically
+    const checkAuthStatus = async () => {
+      try {
+        const user = await authService.getCurrentUser();
+        setCurrentUser(user);
+      } catch (error) {
+        setCurrentUser(null);
+      }
+    };
+
+    // Check auth status immediately
+    checkAuthStatus();
+
+    // Set up a periodic check every 30 seconds
+    const interval = setInterval(checkAuthStatus, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchProjectAndReviews = async () => {
     setIsLoading(true);
     try {
-      const projectDocRef = doc(db, 'projects', projectId);
-      const docSnap = await getDoc(projectDocRef);
+      const projectData = await getProjectById(projectId);
+      
+      if (projectData) {
+        // Appwrite returns $id as the document ID
+        setProject({ id: projectData.$id, ...projectData });
 
-      if (docSnap.exists()) {
-        const projectData = { id: docSnap.id, ...docSnap.data() };
-        setProject(projectData);
-
-        const reviewsRef = collection(db, 'projects', projectId, 'reviews');
-        const q = query(reviewsRef, where('isApproved', '==', true), orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
-        const fetchedReviews = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        // Get reviews for this project using getReviewsByProject
+        const reviewsResponse = await getReviewsByProject(projectId);
+        const fetchedReviews = reviewsResponse.documents.map(doc => ({ 
+          id: doc.$id, 
+          ...doc 
+        }));
         setReviews(fetchedReviews);
 
         if (fetchedReviews.length > 0) {
-          projectData.averageRating = fetchedReviews.reduce((acc, review) => acc + review.rating, 0) / fetchedReviews.length;
+          const averageRating = fetchedReviews.reduce((acc, review) => acc + review.rating, 0) / fetchedReviews.length;
+          projectData.averageRating = averageRating;
           projectData.ratingCount = fetchedReviews.length;
         }
       } else {
@@ -173,11 +198,12 @@ const ProjectDetailPage = () => {
   useEffect(() => {
     if (currentUser && project) {
       const checkPurchase = async () => {
-        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setHasPurchased(userData.purchasedProjects?.includes(projectId));
-          setIsFavorite(userData.favoriteProjects?.includes(projectId));
+        if (currentUser) {
+          const userData = await getUserById(currentUser.$id);
+          if (userData) {
+            setHasPurchased(userData.purchasedProjects?.some(p => p === projectId));
+            setIsFavorite(userData.favoriteProjects?.some(f => f === projectId));
+          }
         }
       };
       checkPurchase();
@@ -191,18 +217,23 @@ const ProjectDetailPage = () => {
       return;
     }
 
-    const userRef = doc(db, 'users', currentUser.uid);
-    
-    if (isFavorite) {
-      await updateDoc(userRef, {
-        favoriteProjects: arrayRemove(projectId)
+    if (currentUser) {
+      const userData = await getUserById(currentUser.$id);
+      let favoriteProjects = userData.favoriteProjects || [];
+      
+      if (isFavorite) {
+        favoriteProjects = favoriteProjects.filter(fav => fav !== projectId);
+      } else {
+        if (!favoriteProjects.some(fav => fav === projectId)) {
+          favoriteProjects.push(projectId);
+        }
+      }
+      
+      await updateUser(currentUser.$id, {
+        ...userData,
+        favoriteProjects
       });
-      setIsFavorite(false);
-    } else {
-      await updateDoc(userRef, {
-        favoriteProjects: arrayUnion(projectId)
-      });
-      setIsFavorite(true);
+      setIsFavorite(!isFavorite);
     }
   };
 
@@ -348,7 +379,7 @@ const ProjectDetailPage = () => {
                 <h2 className="text-3xl font-bold text-slate-900">Abstract</h2>
               </div>
               <div className="prose prose-lg max-w-none text-slate-700 leading-relaxed">
-                <p className="text-lg">{project.abstract}</p>
+                <p className="text-lg">{project.abstractFileId}</p>
               </div>
             </div>
 
@@ -361,7 +392,7 @@ const ProjectDetailPage = () => {
                 <h2 className="text-3xl font-bold text-slate-900">Chapter One Preview</h2>
               </div>
               <div className="prose prose-lg max-w-none text-slate-700 leading-relaxed">
-                {project.chapterOne?.split('\n\n').map((p, i) => (
+                {project.chapterOneFileId?.split('\n\n').map((p, i) => (
                   <p key={i} className="mb-4">{p}</p>
                 ))}
               </div>

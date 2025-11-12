@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { db } from '../firebase/config.js ';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { getAllProjects, getProjectsByDepartment, getProjectsByLevel } from '../api/projectServices';
+import { Query } from 'appwrite';
 import { FaSpinner, FaBook, FaFilePdf, FaCode } from 'react-icons/fa';
 
 const ProjectCard = ({ project }) => (

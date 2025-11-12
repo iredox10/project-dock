@@ -2,8 +2,7 @@
 import React from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
 import { FaTachometerAlt, FaFolder, FaUsers, FaSignOutAlt, FaFolderOpen, FaFileInvoiceDollar, FaComments } from 'react-icons/fa';
-import { auth } from '../../firebase/config';
-import { signOut } from 'firebase/auth';
+import { authService } from '../../appwrite/auth';
 import { useNavigate } from 'react-router-dom';
 
 
@@ -14,7 +13,7 @@ const AdminSidebar = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await authService.logout();
       navigate('/');
     } catch (error) {
       console.error("Error signing out: ", error);

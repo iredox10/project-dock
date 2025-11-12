@@ -2,8 +2,8 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { FaFilePdf, FaCode, FaBook, FaSearch, FaArrowLeft, FaSpinner, FaUniversity, FaGraduationCap, FaFilter, FaCalendar, FaUser, FaEye, FaStar, FaChevronDown, FaLaptopCode, FaFlask, FaChartLine, FaBriefcase, FaNewspaper, FaHeart, FaBuilding, FaCalculator } from 'react-icons/fa';
-import { db } from '../firebase/config';
-import { collection, query, where, getDocs, orderBy, limit, startAfter } from 'firebase/firestore';
+import { getProjectsByDepartment, getProjectsByLevel, getAllProjects } from '../api/projectServices';
+import { Query } from 'appwrite';
 
 // Department icon mapping (same as AllDepartmentsPage)
 const departmentIcons = {

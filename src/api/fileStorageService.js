@@ -1,4 +1,4 @@
-import { storageService } from '../appwrite/api';
+import { fileStorageService as storageService } from '../appwrite/api';
 
 // Export the Appwrite storage service functions directly
 export const {

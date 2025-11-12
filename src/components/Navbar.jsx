@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { FaFolderOpen, FaArrowRight, FaBars, FaTimes, FaHome, FaLayerGroup, FaBuilding, FaPen, FaEnvelope, FaUserPlus, FaUserCircle, FaSignOutAlt, FaTachometerAlt } from 'react-icons/fa';
-import { auth } from '../firebase/config';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { authService } from '../appwrite/auth';
+import { usersService } from '../appwrite/database';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -19,10 +19,43 @@ const Navbar = () => {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
+    // In Appwrite, we need to manually check authentication status
+    const checkAuthStatus = async () => {
+      try {
+        const currentUser = await authService.getCurrentUser();
+        if (currentUser) {
+          // Try to get full user details including role from the database
+          try {
+            const fullUser = await usersService.getUserById(currentUser.$id);
+            setUser({
+              uid: currentUser.$id,
+              email: currentUser.email,
+              displayName: currentUser.name || currentUser.email?.split('@')[0],
+              role: fullUser?.role || 'user'
+            });
+          } catch (dbError) {
+            // If user doesn't exist in the database, default to user role
+            setUser({
+              uid: currentUser.$id,
+              email: currentUser.email,
+              displayName: currentUser.name || currentUser.email?.split('@')[0],
+              role: 'user'
+            });
+          }
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        setUser(null);
+      }
+    };
+
+    checkAuthStatus();
+
+    // Set up a periodic check or use auth events if available in your setup
+    const interval = setInterval(checkAuthStatus, 30000); // Check every 30 seconds
+    
+    return () => clearInterval(interval);
   }, []);
 
   // Close menu when clicking outside
@@ -41,7 +74,8 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await authService.logout();
+      setUser(null);
       navigate('/');
       setShowUserMenu(false);
     } catch (error) {
@@ -175,6 +209,16 @@ const Navbar = () => {
                         <FaFolderOpen className="text-indigo-600" />
                         <span>My Library</span>
                       </Link>
+                      {user?.role === 'admin' && (
+                        <Link
+                          to="/admin"
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          <FaTachometerAlt className="text-indigo-600" />
+                          <span>Admin Panel</span>
+                        </Link>
+                      )}
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-red-600 transition-colors"
@@ -323,6 +367,16 @@ const Navbar = () => {
                     <FaFolderOpen className="h-5 w-5" />
                     <span>My Library</span>
                   </NavLink>
+                  {user?.role === 'admin' && (
+                    <NavLink
+                      to="/admin"
+                      className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <FaTachometerAlt className="h-5 w-5" />
+                      <span>Admin Panel</span>
+                    </NavLink>
+                  )}
                   <button
                     onClick={() => {
                       handleLogout();

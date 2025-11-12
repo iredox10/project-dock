@@ -28,7 +28,8 @@ export {
 
 // Storage service
 export {
-  storageService as fileStorageService
+  storageService as fileStorageService,
+  storageService
 };
 
 // AI extraction services

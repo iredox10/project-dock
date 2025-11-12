@@ -2,26 +2,40 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaBook, FaUserCircle, FaTachometerAlt, FaSpinner } from 'react-icons/fa';
-import { auth, db } from '../../firebase/config';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { authService } from '../../appwrite/auth';
+import { usersService } from '../../appwrite/database';
 
 export const UserDashboardHomePage = () => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          setUser({ uid: currentUser.uid, ...userDoc.data() });
+    const checkAuthStatus = async () => {
+      try {
+        const currentUser = await authService.getCurrentUser();
+        if (currentUser) {
+          // Try to get full user details from the database
+          try {
+            const fullUser = await usersService.getUserById(currentUser.$id);
+            setUser({ uid: currentUser.$id, ...fullUser });
+          } catch (dbError) {
+            // If user doesn't exist in the database, use the basic auth data
+            setUser({
+              uid: currentUser.$id,
+              name: currentUser.name || currentUser.email?.split('@')[0],
+              email: currentUser.email,
+              purchasedProjects: []
+            });
+          }
         }
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    });
-    return () => unsubscribe();
+    };
+
+    checkAuthStatus();
   }, []);
 
   const QuickLinkCard = ({ to, icon, title, description }) => (

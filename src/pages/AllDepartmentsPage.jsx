@@ -2,8 +2,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaSearch, FaUniversity, FaSpinner, FaBook, FaGraduationCap, FaChevronRight, FaLaptopCode, FaFlask, FaCalculator, FaChartLine, FaBuilding, FaNewspaper, FaHeart, FaBriefcase } from 'react-icons/fa';
-import { db } from '../firebase/config';
-import { collection, getDocs, query } from 'firebase/firestore';
+import { getAllProjects, getProjectsByDepartment } from '../api/projectServices';
+import { Query } from 'appwrite';
 
 // Department icon mapping
 const departmentIcons = {

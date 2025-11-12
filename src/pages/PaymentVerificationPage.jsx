@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { FaSpinner, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import { verifyPayment } from '../api/opayService';
-import { db, auth } from '../firebase/config';
-import { addDoc, collection, serverTimestamp, doc, getDoc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
+import { getProjectById, getUserById, createUser, updateUser, createOrder, updateProject } from '../api/projectServices';
+import { authService } from '../appwrite/auth';
+import { Query } from 'appwrite';
 
 const PaymentVerificationPage = () => {
   const [searchParams] = useSearchParams();
@@ -33,7 +34,7 @@ const PaymentVerificationPage = () => {
 
       if (verification.isPaid) {
         // Payment successful
-        const user = auth.currentUser;
+        const user = await authService.getCurrentUser();
         if (!user) {
           setStatus('failed');
           setMessage('User not authenticated');
@@ -41,37 +42,62 @@ const PaymentVerificationPage = () => {
         }
 
         // Get project details
-        const projectDoc = await getDoc(doc(db, 'projects', projectId));
-        const project = projectDoc.data();
+        const project = await getProjectById(projectId);
 
         // Create order record
-        await addDoc(collection(db, 'orders'), {
-          userId: user.uid,
-          userEmail: user.email,
+        await createOrder({
+          userId: user.$id,
           projectId: projectId,
           projectTitle: project.title,
           amount: project.priceNGN,
-          paymentReference: reference,
-          paymentStatus: 'completed',
-          orderNo: orderNo,
-          createdAt: serverTimestamp(),
+          status: 'completed',
+          paymentId: reference,
+          transactionId: orderNo,
+          quantity: 1 // Add quantity field to match schema (defaults to 1)
         });
 
-        // Update user's purchased projects
-        const userRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userRef);
-        const purchasedProjects = userDoc.data()?.purchasedProjects || [];
-        
-        if (!purchasedProjects.includes(projectId)) {
-          await updateDoc(userRef, {
-            purchasedProjects: arrayUnion(projectId)
-          });
+        // Update user's purchased projects - Check if field exists in schema
+        try {
+          const userData = await getUserById(user.$id);
+          
+          // Check if purchasedProjects field exists in the user document
+          if (userData.hasOwnProperty('purchasedProjects')) {
+            // If purchasedProjects field exists, update it
+            const purchasedProjects = userData.purchasedProjects || [];
+            
+            if (!purchasedProjects.some(p => p === projectId)) { // Use array.some() instead of includes()
+              await updateUser(user.$id, {
+                ...userData,
+                purchasedProjects: [...purchasedProjects, projectId]
+              });
+            }
+          } else {
+            // If purchasedProjects field doesn't exist, we'll skip updating user
+            // (The project purchase is already recorded in the orders collection)
+            console.log("purchasedProjects field doesn't exist in user schema, purchase recorded in orders collection.");
+          }
+        } catch (userError) {
+          // If there's an error fetching user data, just continue
+          // (The purchase is already recorded in the orders collection)
+          console.log("User may not exist in users collection, purchase recorded in orders collection.");
         }
 
-        // Update project download count
-        await updateDoc(doc(db, 'projects', projectId), {
-          downloadCount: increment(1)
-        });
+        // Optionally update project download count if the field exists
+        try {
+          const projectData = await getProjectById(projectId);
+          // Only attempt to update if downloadCount field exists in the project
+          if (projectData.hasOwnProperty('downloadCount')) {
+            const newDownloadCount = (projectData.downloadCount || 0) + 1;
+            await updateProject(projectId, {
+              ...projectData,
+              downloadCount: newDownloadCount
+            });
+          }
+        } catch (projectUpdateError) {
+          // If downloadCount field doesn't exist or update fails, just continue
+          // The payment verification is still successful since order is recorded
+          console.log("Could not update download count:", projectUpdateError.message);
+        }
 
         // Clear session storage
         sessionStorage.removeItem('payment_reference');

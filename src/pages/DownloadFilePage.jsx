@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { FaDownload, FaArrowLeft, FaCheckCircle, FaSpinner, FaFilePdf, FaFileWord, FaLock } from 'react-icons/fa';
-import { db, auth } from '../firebase/config';
-import { getDoc, doc } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
+import { getProjectById, getUserById } from '../api/projectServices';
+import { authService } from '../appwrite/auth';
 import { downloadFile, getFileDownloadURL } from '../api/fileStorageService';
 import { Modal, useModal } from '../components/Modal';
 
@@ -20,13 +19,21 @@ const DownloadFilePage = () => {
   const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (!currentUser) {
+    const checkAuthStatus = async () => {
+      try {
+        const currentUser = await authService.getCurrentUser();
+        setUser(currentUser);
+        if (!currentUser) {
+          // Redirect to login with redirect parameter
+          navigate(`/login?redirect=/projects/${projectId}/download-file`);
+        }
+      } catch (error) {
+        // If auth check fails, redirect to login
         navigate(`/login?redirect=/projects/${projectId}/download-file`);
       }
-    });
-    return () => unsubscribe();
+    };
+
+    checkAuthStatus();
   }, [projectId, navigate]);
 
   useEffect(() => {
@@ -36,33 +43,63 @@ const DownloadFilePage = () => {
       setIsLoading(true);
       try {
         // Fetch project
-        const projectDocRef = doc(db, 'projects', projectId);
-        const projectSnap = await getDoc(projectDocRef);
+        const projectData = await getProjectById(projectId);
         
-        if (!projectSnap.exists()) {
+        if (!projectData) {
           setError('Project not found.');
           return;
         }
         
-        setProject({ id: projectSnap.id, ...projectSnap.data() });
+        setProject({ id: projectData.$id, ...projectData });
         
-        // Check if user has purchased
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          const purchasedProjects = userDoc.data().purchasedProjects || [];
-          const purchased = purchasedProjects.includes(projectId);
-          setHasPurchased(purchased);
-          
-          if (!purchased) {
-            showModal(
-              'Access Denied',
-              'You need to purchase this project to download it.',
-              'warning'
-            );
-            setTimeout(() => navigate(`/projects/${projectId}/payment`), 2000);
+        // Check if user has purchased - try multiple methods
+        let hasPurchasedLocally = false;
+
+        // First, check the user's purchasedProjects array
+        try {
+          const userDoc = await getUserById(user.$id);
+          if (userDoc) {
+            const purchasedProjects = userDoc.purchasedProjects || [];
+            hasPurchasedLocally = purchasedProjects.some(p => p === projectId);
           }
-        } else {
-          setError('User data not found.');
+        } catch (userError) {
+          console.log("User document not found in users collection, checking orders...");
+        }
+
+        // If not found in user doc, check the orders collection as a backup
+        if (!hasPurchasedLocally) {
+          try {
+            const { databases, DATABASE_ID, COLLECTIONS } = await import('../appwrite/config');
+            const { Query } = await import('appwrite');
+            
+            // Look for completed orders for this user and project
+            const orderResponse = await databases.listDocuments(
+              DATABASE_ID,
+              COLLECTIONS.ORDERS,
+              [
+                Query.equal('userId', user.$id),
+                Query.equal('projectId', projectId),
+                Query.equal('status', 'completed') // Only completed orders
+              ]
+            );
+
+            if (orderResponse.documents.length > 0) {
+              hasPurchasedLocally = true;
+            }
+          } catch (orderError) {
+            console.error("Error checking orders:", orderError);
+          }
+        }
+
+        setHasPurchased(hasPurchasedLocally);
+
+        if (!hasPurchasedLocally) {
+          showModal(
+            'Access Denied',
+            'You need to purchase this project to download it.',
+            'warning'
+          );
+          setTimeout(() => navigate(`/projects/${projectId}/payment`), 2000);
         }
       } catch (err) {
         setError('Failed to load project.');
@@ -85,14 +122,13 @@ const DownloadFilePage = () => {
 
     try {
       // Get the file path from project data
-      const filePath = fileType === 'pdf' 
-        ? project.pdfFilePath 
-        : project.docxFilePath;
+      // Use the mainFileId field since that's what we use in our Appwrite schema
+      const filePath = project.mainFileId || project.fileId || project.filePath;
 
       if (!filePath) {
         showModal(
           'File Not Available',
-          `The ${fileType.toUpperCase()} file is not available for this project. Please contact support.`,
+          `The file is not available for this project. Please contact support.`,
           'error'
         );
         return;
@@ -101,8 +137,9 @@ const DownloadFilePage = () => {
       // Get download URL
       const url = await getFileDownloadURL(filePath);
       
-      // Download file
-      const fileName = `${project.title.replace(/[^a-z0-9]/gi, '_')}.${fileType}`;
+      // Download file - the actual file extension is determined by the stored file in Appwrite
+      // We'll use the project title as the filename
+      const fileName = `${project.title.replace(/[^a-z0-9]/gi, '_')}`;
       await downloadFile(url, fileName);
       
       showModal('Success', 'Download started successfully!', 'success');
@@ -188,8 +225,8 @@ const DownloadFilePage = () => {
           <div className="space-y-4 mb-8">
             <h3 className="font-bold text-gray-900 mb-4">Choose Format:</h3>
             
-            {/* PDF Download */}
-            {project.pdfFilePath && (
+            {/* PDF Download - Check using mainFileId or fileName */}
+            {(project.mainFileId || project.fileName || project.filePath) && (
               <button
                 onClick={() => handleDownload('pdf')}
                 disabled={isDownloading}
@@ -208,8 +245,8 @@ const DownloadFilePage = () => {
               </button>
             )}
 
-            {/* DOCX Download */}
-            {project.docxFilePath && (
+            {/* DOCX Download - Check using mainFileId or fileName */}
+            {(project.mainFileId || project.fileName || project.filePath) && (
               <button
                 onClick={() => handleDownload('docx')}
                 disabled={isDownloading}
@@ -228,7 +265,7 @@ const DownloadFilePage = () => {
               </button>
             )}
 
-            {!project.pdfFilePath && !project.docxFilePath && (
+            {!(project.mainFileId || project.fileName || project.filePath) && (
               <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-lg">
                 <p className="font-semibold mb-2">Files Not Available</p>
                 <p className="text-sm">

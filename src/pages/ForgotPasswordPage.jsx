@@ -2,8 +2,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaFolderOpen, FaEnvelope, FaPaperPlane, FaSpinner, FaCheckCircle } from 'react-icons/fa';
-import { auth } from '../firebase/config';
-import { sendPasswordResetEmail } from 'firebase/auth';
+import { authService } from '../appwrite/auth';
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
@@ -22,15 +21,11 @@ const ForgotPasswordPage = () => {
     setSuccessMessage('');
 
     try {
-      await sendPasswordResetEmail(auth, email);
+      await authService.sendPasswordReset(email);
       setSuccessMessage('Password reset link sent! Please check your email inbox (and spam folder).');
     } catch (err) {
-      if (err.code === 'auth/user-not-found') {
-        setError('No account found with this email address.');
-      } else {
-        setError('Failed to send reset link. Please try again.');
-        console.error("Forgot password error:", err);
-      }
+      setError('Failed to send reset link. Please try again.');
+      console.error("Forgot password error:", err);
     } finally {
       setIsLoading(false);
     }

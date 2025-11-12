@@ -30,9 +30,37 @@ docker run -it --rm \
 4. Create a project and update your `.env` with the local endpoint and project ID
 
 ## Once Appwrite is Set Up:
-Run the initialization script to create collections:
+
+### For Server-Side Administration (Required for initialization):
+1. Go to your Appwrite console: https://fra.cloud.appwrite.io
+2. **Important**: Make sure you're in the correct project before creating the API key:
+   - Check the project ID in your `.env` file: `VITE_APPWRITE_PROJECT_ID`
+   - Verify this matches the project you're currently in the console
+3. Navigate to your project
+4. Go to Settings → API Keys
+5. Click "Add API Key"
+6. Enter a name for the key (e.g., "server-key")
+7. Select the following scopes:
+   - databases.write
+   - collections.write
+   - buckets.write
+   - files.write
+8. Click "Create"
+9. **Copy the API Key** (the long string that starts with "default_" or "standard_") - you must copy it immediately as it won't be shown again
+10. Add the API key to your `.env` file:
+```env
+APPWRITE_SERVER_API_KEY=your_actual_server_api_key_here
+```
+11. Verify your `.env` file has the correct project ID:
+```env
+VITE_APPWRITE_PROJECT_ID="your-project-id-here"  # Make sure this matches your project
+```
+
+⚠️ **Important**: The API key must belong to the same project you're targeting.
+
+### Run the initialization script:
 ```bash
-node init-appwrite.js
+bun init-appwrite.js
 ```
 
 ## Run the Application:

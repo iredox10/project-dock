@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { FaArrowLeft, FaSave, FaBook, FaInfoCircle, FaDollarSign, FaFileAlt, FaSpinner } from 'react-icons/fa';
-import { db } from '../../firebase/config';
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { getProjectById, updateProject } from '../../api/projectServices';
 import { Modal, useModal } from '../../components/Modal';
 
 export const EditProjectPage = () => {
@@ -18,16 +17,15 @@ export const EditProjectPage = () => {
     const fetchProject = async () => {
       setIsLoading(true);
       try {
-        const projectRef = doc(db, 'projects', projectId);
-        const docSnap = await getDoc(projectRef);
+        const projectData = await getProjectById(projectId);
 
-        if (docSnap.exists()) {
-          const data = docSnap.data();
+        if (projectData) {
           // Convert arrays back to comma-separated strings for the form inputs
           setFormData({
-            ...data,
-            formats: Array.isArray(data.formats) ? data.formats.join(', ') : data.formats,
-            includes: Array.isArray(data.includes) ? data.includes.join(', ') : data.includes,
+            ...projectData,
+            id: projectData.$id, // Store the ID separately since Appwrite uses $id
+            formats: Array.isArray(projectData.formats) ? projectData.formats.join(', ') : projectData.formats,
+            includes: Array.isArray(projectData.includes) ? projectData.includes.join(', ') : projectData.includes,
           });
         } else {
           console.error("No such project!");
@@ -57,24 +55,25 @@ export const EditProjectPage = () => {
     setIsSaving(true);
 
     try {
-      const projectRef = doc(db, 'projects', projectId);
       const projectData = {
-        ...formData,
+        ...formData, // Include all form data  
+        department: formData.department,
+        abstractFileId: formData.abstract, // Map 'abstract' to 'abstractFileId' field in your db
+        chapterOneFileId: formData.chapterOne, // Map 'chapterOne' to 'chapterOneFileId' field in your db
         year: Number(formData.year),
         priceNGN: Number(formData.priceNGN),
         pages: Number(formData.pages) || 0,
-        formats: formData.formats.split(',').map(item => item.trim()),
-        includes: formData.includes.split(',').map(item => item.trim()),
-        updatedAt: serverTimestamp() // Add an updated timestamp
+        formats: typeof formData.formats === 'string' ? formData.formats : Array.isArray(formData.formats) ? formData.formats.join(', ') : formData.formats,
+        includes: typeof formData.includes === 'string' ? formData.includes : Array.isArray(formData.includes) ? formData.includes.join(', ') : formData.includes
       };
 
-      await updateDoc(projectRef, projectData);
+      await updateProject(projectId, projectData);
 
-      showModal("Success!", `Project "${formData.title}" has been updated successfully!`, "success"); setTimeout(() => navigate("/admin/projects"), 2000);
-      navigate('/admin/projects');
+      showModal("Success!", `Project "${formData.title}" has been updated successfully!`, "success"); 
+      setTimeout(() => navigate("/admin/projects"), 2000);
 
     } catch (error) {
-      console.error("Error updating document: ", error);
+      console.error("Error updating project: ", error);
       showModal('Error', 'Failed to update project. Please check the console for errors.', 'error');
     } finally {
       setIsSaving(false);

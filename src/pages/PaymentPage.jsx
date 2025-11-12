@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { FaArrowLeft, FaShieldAlt, FaCheckCircle, FaSpinner, FaCreditCard, FaLock, FaDownload } from 'react-icons/fa';
-import { db, auth } from '../firebase/config';
-import { getDoc, doc, addDoc, collection, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
+import { getProjectById, getUserById, createUser, updateUser, createOrder, getOrderById, updateOrder, deleteOrder } from '../api/projectServices';
+import { authService } from '../appwrite/auth';
+import { Query } from 'appwrite';
 import { initializeInlinePayment, initializePayment, verifyPayment, isOpayConfigured } from '../api/opayService';
 import { Modal, useModal } from '../components/Modal';
 
@@ -21,31 +21,52 @@ const PaymentPage = () => {
   const [paymentMethod, setPaymentMethod] = useState('inline'); // 'inline' or 'redirect'
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (!currentUser) {
-        navigate(`/login?redirect=/projects/${projectId}/payment`);
+    const abortController = new AbortController();
+
+    const checkAuthStatus = async () => {
+      if (abortController.signal.aborted) return;
+
+      try {
+        // Get the current user to verify authentication
+        const currentUser = await authService.getCurrentUser();
+        setUser(currentUser);
+        
+        // If user is not authenticated, redirect to login
+        if (!currentUser) {
+          const currentURL = encodeURIComponent(`/projects/${projectId}/payment`);
+          navigate(`/login?redirect=${currentURL}`);
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        // If there's an error checking auth, also redirect to login
+        const currentURL = encodeURIComponent(`/projects/${projectId}/payment`);
+        navigate(`/login?redirect=${currentURL}`);
       }
-    });
-    return () => unsubscribe();
+    };
+
+    checkAuthStatus();
+
+    // Cleanup
+    return () => {
+      abortController.abort();
+    };
   }, [projectId, navigate]);
 
   useEffect(() => {
     const fetchProject = async () => {
       setIsLoading(true);
       try {
-        const projectDocRef = doc(db, 'projects', projectId);
-        const docSnap = await getDoc(projectDocRef);
+        const projectDoc = await getProjectById(projectId);
         
-        if (docSnap.exists()) {
-          setProject({ id: docSnap.id, ...docSnap.data() });
+        if (projectDoc) {
+          setProject({ id: projectDoc.$id, ...projectDoc });
           
           // Check if user already purchased
           if (user) {
-            const userDoc = await getDoc(doc(db, 'users', user.uid));
-            if (userDoc.exists()) {
-              const purchasedProjects = userDoc.data().purchasedProjects || [];
-              setHasPurchased(purchasedProjects.includes(projectId));
+            const userDoc = await getUserById(user.$id);
+            if (userDoc) {
+              const purchasedProjects = userDoc.purchasedProjects || [];
+              setHasPurchased(purchasedProjects.some(p => p === projectId));
             }
           }
         } else {
@@ -65,10 +86,22 @@ const PaymentPage = () => {
   }, [projectId, user]);
 
   const handlePayment = async () => {
-    if (!user) {
-      showModal('Login Required', 'Please login to make a purchase', 'warning');
-      navigate(`/login?redirect=/projects/${projectId}/payment`);
-      return;
+    // Double check auth status before processing payment
+    let currentUser = user;
+    if (!currentUser) {
+      try {
+        currentUser = await authService.getCurrentUser();
+        if (!currentUser) {
+          const currentURL = encodeURIComponent(`/projects/${projectId}/payment`);
+          navigate(`/login?redirect=${currentURL}`);
+          return;
+        }
+        setUser(currentUser); // Update state in case it was outdated
+      } catch (authError) {
+        const currentURL = encodeURIComponent(`/projects/${projectId}/payment`);
+        navigate(`/login?redirect=${currentURL}`);
+        return;
+      }
     }
 
     if (!isOpayConfigured()) {
@@ -79,22 +112,19 @@ const PaymentPage = () => {
     setIsProcessing(true);
 
     try {
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      const userData = userDoc.exists() ? userDoc.data() : {};
-
+      // Use the user object directly from auth service, as it already contains user details
       const paymentData = {
         amount: project.priceNGN,
-        email: user.email,
-        firstName: userData.name?.split(' ')[0] || 'User',
-        lastName: userData.name?.split(' ')[1] || '',
-        phone: userData.phone || '',
+        email: user.email || user.emailAddress, // Appwrite uses emailAddress
+        firstName: (user.name || user.email?.split('@')[0])?.split(' ')[0] || 'User',
+        lastName: (user.name || user.email?.split('@')[0])?.split(' ').slice(1).join(' ') || '',
+        phone: user.phone || '',
         productName: project.title,
         productDesc: `${project.department} - ${project.level} Project`,
         callbackUrl: `${window.location.origin}/payment/verify?projectId=${projectId}`,
         returnUrl: `${window.location.origin}/payment/success?projectId=${projectId}`,
       };
 
-      // Both methods now use redirect
       const response = await initializePayment(paymentData);
       
       if (response.success) {
@@ -121,33 +151,43 @@ const PaymentPage = () => {
       if (verification.isPaid) {
         // Create order record
         const orderData = {
-          userId: user.uid,
-          userEmail: user.email,
+          userId: user.$id, // Appwrite uses $id
+          userEmail: user.email || user.emailAddress, // Appwrite uses emailAddress
           projectId: projectId,
           projectTitle: project.title,
           amount: project.priceNGN,
           paymentReference: reference,
           paymentStatus: 'completed',
           orderNo: orderNo,
-          createdAt: serverTimestamp(),
+          createdAt: new Date().toISOString(), // Appwrite uses ISO strings instead of serverTimestamp
         };
 
-        await addDoc(collection(db, 'orders'), orderData);
+        await createOrder(orderData);
 
         // Update user's purchased projects
-        const userRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userRef);
-        const purchasedProjects = userDoc.data()?.purchasedProjects || [];
-        
-        if (!purchasedProjects.includes(projectId)) {
-          await updateDoc(userRef, {
-            purchasedProjects: [...purchasedProjects, projectId]
+        // First get user's document from the users collection (not the auth user object)
+        try {
+          const userData = await getUserById(user.$id);
+          const purchasedProjects = userData.purchasedProjects || [];
+          
+          if (!purchasedProjects.some(p => p === projectId)) { // Use array.some() instead of includes()
+            await updateUser(user.$id, {
+              ...userData,
+              purchasedProjects: [...purchasedProjects, projectId]
+            });
+          }
+        } catch (userError) {
+          // If user doesn't exist in the users collection, create or update the user record
+          await updateUser(user.$id, {
+            purchasedProjects: [projectId]
           });
         }
 
         // Update project download count
-        await updateDoc(doc(db, 'projects', projectId), {
-          downloadCount: increment(1)
+        const projectData = await getProjectById(projectId);
+        await updateProject(projectId, {
+          ...projectData,
+          downloadCount: (projectData.downloadCount || 0) + 1
         });
 
         showModal('Payment Successful!', 'Your payment was successful. You can now download the project.', 'success');
