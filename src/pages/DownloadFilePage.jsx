@@ -112,7 +112,7 @@ const DownloadFilePage = () => {
     fetchProjectAndCheckAccess();
   }, [user, projectId]);
 
-  const handleDownload = async (fileType) => {
+  const handleDownload = (fileType) => {
     if (!hasPurchased) {
       showModal('Access Denied', 'Please purchase this project first.', 'warning');
       return;
@@ -123,24 +123,22 @@ const DownloadFilePage = () => {
     try {
       // Get the file path from project data
       // Use the mainFileId field since that's what we use in our Appwrite schema
-      const filePath = project.mainFileId || project.fileId || project.filePath;
+      const fileId = project.mainFileId || project.fileId || project.filePath;
 
-      if (!filePath) {
+      if (!fileId) {
         showModal(
           'File Not Available',
           `The file is not available for this project. Please contact support.`,
           'error'
         );
+        setIsDownloading(false);
         return;
       }
 
-      // Get download URL
-      const url = await getFileDownloadURL(filePath);
-      
-      // Download file - the actual file extension is determined by the stored file in Appwrite
+      // Download file directly - the actual file extension is determined by the stored file in Appwrite
       // We'll use the project title as the filename
       const fileName = `${project.title.replace(/[^a-z0-9]/gi, '_')}`;
-      await downloadFile(url, fileName);
+      downloadFile(fileId, fileName);
       
       showModal('Success', 'Download started successfully!', 'success');
     } catch (error) {

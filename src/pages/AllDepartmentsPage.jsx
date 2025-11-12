@@ -2,8 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaSearch, FaUniversity, FaSpinner, FaBook, FaGraduationCap, FaChevronRight, FaLaptopCode, FaFlask, FaCalculator, FaChartLine, FaBuilding, FaNewspaper, FaHeart, FaBriefcase } from 'react-icons/fa';
-import { getAllProjects, getProjectsByDepartment } from '../api/projectServices';
-import { Query } from 'appwrite';
+import { getAllProjects } from '../api/projectServices';
 
 // Department icon mapping
 const departmentIcons = {
@@ -133,10 +132,8 @@ const AllDepartmentsPage = () => {
     const fetchAllProjects = async () => {
       setIsLoading(true);
       try {
-        const projectsRef = collection(db, 'projects');
-        const q = query(projectsRef);
-        const querySnapshot = await getDocs(q);
-        const fetchedProjects = querySnapshot.docs.map(doc => doc.data());
+        const response = await getAllProjects({ limit: 10000 });
+        const fetchedProjects = response.documents || [];
         setAllProjects(fetchedProjects);
       } catch (error) {
         console.error("Error fetching all projects for department aggregation: ", error);

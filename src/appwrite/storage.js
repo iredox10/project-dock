@@ -43,9 +43,10 @@ export const uploadProjectFile = async (file, projectId, fileType, onProgress) =
 };
 
 // Get file download URL
-export const getFileDownloadURL = async (fileId) => {
+export const getFileDownloadURL = (fileId) => {
   try {
     // For download, we use getFileDownload
+    // This returns a URL string, not a promise
     const downloadUrl = storage.getFileDownload(
       BUCKET_ID,
       fileId
@@ -58,7 +59,7 @@ export const getFileDownloadURL = async (fileId) => {
 };
 
 // Get file preview URL
-export const getFilePreviewURL = async (fileId) => {
+export const getFilePreviewURL = (fileId) => {
   try {
     const previewUrl = storage.getFileView(
       BUCKET_ID,
@@ -118,9 +119,10 @@ export const getFileInfo = async (fileId) => {
 };
 
 // Download file directly (triggers browser download)
-export const downloadFile = async (fileId, fileName = 'download') => {
+export const downloadFile = (fileId, fileName = 'download') => {
   try {
     // Get the download URL
+    // This returns a URL string, not a promise
     const downloadUrl = storage.getFileDownload(
       BUCKET_ID,
       fileId
@@ -142,7 +144,7 @@ export const downloadFile = async (fileId, fileName = 'download') => {
 };
 
 // Get file preview (for PDFs, images, etc.)
-export const getFilePreview = async (fileId, width = 0, height = 0, quality = 100, background = 'transparent', output = undefined) => {
+export const getFilePreview = (fileId, width = 0, height = 0, quality = 100, background = 'transparent', output = undefined) => {
   try {
     const previewUrl = storage.getFilePreview(
       BUCKET_ID,

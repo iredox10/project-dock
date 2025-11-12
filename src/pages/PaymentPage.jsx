@@ -63,10 +63,16 @@ const PaymentPage = () => {
           
           // Check if user already purchased
           if (user) {
-            const userDoc = await getUserById(user.$id);
-            if (userDoc) {
-              const purchasedProjects = userDoc.purchasedProjects || [];
-              setHasPurchased(purchasedProjects.some(p => p === projectId));
+            try {
+              const userDoc = await getUserById(user.$id);
+              if (userDoc) {
+                const purchasedProjects = userDoc.purchasedProjects || [];
+                setHasPurchased(purchasedProjects.some(p => p === projectId));
+              }
+            } catch (userError) {
+              // User document doesn't exist yet, that's okay
+              console.log("User document not found, will be created on first purchase");
+              setHasPurchased(false);
             }
           }
         } else {

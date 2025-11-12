@@ -40,6 +40,10 @@ import { EditProjectPage } from './admin/pages/EditProjectPage';
 // Import protected route component
 import ProtectedRoute from './components/ProtectedRoute';
 
+// Import additional pages
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import NotFoundPage from './pages/NotFoundPage';
+
 // Import user dashboard components
 import UserDashboardLayout from './dashboard/components/UserDashboardLayout';
 import { UserDashboardHomePage } from './dashboard/pages/DashboardHomePage';
@@ -108,6 +112,10 @@ const MainApp = () => {
           <Route path="/hire-writer" element={<HireWriterPage />} />
 
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          
+          {/* Catch-all route for 404 - should be the last route */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
       <Footer />

@@ -132,6 +132,10 @@ export const projectsService = {
         queries.push(Query.limit(params.limit));
       }
       
+      if (params.offset) {
+        queries.push(Query.offset(params.offset));
+      }
+      
       queries.push(Query.orderDesc('$createdAt'));
       
       const response = await databases.listDocuments(

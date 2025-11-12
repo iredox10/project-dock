@@ -2,8 +2,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { FaFilePdf, FaCode, FaBook, FaSearch, FaArrowLeft, FaSpinner, FaUniversity, FaGraduationCap, FaFilter, FaCalendar, FaUser, FaEye, FaStar, FaChevronDown, FaLaptopCode, FaFlask, FaChartLine, FaBriefcase, FaNewspaper, FaHeart, FaBuilding, FaCalculator } from 'react-icons/fa';
-import { getProjectsByDepartment, getProjectsByLevel, getAllProjects } from '../api/projectServices';
-import { Query } from 'appwrite';
+import { getProjectsByDepartment } from '../api/projectServices';
 
 // Department icon mapping (same as AllDepartmentsPage)
 const departmentIcons = {
@@ -164,18 +163,12 @@ const DepartmentPage = () => {
   const fetchDepartmentProjects = useCallback(async () => {
     setIsLoading(true);
     try {
-      const projectsRef = collection(db, 'projects');
-      const q = query(
-        projectsRef,
-        where('department', '==', decodedDeptName),
-        orderBy('year', 'desc'),
-        limit(PROJECTS_PER_PAGE)
-      );
-      const docSnapshots = await getDocs(q);
-      const fetchedProjects = docSnapshots.docs.map(d => ({ id: d.id, ...d.data() }));
-      const lastDoc = docSnapshots.docs[docSnapshots.docs.length - 1];
+      const response = await getProjectsByDepartment(decodedDeptName, {
+        limit: PROJECTS_PER_PAGE
+      });
+      const fetchedProjects = response.documents.map(d => ({ id: d.$id, ...d }));
       setProjects(fetchedProjects);
-      setLastVisible(lastDoc);
+      setLastVisible(fetchedProjects[fetchedProjects.length - 1]?.$id || null);
       setHasMore(fetchedProjects.length === PROJECTS_PER_PAGE);
     } catch (error) {
       console.error("Error fetching department projects: ", error);
@@ -200,19 +193,14 @@ const DepartmentPage = () => {
     if (!hasMore || !lastVisible) return;
     setIsMoreLoading(true);
     try {
-      const projectsRef = collection(db, 'projects');
-      const q = query(
-        projectsRef,
-        where('department', '==', decodedDeptName),
-        orderBy('year', 'desc'),
-        startAfter(lastVisible),
-        limit(PROJECTS_PER_PAGE)
-      );
-      const docSnapshots = await getDocs(q);
-      const newProjects = docSnapshots.docs.map(d => ({ id: d.id, ...d.data() }));
-      const lastDoc = docSnapshots.docs[docSnapshots.docs.length - 1];
+      const offset = projects.length;
+      const response = await getProjectsByDepartment(decodedDeptName, {
+        limit: PROJECTS_PER_PAGE,
+        offset: offset
+      });
+      const newProjects = response.documents.map(d => ({ id: d.$id, ...d }));
       setProjects(prev => [...prev, ...newProjects]);
-      setLastVisible(lastDoc);
+      setLastVisible(newProjects[newProjects.length - 1]?.$id || null);
       setHasMore(newProjects.length === PROJECTS_PER_PAGE);
     } catch (error) {
       console.error("Error fetching more projects: ", error);
