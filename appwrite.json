@@ -1,0 +1,34 @@
+{
+    "projectId": "YOUR_PROJECT_ID",
+    "projectName": "Project Dock",
+    "functions": [
+        {
+            "$id": "opay-handler",
+            "name": "Opay Handler",
+            "runtime": "node-18.0",
+            "path": "functions/opay-handler",
+            "entrypoint": "src/index.js",
+            "ignore": [
+                "node_modules"
+            ],
+            "execute": [
+                "users"
+            ],
+            "events": [],
+            "schedule": "",
+            "timeout": 15,
+            "variables": {
+                "OPAY_MERCHANT_ID": "",
+                "OPAY_PUBLIC_KEY": "",
+                "OPAY_PRIVATE_KEY": "",
+                "OPAY_ENV": "sandbox",
+                "APPWRITE_FUNCTION_PROJECT_ID": "YOUR_PROJECT_ID",
+                "APPWRITE_FUNCTION_ENDPOINT": "https://cloud.appwrite.io/v1",
+                "APPWRITE_FUNCTION_API_KEY": ""
+            }
+        }
+    ],
+    "databases": [],
+    "collections": [],
+    "buckets": []
+}

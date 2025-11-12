@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 
@@ -168,7 +167,7 @@ const MinimalTestimonials = () => {
 };
 
 // Main homepage component
-const HomePage = () => {
+const NewHomePage = () => {
   return (
     <div className="min-h-screen bg-white">
       <MinimalHero />
@@ -179,4 +178,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage;
+export default NewHomePage;

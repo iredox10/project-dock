@@ -4,7 +4,7 @@ import { FaArrowLeft, FaShieldAlt, FaCheckCircle, FaSpinner, FaCreditCard, FaLoc
 import { getProjectById, getUserById, createUser, updateUser, createOrder, getOrderById, updateOrder, deleteOrder } from '../api/projectServices';
 import { authService } from '../appwrite/auth';
 import { Query } from 'appwrite';
-import { initializeInlinePayment, initializePayment, verifyPayment, isOpayConfigured } from '../api/opayService';
+import { initializePayment, verifyPayment, isOpayConfigured } from '../api/opayService.js';
 import { Modal, useModal } from '../components/Modal';
 
 const PaymentPage = () => {

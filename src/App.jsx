@@ -3,12 +3,12 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 
 // Import regular page components
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
+import CleanNavbar from './components/CleanNavbar';
+import CleanFooter from './components/CleanFooter';
 import HomePage from './pages/HomePage';
 import ContactPage from './pages/ContactPage';
-import ProjectsPage from './pages/ProjectsPage';
-import ProjectDetailPage from './pages/ProjectDetailPage';
+import CleanProjectsPage from './pages/CleanProjectsPage';
+import CleanProjectDetailPage from './pages/CleanProjectDetailPage';
 import DepartmentPage from './pages/DepartmentPage';
 import AllDepartmentsPage from './pages/AllDepartmentsPage';
 import DownloadPage from './pages/DownloadPage';
@@ -90,13 +90,13 @@ function App() {
 const MainApp = () => {
   return (
     <div className="bg-gray-50 text-gray-800" style={{ fontFamily: "'Inter', sans-serif" }}>
-      <Navbar />
+      <CleanNavbar />
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/contact" element={<ContactPage />} />
-          <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
+          <Route path="/projects" element={<CleanProjectsPage />} />
+          <Route path="/projects/:projectId" element={<CleanProjectDetailPage />} />
           <Route path="/projects/:projectId/download" element={<DownloadPage />} />
           <Route path="/projects/:projectId/download-file" element={<DownloadFilePage />} />
           <Route path="/projects/:projectId/payment" element={<PaymentPage />} />
@@ -118,7 +118,7 @@ const MainApp = () => {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
-      <Footer />
+      <CleanFooter />
     </div>
   );
 };

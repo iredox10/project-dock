@@ -1,4 +1,4 @@
-import { Client, Databases, Storage, Account } from 'appwrite';
+import { Client, Databases, Storage, Account, Functions } from 'appwrite';
 
 // Appwrite configuration
 const client = new Client();
@@ -12,13 +12,15 @@ export const appwrite = {
   client,
   databases: new Databases(client),
   storage: new Storage(client),
-  account: new Account(client)
+  account: new Account(client),
+  functions: new Functions(client)
 };
 
 export const {
   databases,
   storage,
-  account
+  account,
+  functions
 } = appwrite;
 
 // Database ID - you can change this as needed

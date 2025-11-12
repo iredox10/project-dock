@@ -1,39 +1,35 @@
-import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import { functions } from '../appwrite/config'; // Import the functions service from Appwrite config
 
 /**
- * OPay Payment Gateway Integration Service
- * Documentation: https://documentation.opayweb.com/
+ * OPay Payment Gateway Integration Service (Secure Version)
+ * This service communicates with a secure Appwrite Function instead of OPay directly.
  */
 
 // OPay API Configuration
 const OPAY_CONFIG = {
-  // Test/Production URLs
-  baseURL: import.meta.env.VITE_OPAY_ENV === 'production' 
-    ? 'https://api.opayweb.com' 
-    : 'https://sandboxapi.opayweb.com',
-  
-  // Your OPay credentials (set these in .env file)
+  // Your OPay credentials (public ones are safe here, but not used directly)
   merchantId: import.meta.env.VITE_OPAY_MERCHANT_ID,
   publicKey: import.meta.env.VITE_OPAY_PUBLIC_KEY,
-  privateKey: import.meta.env.VITE_OPAY_PRIVATE_KEY,
   
+  // The ID of the Appwrite function that will handle OPay calls
+  functionId: import.meta.env.VITE_APPWRITE_OPAY_FUNCTION_ID,
+
   // Demo mode for testing without credentials
   isDemoMode: import.meta.env.VITE_OPAY_DEMO_MODE === 'true',
 };
 
 /**
- * Initialize payment with OPay
+ * Initialize payment with OPay via a secure Appwrite Function
  * @param {Object} paymentData - Payment information
  * @returns {Promise<Object>} - Payment initialization response
  */
 export const initializePayment = async (paymentData) => {
-  // Demo mode - simulate payment for testing
+  // Demo mode - simulate payment for testing without calling the backend
   if (OPAY_CONFIG.isDemoMode) {
     console.log('🎭 DEMO MODE: Simulating payment initialization', paymentData);
     const reference = `DEMO_${uuidv4().substring(0, 8)}_${Date.now()}`;
     
-    // Simulate delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     return {
@@ -45,196 +41,102 @@ export const initializePayment = async (paymentData) => {
     };
   }
 
-  // Real OPay integration
+  if (!OPAY_CONFIG.functionId) {
+    throw new Error('The Appwrite Function ID for payments is not configured. Please set VITE_APPWRITE_OPAY_FUNCTION_ID in your .env file.');
+  }
+
+  // Real OPay integration via Appwrite Function
   try {
-    const reference = `PROJ_${uuidv4().substring(0, 8)}_${Date.now()}`;
-    
     const payload = {
-      reference: reference,
-      mchShortName: OPAY_CONFIG.merchantId,
-      productName: paymentData.productName,
-      productDesc: paymentData.productDesc || paymentData.productName,
-      userPhone: paymentData.userPhone || '',
-      userRequestIp: paymentData.userRequestIp || '',
-      amount: {
-        total: paymentData.amount,
-        currency: 'NGN'
-      },
-      callbackUrl: paymentData.callbackUrl || `${window.location.origin}/payment/verify`,
-      returnUrl: paymentData.returnUrl || `${window.location.origin}/payment/success`,
-      expireAt: paymentData.expireAt || 30, // minutes
+      action: 'initialize',
+      data: paymentData,
     };
 
-    const response = await axios.post(
-      `${OPAY_CONFIG.baseURL}/api/v1/international/cashier/create`,
-      payload,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPAY_CONFIG.publicKey}`,
-          'MerchantId': OPAY_CONFIG.merchantId,
-        }
-      }
+    const execution = await functions.createExecution(
+      OPAY_CONFIG.functionId,
+      JSON.stringify(payload)
     );
 
-    if (response.data.code === '00000') {
-      return {
-        success: true,
-        reference: reference,
-        cashierUrl: response.data.data.cashierUrl,
-        orderNo: response.data.data.orderNo,
-      };
+    if (execution.status === 'completed') {
+      const response = JSON.parse(execution.responseBody);
+      if (response.success) {
+        return response;
+      } else {
+        throw new Error(response.message || 'Payment initialization failed on the server.');
+      }
     } else {
-      throw new Error(response.data.message || 'Payment initialization failed');
+      const errorResponse = JSON.parse(execution.responseBody);
+      throw new Error(errorResponse.message || `Function execution failed with status: ${execution.status}`);
     }
   } catch (error) {
-    console.error('OPay initialization error:', error);
-    
-    // Better error message
-    if (error.message === 'Network Error') {
-      throw new Error('Unable to connect to payment gateway. This might be because:\n1. OPay credentials are not configured\n2. CORS restrictions\n3. Network connectivity issues\n\nEnable demo mode or configure OPay credentials.');
-    }
-    
-    throw new Error(error.response?.data?.message || error.message || 'Failed to initialize payment');
+    console.error('Appwrite Function (initialize) error:', error);
+    throw new Error(error.message || 'Failed to execute payment initialization function.');
   }
 };
 
 /**
- * Verify payment status
+ * Verify payment status via a secure Appwrite Function
  * @param {string} reference - Transaction reference
+ * @param {string} orderNo - OPay Order number
  * @returns {Promise<Object>} - Payment verification response
  */
 export const verifyPayment = async (reference, orderNo) => {
   // Demo mode - auto-approve payments
   if (OPAY_CONFIG.isDemoMode || reference.startsWith('DEMO_')) {
     console.log('🎭 DEMO MODE: Auto-approving payment', reference);
-    
-    // Simulate delay
     await new Promise(resolve => setTimeout(resolve, 500));
-    
     return {
       success: true,
       status: 'SUCCESS',
       isPaid: true,
-      data: {
-        reference: reference,
-        orderNo: orderNo,
-        status: 'SUCCESS',
-      },
+      data: { reference, orderNo, status: 'SUCCESS' },
     };
   }
 
-  // Real OPay verification
-  try {
-    const response = await axios.post(
-      `${OPAY_CONFIG.baseURL}/api/v1/international/cashier/status`,
-      {
-        orderNo: orderNo,
-        reference: reference,
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPAY_CONFIG.publicKey}`,
-          'MerchantId': OPAY_CONFIG.merchantId,
-        }
-      }
-    );
-
-    if (response.data.code === '00000') {
-      const status = response.data.data.status;
-      return {
-        success: true,
-        status: status, // SUCCESS, PENDING, FAIL, CLOSE
-        isPaid: status === 'SUCCESS',
-        data: response.data.data,
-      };
-    } else {
-      throw new Error(response.data.message || 'Payment verification failed');
-    }
-  } catch (error) {
-    console.error('OPay verification error:', error);
-    throw new Error(error.response?.data?.message || error.message || 'Failed to verify payment');
+  if (!OPAY_CONFIG.functionId) {
+    throw new Error('The Appwrite Function ID for payments is not configured. Please set VITE_APPWRITE_OPAY_FUNCTION_ID in your .env file.');
   }
-};
 
-/**
- * Alternative: Use OPay redirect method (more reliable)
- * This redirects to OPay's hosted payment page
- */
-export const initializeRedirectPayment = async (paymentData) => {
+  // Real OPay verification via Appwrite Function
   try {
-    const reference = `PROJ_${uuidv4().substring(0, 8)}_${Date.now()}`;
-    
     const payload = {
-      reference: reference,
-      mchShortName: OPAY_CONFIG.merchantId,
-      productName: paymentData.productName,
-      productDesc: paymentData.productDesc || paymentData.productName,
-      userPhone: paymentData.phone || '',
-      userRequestIp: '',
-      amount: {
-        total: paymentData.amount,
-        currency: 'NGN'
-      },
-      callbackUrl: paymentData.callbackUrl || `${window.location.origin}/payment/verify`,
-      returnUrl: paymentData.returnUrl || `${window.location.origin}/payment/success`,
-      expireAt: 30, // minutes
+      action: 'verify',
+      data: { reference, orderNo },
     };
 
-    const response = await axios.post(
-      `${OPAY_CONFIG.baseURL}/api/v1/international/cashier/create`,
-      payload,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPAY_CONFIG.publicKey}`,
-          'MerchantId': OPAY_CONFIG.merchantId,
-        }
-      }
+    const execution = await functions.createExecution(
+      OPAY_CONFIG.functionId,
+      JSON.stringify(payload)
     );
 
-    if (response.data.code === '00000') {
-      return {
-        success: true,
-        reference: reference,
-        cashierUrl: response.data.data.cashierUrl,
-        orderNo: response.data.data.orderNo,
-      };
+    if (execution.status === 'completed') {
+      const response = JSON.parse(execution.responseBody);
+      if (response.success) {
+        return response;
+      } else {
+        throw new Error(response.message || 'Payment verification failed on the server.');
+      }
     } else {
-      throw new Error(response.data.message || 'Payment initialization failed');
+      const errorResponse = JSON.parse(execution.responseBody);
+      throw new Error(errorResponse.message || `Function execution failed with status: ${execution.status}`);
     }
   } catch (error) {
-    console.error('OPay initialization error:', error);
-    throw new Error(error.response?.data?.message || error.message || 'Failed to initialize payment');
+    console.error('Appwrite Function (verify) error:', error);
+    throw new Error(error.message || 'Failed to execute payment verification function.');
   }
 };
 
 /**
- * Simplified inline payment - just redirect to cashier URL
- * OPay doesn't have a reliable inline SDK, so we use redirect
- */
-export const initializeInlinePayment = async (paymentData, onSuccess, onClose) => {
-  try {
-    // Just use the redirect method
-    const result = await initializeRedirectPayment(paymentData);
-    return result;
-  } catch (error) {
-    console.error('Payment initialization error:', error);
-    throw error;
-  }
-};
-
-/**
- * Check if OPay is properly configured
+ * Check if OPay is properly configured for client-side initialization
  */
 export const isOpayConfigured = () => {
-  return !!(OPAY_CONFIG.merchantId && OPAY_CONFIG.publicKey);
+  // In this secure setup, we only need to know if the function ID is set.
+  // The demo mode flag also allows the UI to work without any backend config.
+  return OPAY_CONFIG.isDemoMode || !!OPAY_CONFIG.functionId;
 };
 
 export default {
   initializePayment,
   verifyPayment,
-  initializeInlinePayment,
   isOpayConfigured,
 };
