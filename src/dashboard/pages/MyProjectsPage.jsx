@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { db, auth } from '../../firebase/config';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
+import { getUserById, getProjectById } from '../../api/projectServices';
+import { authService } from '../../appwrite/auth';
 import { FaDownload, FaSpinner } from 'react-icons/fa';
 
 export const MyProjectsPage = () => {
@@ -11,34 +10,52 @@ export const MyProjectsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          // 1. Get user's purchased project IDs
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDoc = await getDoc(userDocRef);
-          const projectIds = userDoc.exists() ? userDoc.data().purchasedProjects || [] : [];
-
-          if (projectIds.length > 0) {
-            // 2. Fetch the projects using the IDs
-            // Firestore 'in' query is limited to 30 items. For more, you'd need multiple queries.
-            const projectsRef = collection(db, 'projects');
-            const q = query(projectsRef, where('__name__', 'in', projectIds));
-            const projectSnapshots = await getDocs(q);
-            const projectsData = projectSnapshots.docs.map(d => ({ id: d.id, ...d.data() }));
-            setPurchasedProjects(projectsData);
-          }
-        } catch (error) {
-          console.error("Error fetching purchased projects:", error);
-        } finally {
-          setIsLoading(false);
-        }
-      } else {
-        setIsLoading(false);
-      }
-    });
-    return () => unsubscribe();
+    fetchPurchasedProjects();
   }, []);
+
+  // Refresh data when the component becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchPurchasedProjects();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  const fetchPurchasedProjects = async () => {
+    try {
+      const user = await authService.getCurrentUser();
+      if (user) {
+        // 1. Get user's purchased project IDs
+        const userData = await getUserById(user.$id);
+        const projectIds = userData?.purchasedProjects || [];
+
+        if (projectIds.length > 0) {
+          // 2. Fetch the projects using the IDs
+          const projectsPromises = projectIds.map(async (projectId) => {
+            try {
+              const projectData = await getProjectById(projectId);
+              return projectData ? { id: projectData.$id, ...projectData } : null;
+            } catch (error) {
+              console.error(`Error fetching project ${projectId}:`, error);
+              return null;
+            }
+          });
+          const projectsData = await Promise.all(projectsPromises);
+          setPurchasedProjects(projectsData.filter(p => p !== null));
+        } else {
+          setPurchasedProjects([]);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching purchased projects:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (isLoading) {
     return <div className="flex justify-center items-center py-20"><FaSpinner className="animate-spin text-4xl text-indigo-600" /></div>;

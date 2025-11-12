@@ -1,42 +1,55 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaBook, FaUserCircle, FaTachometerAlt, FaSpinner } from 'react-icons/fa';
+import { FaBook, FaUserCircle, FaTachometerAlt, FaSpinner, FaHeart } from 'react-icons/fa';
 import { authService } from '../../appwrite/auth';
-import { usersService } from '../../appwrite/database';
+import { getUserById } from '../../api/projectServices';
 
 export const UserDashboardHomePage = () => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        const currentUser = await authService.getCurrentUser();
-        if (currentUser) {
-          // Try to get full user details from the database
-          try {
-            const fullUser = await usersService.getUserById(currentUser.$id);
-            setUser({ uid: currentUser.$id, ...fullUser });
-          } catch (dbError) {
-            // If user doesn't exist in the database, use the basic auth data
-            setUser({
-              uid: currentUser.$id,
-              name: currentUser.name || currentUser.email?.split('@')[0],
-              email: currentUser.email,
-              purchasedProjects: []
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error checking auth status:', error);
-      } finally {
-        setIsLoading(false);
+    checkAuthStatus();
+  }, []);
+
+  // Refresh data when the component becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        checkAuthStatus();
       }
     };
 
-    checkAuthStatus();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      const currentUser = await authService.getCurrentUser();
+      if (currentUser) {
+        // Try to get full user details from the database
+        try {
+          const fullUser = await getUserById(currentUser.$id);
+          setUser({ uid: currentUser.$id, ...fullUser });
+        } catch (dbError) {
+          // If user doesn't exist in the database, use the basic auth data
+          setUser({
+            uid: currentUser.$id,
+            name: currentUser.name || currentUser.email?.split('@')[0],
+            email: currentUser.email,
+            purchasedProjects: [],
+            favoriteProjects: []
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error checking auth status:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const QuickLinkCard = ({ to, icon, title, description }) => (
     <Link to={to} className="group block bg-white p-4 md:p-6 rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
@@ -70,13 +83,13 @@ export const UserDashboardHomePage = () => {
           to="/dashboard/my-library"
           icon={<FaBook className="text-xl md:text-2xl" />}
           title="My Library"
-          description={`Access all ${user?.purchasedProjects?.length || 0} purchased and favorite projects.`}
+          description={`${user?.purchasedProjects?.length || 0} purchased, ${user?.favoriteProjects?.length || 0} favorites`}
         />
         <QuickLinkCard
           to="/dashboard/my-projects"
           icon={<FaBook className="text-xl md:text-2xl" />}
           title="My Purchased Projects"
-          description={`View and download all ${user?.purchasedProjects?.length || 0} of your projects.`}
+          description={`View and download ${user?.purchasedProjects?.length || 0} projects`}
         />
         <QuickLinkCard
           to="/dashboard/profile"

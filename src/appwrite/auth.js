@@ -56,7 +56,9 @@ const register = async (email, password, name) => {
           email,
           name,
           role: 'user', // Default role is 'user'
-          joinYear: new Date().getFullYear()
+          joinYear: new Date().getFullYear(),
+          purchasedProjects: [],
+          favoriteProjects: []
         }
       );
     } catch (dbError) {
@@ -81,6 +83,37 @@ const login = async (email, password) => {
     const session = await account.createEmailPasswordSession(email, password);
     const user = await account.get();
     currentUser = user;
+    
+    // Ensure user document exists in database (for users who registered before the update)
+    try {
+      const { databases, DATABASE_ID, COLLECTIONS } = await import('./config');
+      const { Query } = await import('appwrite');
+      
+      // Check if user document exists
+      try {
+        await databases.getDocument(DATABASE_ID, COLLECTIONS.USERS, user.$id);
+      } catch (docError) {
+        // Document doesn't exist, create it
+        if (docError.code === 404) {
+          await databases.createDocument(
+            DATABASE_ID,
+            COLLECTIONS.USERS,
+            user.$id,
+            {
+              email: user.email,
+              name: user.name || user.email?.split('@')[0],
+              role: 'user',
+              joinYear: new Date().getFullYear(),
+              purchasedProjects: [],
+              favoriteProjects: []
+            }
+          );
+        }
+      }
+    } catch (dbError) {
+      console.error('Error checking/creating user document:', dbError);
+      // Don't throw as login was successful
+    }
     
     return {
       success: true,

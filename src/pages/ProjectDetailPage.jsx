@@ -199,10 +199,17 @@ const ProjectDetailPage = () => {
     if (currentUser && project) {
       const checkPurchase = async () => {
         if (currentUser) {
-          const userData = await getUserById(currentUser.$id);
-          if (userData) {
-            setHasPurchased(userData.purchasedProjects?.some(p => p === projectId));
-            setIsFavorite(userData.favoriteProjects?.some(f => f === projectId));
+          try {
+            const userData = await getUserById(currentUser.$id);
+            if (userData) {
+              setHasPurchased(userData.purchasedProjects?.some(p => p === projectId));
+              setIsFavorite(userData.favoriteProjects?.some(f => f === projectId));
+            }
+          } catch (error) {
+            // User document doesn't exist yet, set defaults
+            console.log('User document not found, setting defaults');
+            setHasPurchased(false);
+            setIsFavorite(false);
           }
         }
       };
@@ -217,8 +224,32 @@ const ProjectDetailPage = () => {
       return;
     }
 
-    if (currentUser) {
-      const userData = await getUserById(currentUser.$id);
+    try {
+      let userData;
+      
+      // Try to get user data, if it doesn't exist, create it
+      try {
+        userData = await getUserById(currentUser.$id);
+      } catch (error) {
+        // User document doesn't exist, create it using the database directly
+        const { databases, DATABASE_ID, COLLECTIONS } = await import('../appwrite/config');
+        const { ID } = await import('appwrite');
+        
+        await databases.createDocument(
+          DATABASE_ID,
+          COLLECTIONS.USERS,
+          currentUser.$id, // Use the auth user ID as document ID
+          {
+            email: currentUser.email,
+            name: currentUser.name || currentUser.email?.split('@')[0],
+            role: 'user',
+            purchasedProjects: [],
+            favoriteProjects: []
+          }
+        );
+        userData = await getUserById(currentUser.$id);
+      }
+
       let favoriteProjects = userData.favoriteProjects || [];
       
       if (isFavorite) {
@@ -234,6 +265,9 @@ const ProjectDetailPage = () => {
         favoriteProjects
       });
       setIsFavorite(!isFavorite);
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      setError('Failed to update favorites. Please try again.');
     }
   };
 

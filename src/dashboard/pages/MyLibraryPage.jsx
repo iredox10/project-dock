@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaHeart, FaDownload, FaBook, FaSpinner, FaStar, FaCalendar, FaEye, FaHeartBroken } from 'react-icons/fa';
-import { getAllProjects, getProjectById, createProject, updateProject, deleteProject, getProjectsByDepartment, getProjectsByLevel, getAllUsers, getUserById, createUser, updateUser, deleteUser, getUserByEmail } from '../../api/projectServices';
+import { getAllProjects, getProjectById, getAllOrders, getUserById, updateUser } from '../../api/projectServices';
 import { authService } from '../../appwrite/auth';
 import { Query } from 'appwrite';
 
@@ -14,10 +14,15 @@ const MyLibraryPage = () => {
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
+    const checkAuthStatus = async () => {
+      try {
+        const currentUser = await authService.getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        setUser(null);
+      }
+    };
+    checkAuthStatus();
   }, []);
 
   useEffect(() => {
@@ -26,42 +31,66 @@ const MyLibraryPage = () => {
     }
   }, [user]);
 
+  // Refresh data when the component mounts or becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user) {
+        fetchUserLibrary();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user]);
+
   const fetchUserLibrary = async () => {
     setIsLoading(true);
     try {
       // Get user data
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (!userDoc.exists()) return;
+      const userData = await getUserById(user.$id);
+      if (!userData) return;
 
-      const userData = userDoc.data();
       const purchasedIds = userData.purchasedProjects || [];
       const favoriteIds = userData.favoriteProjects || [];
 
       // Fetch purchased projects
       if (purchasedIds.length > 0) {
         const purchasedPromises = purchasedIds.map(async (projectId) => {
-          const projectDoc = await getDoc(doc(db, 'projects', projectId));
-          return projectDoc.exists() ? { id: projectDoc.id, ...projectDoc.data() } : null;
+          try {
+            const projectData = await getProjectById(projectId);
+            return projectData ? { id: projectData.$id, ...projectData } : null;
+          } catch (error) {
+            console.error(`Error fetching project ${projectId}:`, error);
+            return null;
+          }
         });
         const purchased = await Promise.all(purchasedPromises);
         setPurchasedProjects(purchased.filter(p => p !== null));
+      } else {
+        setPurchasedProjects([]);
       }
 
       // Fetch favorite projects
       if (favoriteIds.length > 0) {
         const favoritePromises = favoriteIds.map(async (projectId) => {
-          const projectDoc = await getDoc(doc(db, 'projects', projectId));
-          return projectDoc.exists() ? { id: projectDoc.id, ...projectDoc.data() } : null;
+          try {
+            const projectData = await getProjectById(projectId);
+            return projectData ? { id: projectData.$id, ...projectData } : null;
+          } catch (error) {
+            console.error(`Error fetching project ${projectId}:`, error);
+            return null;
+          }
         });
         const favorites = await Promise.all(favoritePromises);
         setFavoriteProjects(favorites.filter(p => p !== null));
+      } else {
+        setFavoriteProjects([]);
       }
 
       // Fetch orders
-      const ordersQuery = query(collection(db, 'orders'), where('userId', '==', user.uid));
-      const ordersSnap = await getDocs(ordersQuery);
-      const ordersData = ordersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setOrders(ordersData);
+      const ordersResponse = await getAllOrders();
+      const userOrders = ordersResponse.documents.filter(order => order.userId === user.$id);
+      setOrders(userOrders.map(doc => ({ id: doc.$id, ...doc })));
 
     } catch (error) {
       console.error('Error fetching library:', error);
@@ -73,32 +102,39 @@ const MyLibraryPage = () => {
   const toggleFavorite = async (projectId) => {
     if (!user) return;
 
-    const userRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userRef);
-    const favoriteIds = userDoc.data()?.favoriteProjects || [];
+    try {
+      const userData = await getUserById(user.$id);
+      const favoriteIds = userData.favoriteProjects || [];
 
-    if (favoriteIds.includes(projectId)) {
-      // Remove from favorites
-      await updateDoc(userRef, {
-        favoriteProjects: arrayRemove(projectId)
-      });
-      setFavoriteProjects(prev => prev.filter(p => p.id !== projectId));
-    } else {
-      // Add to favorites
-      await updateDoc(userRef, {
-        favoriteProjects: arrayUnion(projectId)
-      });
-      // Fetch and add project
-      const projectDoc = await getDoc(doc(db, 'projects', projectId));
-      if (projectDoc.exists()) {
-        setFavoriteProjects(prev => [...prev, { id: projectDoc.id, ...projectDoc.data() }]);
+      if (favoriteIds.includes(projectId)) {
+        // Remove from favorites
+        const updatedFavorites = favoriteIds.filter(id => id !== projectId);
+        await updateUser(user.$id, {
+          ...userData,
+          favoriteProjects: updatedFavorites
+        });
+        setFavoriteProjects(prev => prev.filter(p => p.id !== projectId));
+      } else {
+        // Add to favorites
+        const updatedFavorites = [...favoriteIds, projectId];
+        await updateUser(user.$id, {
+          ...userData,
+          favoriteProjects: updatedFavorites
+        });
+        // Fetch and add project
+        const projectData = await getProjectById(projectId);
+        if (projectData) {
+          setFavoriteProjects(prev => [...prev, { id: projectData.$id, ...projectData }]);
+        }
       }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
     }
   };
 
   const ProjectCard = ({ project, showRemoveFavorite = false }) => {
     const order = orders.find(o => o.projectId === project.id);
-    const isPurchased = purchasedProjects.some(p => p.id === project.id);
+    const isPurchased = purchasedProjects.some(p => p.id === project.id) || orders.some(o => o.projectId === project.id);
 
     return (
       <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group">
@@ -155,7 +191,7 @@ const MyLibraryPage = () => {
                 <span className="font-semibold">Purchased</span>
               </div>
               <div className="text-xs text-green-700 mt-1">
-                {order.createdAt?.toDate?.()?.toLocaleDateString() || 'Recently'}
+                {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Recently'}
               </div>
             </div>
           )}

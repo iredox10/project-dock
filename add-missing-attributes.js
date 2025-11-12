@@ -14,9 +14,73 @@ const databases = new Databases(client);
 const DATABASE_ID = process.env.VITE_APPWRITE_DATABASE_ID || 'projectdock_db';
 
 async function addMissingAttributes() {
-  console.log('Adding missing attributes to projects collection...');
+  console.log('Adding missing attributes to collections...');
 
   try {
+    // ========== USERS COLLECTION ==========
+    console.log('\n📋 Adding attributes to Users collection...');
+    
+    // Add purchasedProjects array attribute
+    try {
+      await databases.createStringAttribute(
+        DATABASE_ID,
+        'users',
+        'purchasedProjects',
+        1000, // Array stored as JSON string, max 1000 chars
+        false, // optional
+        '[]'   // default empty array
+      );
+      console.log('✅ Added "purchasedProjects" attribute to users collection');
+    } catch (error) {
+      if (error.type === 'attribute_already_exists') {
+        console.log('ℹ️  "purchasedProjects" attribute already exists in users collection');
+      } else {
+        console.error('❌ Error adding "purchasedProjects" attribute:', error.message);
+      }
+    }
+
+    // Add favoriteProjects array attribute
+    try {
+      await databases.createStringAttribute(
+        DATABASE_ID,
+        'users',
+        'favoriteProjects',
+        1000, // Array stored as JSON string, max 1000 chars
+        false, // optional
+        '[]'   // default empty array
+      );
+      console.log('✅ Added "favoriteProjects" attribute to users collection');
+    } catch (error) {
+      if (error.type === 'attribute_already_exists') {
+        console.log('ℹ️  "favoriteProjects" attribute already exists in users collection');
+      } else {
+        console.error('❌ Error adding "favoriteProjects" attribute:', error.message);
+      }
+    }
+
+    // Add joinYear attribute
+    try {
+      await databases.createIntegerAttribute(
+        DATABASE_ID,
+        'users',
+        'joinYear',
+        false, // not required
+        new Date().getFullYear(), // default to current year
+        1900,
+        2100
+      );
+      console.log('✅ Added "joinYear" integer attribute to users collection');
+    } catch (error) {
+      if (error.type === 'attribute_already_exists') {
+        console.log('ℹ️  "joinYear" attribute already exists in users collection');
+      } else {
+        console.error('❌ Error adding "joinYear" attribute:', error.message);
+      }
+    }
+
+    // ========== PROJECTS COLLECTION ==========
+    console.log('\n📋 Adding attributes to Projects collection...');
+    
     // Add the abstract attribute (text field for project abstract/description)
     try {
       await databases.createStringAttribute(
@@ -111,8 +175,13 @@ async function addMissingAttributes() {
       }
     }
 
-    console.log('\n🎉 All missing attributes have been added to the projects collection!');
-    console.log('\nYou should now be able to save projects with AI-extracted data.');
+    console.log('\n🎉 All missing attributes have been added!');
+    console.log('\n✅ Users collection: purchasedProjects, favoriteProjects, joinYear');
+    console.log('✅ Projects collection: All attributes updated');
+    console.log('\nYou can now:');
+    console.log('  - Add projects to favorites');
+    console.log('  - Purchase projects');
+    console.log('  - View purchased projects in dashboard');
   } catch (error) {
     console.error('❌ Error during attribute setup:', error);
   }
