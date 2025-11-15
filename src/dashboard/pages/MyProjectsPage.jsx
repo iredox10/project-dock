@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getUserById, getProjectById } from '../../api/projectServices';
+import { getAllOrders, getProjectById } from '../../api/projectServices';
 import { authService } from '../../appwrite/auth';
-import { FaDownload, FaSpinner } from 'react-icons/fa';
+import { FaDownload, FaSpinner, FaEye, FaBook, FaShoppingCart } from 'react-icons/fa';
 
 export const MyProjectsPage = () => {
   const [purchasedProjects, setPurchasedProjects] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -29,12 +30,20 @@ export const MyProjectsPage = () => {
     try {
       const user = await authService.getCurrentUser();
       if (user) {
-        // 1. Get user's purchased project IDs
-        const userData = await getUserById(user.$id);
-        const projectIds = userData?.purchasedProjects || [];
+        // Fetch orders to get purchased projects
+        const ordersResponse = await getAllOrders({
+          userId: user.$id,
+          status: 'completed'
+        });
+
+        const userOrders = ordersResponse.documents || [];
+        setOrders(userOrders.map(doc => ({ id: doc.$id, ...doc })));
+
+        // Get unique project IDs from orders
+        const projectIds = [...new Set(userOrders.map(order => order.projectId))];
 
         if (projectIds.length > 0) {
-          // 2. Fetch the projects using the IDs
+          // Fetch the projects using the IDs
           const projectsPromises = projectIds.map(async (projectId) => {
             try {
               const projectData = await getProjectById(projectId);
@@ -58,53 +67,98 @@ export const MyProjectsPage = () => {
   };
 
   if (isLoading) {
-    return <div className="flex justify-center items-center py-20"><FaSpinner className="animate-spin text-4xl text-indigo-600" /></div>;
+    return (
+      <div className="flex justify-center items-center py-20">
+        <FaSpinner className="animate-spin text-5xl text-indigo-600" />
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl md:text-4xl font-extrabold text-gray-900 mb-2">My Purchased Projects</h1>
-        <p className="text-sm md:text-base text-gray-600">View and download all your purchased projects</p>
+    <div className="max-w-7xl mx-auto space-y-8">
+      {/* Header Section */}
+      <div className="bg-white border-2 border-slate-200 rounded-2xl p-8 shadow-lg">
+        <div className="flex items-center gap-3 mb-2">
+          <FaShoppingCart className="text-4xl text-indigo-600" />
+          <h1 className="text-4xl font-extrabold text-slate-900">My Purchases</h1>
+        </div>
+        <p className="text-lg text-slate-600">Download and access all your purchased projects</p>
       </div>
-      <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg">
-        {purchasedProjects.length > 0 ? (
-          <ul className="divide-y divide-gray-200">
-            {purchasedProjects.map(project => (
-              <li key={project.id} className="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
-                <div className="flex-1">
-                  <h3 className="font-bold text-base md:text-lg text-gray-800">{project.title}</h3>
-                  <p className="text-xs md:text-sm text-gray-500">{project.department}</p>
-                </div>
-                <div className="flex gap-2 md:gap-4 w-full sm:w-auto">
-                  <Link 
-                    to={`/projects/${project.id}`} 
-                    className="flex-1 sm:flex-none text-center font-semibold text-indigo-600 hover:underline px-4 py-2 text-sm md:text-base"
-                  >
-                    View
-                  </Link>
-                  <Link
-                    to={`/projects/${project.id}/download-file`}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-green-500 text-white font-bold px-3 md:px-4 py-2 rounded-lg hover:bg-green-600 text-sm md:text-base"
-                  >
-                    <FaDownload /> Download
-                  </Link>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="text-center py-8 md:py-10">
-            <p className="text-sm md:text-base text-gray-600 mb-4">You haven't purchased any projects yet.</p>
-            <Link 
-              to="/projects" 
-              className="inline-block bg-indigo-600 text-white font-bold px-4 md:px-6 py-2 md:py-3 rounded-lg hover:bg-indigo-700 text-sm md:text-base"
-            >
-              Browse Projects
-            </Link>
+
+      {/* Stats Card */}
+      <div className="bg-white border-2 border-indigo-200 rounded-2xl p-6 shadow-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-slate-600 text-sm font-medium mb-1">Total Purchased Projects</p>
+            <p className="text-5xl font-bold text-indigo-600">{purchasedProjects.length}</p>
+            <p className="text-sm text-slate-500 mt-2">{orders.length} total orders</p>
           </div>
-        )}
+          <div className="w-20 h-20 bg-indigo-100 rounded-2xl flex items-center justify-center">
+            <FaBook className="text-4xl text-indigo-600" />
+          </div>
+        </div>
       </div>
+
+      {/* Projects List */}
+      {purchasedProjects.length > 0 ? (
+        <div className="space-y-4">
+          {purchasedProjects.map(project => {
+            const order = orders.find(o => o.projectId === project.id);
+            return (
+              <div key={project.id} className="bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-lg hover:shadow-xl hover:border-indigo-300 transition-all duration-300">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-lg uppercase">
+                        Purchased
+                      </span>
+                      <span className="inline-block px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg">
+                        {project.department}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-xl text-slate-900 mb-1">{project.title}</h3>
+                    {order && (
+                      <p className="text-sm text-slate-500">
+                        Purchased on {order.$createdAt ? new Date(order.$createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Recently'}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-3 w-full sm:w-auto">
+                    <Link 
+                      to={`/projects/${project.id}`} 
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-200 text-slate-700 font-semibold px-6 py-3 rounded-xl hover:bg-slate-300 transition-all"
+                    >
+                      <FaEye />
+                      <span className="hidden sm:inline">View</span>
+                    </Link>
+                    <Link
+                      to={`/projects/${project.id}/download-file`}
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-indigo-700 hover:shadow-xl transition-all duration-300"
+                    >
+                      <FaDownload />
+                      <span>Download</span>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="text-center py-16 bg-white border-2 border-slate-200 rounded-2xl shadow-lg">
+          <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FaBook className="text-5xl text-slate-400" />
+          </div>
+          <h3 className="text-2xl font-bold text-slate-900 mb-2">No Purchases Yet</h3>
+          <p className="text-slate-600 mb-6">Start building your library by purchasing projects</p>
+          <Link 
+            to="/projects" 
+            className="inline-flex items-center gap-2 bg-indigo-600 text-white font-bold px-8 py-4 rounded-xl hover:bg-indigo-700 hover:shadow-xl transition-all"
+          >
+            Browse Projects
+          </Link>
+        </div>
+      )}
     </div>
   );
 };

@@ -2,9 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
 import { FaBook, FaUserCircle, FaSignOutAlt, FaTachometerAlt, FaHeart, FaBars, FaTimes } from 'react-icons/fa';
-import { auth, db } from '../../firebase/config';
-import { signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { authService } from '../../appwrite/auth';
+import { getUserById } from '../../api/projectServices';
 
 const UserSidebar = () => {
   const navigate = useNavigate();
@@ -12,26 +11,40 @@ const UserSidebar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    checkAuthStatus();
+  }, [navigate]);
+
+  const checkAuthStatus = async () => {
+    try {
+      const user = await authService.getCurrentUser();
       if (user) {
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          setUserName(userDoc.data().name);
+        // Try to get user details from database
+        try {
+          const userData = await getUserById(user.$id);
+          if (userData && userData.name) {
+            setUserName(userData.name);
+          } else {
+            setUserName(user.name || user.email?.split('@')[0] || 'User');
+          }
+        } catch (dbError) {
+          // User not in database, use auth name
+          setUserName(user.name || user.email?.split('@')[0] || 'User');
         }
       } else {
         navigate('/login');
       }
-    });
-    return () => unsubscribe();
-  }, [navigate]);
+    } catch (error) {
+      console.error('Auth error:', error);
+      navigate('/login');
+    }
+  };
 
   const linkClasses = "flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-200 hover:text-gray-900 rounded-lg transition-colors";
   const activeLinkClasses = "bg-indigo-100 text-indigo-600 font-bold";
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await authService.logout();
       navigate('/');
     } catch (error) {
       console.error("Error signing out: ", error);

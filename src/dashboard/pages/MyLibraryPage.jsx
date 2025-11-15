@@ -1,9 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaHeart, FaDownload, FaBook, FaSpinner, FaStar, FaCalendar, FaEye, FaHeartBroken } from 'react-icons/fa';
+import { FaHeart, FaDownload, FaBook, FaSpinner, FaStar, FaCalendar, FaEye, FaUniversity, FaUser, FaFilePdf, FaCode, FaShoppingCart } from 'react-icons/fa';
 import { getAllProjects, getProjectById, getAllOrders, getUserById, updateUser } from '../../api/projectServices';
 import { authService } from '../../appwrite/auth';
 import { Query } from 'appwrite';
+
+const departmentColors = {
+  'Computer Science': { border: 'border-indigo-500', bg: 'bg-indigo-50', text: 'text-indigo-700', icon: 'bg-gradient-to-br from-indigo-500 to-blue-600' },
+  'Electrical Engineering': { border: 'border-amber-500', bg: 'bg-amber-50', text: 'text-amber-700', icon: 'bg-gradient-to-br from-amber-500 to-orange-600' },
+  'Economics': { border: 'border-emerald-500', bg: 'bg-emerald-50', text: 'text-emerald-700', icon: 'bg-gradient-to-br from-emerald-500 to-green-600' },
+  'Mechanical Engineering': { border: 'border-red-500', bg: 'bg-red-50', text: 'text-red-700', icon: 'bg-gradient-to-br from-red-500 to-rose-600' },
+  'Civil Engineering': { border: 'border-purple-500', bg: 'bg-purple-50', text: 'text-purple-700', icon: 'bg-gradient-to-br from-purple-500 to-fuchsia-600' },
+  'Business Administration': { border: 'border-blue-500', bg: 'bg-blue-50', text: 'text-blue-700', icon: 'bg-gradient-to-br from-blue-500 to-cyan-600' },
+  'Mass Communication': { border: 'border-pink-500', bg: 'bg-pink-50', text: 'text-pink-700', icon: 'bg-gradient-to-br from-pink-500 to-rose-600' },
+};
+
+const defaultColors = { border: 'border-slate-400', bg: 'bg-slate-50', text: 'text-slate-700', icon: 'bg-gradient-to-br from-slate-500 to-slate-600' };
 
 const MyLibraryPage = () => {
   const [user, setUser] = useState(null);
@@ -46,12 +58,17 @@ const MyLibraryPage = () => {
   const fetchUserLibrary = async () => {
     setIsLoading(true);
     try {
-      // Get user data
-      const userData = await getUserById(user.$id);
-      if (!userData) return;
+      // Fetch orders to get purchased projects
+      const ordersResponse = await getAllOrders({
+        userId: user.$id,
+        status: 'completed'
+      });
+      
+      const userOrders = ordersResponse.documents || [];
+      setOrders(userOrders.map(doc => ({ id: doc.$id, ...doc })));
 
-      const purchasedIds = userData.purchasedProjects || [];
-      const favoriteIds = userData.favoriteProjects || [];
+      // Get unique project IDs from orders
+      const purchasedIds = [...new Set(userOrders.map(order => order.projectId))];
 
       // Fetch purchased projects
       if (purchasedIds.length > 0) {
@@ -70,27 +87,35 @@ const MyLibraryPage = () => {
         setPurchasedProjects([]);
       }
 
-      // Fetch favorite projects
-      if (favoriteIds.length > 0) {
-        const favoritePromises = favoriteIds.map(async (projectId) => {
-          try {
-            const projectData = await getProjectById(projectId);
-            return projectData ? { id: projectData.$id, ...projectData } : null;
-          } catch (error) {
-            console.error(`Error fetching project ${projectId}:`, error);
-            return null;
+      // Fetch favorite projects from user data (if field exists)
+      try {
+        const userData = await getUserById(user.$id);
+        if (userData && userData.favoriteProjects) {
+          const favoriteIds = userData.favoriteProjects || [];
+          
+          if (favoriteIds.length > 0) {
+            const favoritePromises = favoriteIds.map(async (projectId) => {
+              try {
+                const projectData = await getProjectById(projectId);
+                return projectData ? { id: projectData.$id, ...projectData } : null;
+              } catch (error) {
+                console.error(`Error fetching project ${projectId}:`, error);
+                return null;
+              }
+            });
+            const favorites = await Promise.all(favoritePromises);
+            setFavoriteProjects(favorites.filter(p => p !== null));
+          } else {
+            setFavoriteProjects([]);
           }
-        });
-        const favorites = await Promise.all(favoritePromises);
-        setFavoriteProjects(favorites.filter(p => p !== null));
-      } else {
+        } else {
+          setFavoriteProjects([]);
+        }
+      } catch (userError) {
+        // User document doesn't exist or favoriteProjects field doesn't exist
+        console.log('Favorites feature not available');
         setFavoriteProjects([]);
       }
-
-      // Fetch orders
-      const ordersResponse = await getAllOrders();
-      const userOrders = ordersResponse.documents.filter(order => order.userId === user.$id);
-      setOrders(userOrders.map(doc => ({ id: doc.$id, ...doc })));
 
     } catch (error) {
       console.error('Error fetching library:', error);
@@ -135,91 +160,116 @@ const MyLibraryPage = () => {
   const ProjectCard = ({ project, showRemoveFavorite = false }) => {
     const order = orders.find(o => o.projectId === project.id);
     const isPurchased = purchasedProjects.some(p => p.id === project.id) || orders.some(o => o.projectId === project.id);
+    const colors = departmentColors[project.department] || defaultColors;
 
     return (
-      <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group">
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-full">
-                  {project.department}
-                </span>
-                <span className="inline-block px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">
-                  {project.level}
-                </span>
-              </div>
-              <Link to={`/projects/${project.id}`}>
-                <h3 className="text-lg font-bold text-gray-900 hover:text-indigo-600 transition-colors line-clamp-2">
-                  {project.title}
-                </h3>
-              </Link>
+      <div className={`group bg-white rounded-2xl border-2 ${colors.border} border-opacity-20 hover:border-opacity-100 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col`}>
+        {/* Top accent bar */}
+        <div className={`h-2 ${colors.icon}`}></div>
+
+        <div className="p-6 flex-grow">
+          {/* Department badge & Icon */}
+          <div className="flex justify-between items-start mb-4">
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 ${colors.bg} ${colors.text} rounded-lg text-xs font-bold uppercase tracking-wide`}>
+              <FaUniversity className="text-xs" />
+              {project.department}
+            </span>
+            <div className={`w-10 h-10 ${colors.icon} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+              {project.formats?.includes('PDF') ? (
+                <FaFilePdf className="text-white text-lg" />
+              ) : (
+                <FaCode className="text-white text-lg" />
+              )}
             </div>
-            {showRemoveFavorite && (
-              <button
-                onClick={() => toggleFavorite(project.id)}
-                className="text-red-500 hover:text-red-600 transition-colors ml-2"
-                title="Remove from favorites"
-              >
-                <FaHeart className="text-xl" />
-              </button>
-            )}
           </div>
+
+          {/* Title */}
+          <Link to={`/projects/${project.id}`}>
+            <h3 className="text-xl font-bold text-slate-900 mb-3 leading-tight group-hover:text-indigo-700 transition-colors min-h-[3.5rem] line-clamp-2">
+              {project.title}
+            </h3>
+          </Link>
 
           {/* Metadata */}
-          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 mb-4">
-            <div className="flex items-center gap-1">
-              <FaCalendar className="text-gray-400" />
-              <span>{project.year}</span>
+          <div className="space-y-2 mb-4">
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <FaUser className="text-slate-400 text-xs" />
+              <span className="font-medium">{project.author || 'N/A'}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <FaBook className="text-gray-400" />
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <FaCalendar className="text-slate-400 text-xs" />
+              <span>{project.year || 'N/A'}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <FaBook className="text-slate-400 text-xs" />
               <span>{project.pages || 'N/A'} pages</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <FaStar className="text-yellow-400" />
-              <span>{project.averageRating?.toFixed(1) || 'N/A'}</span>
             </div>
           </div>
 
-          {/* Purchase Info */}
-          {order && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-              <div className="flex items-center gap-2 text-sm text-green-800">
-                <FaDownload className="text-green-600" />
-                <span className="font-semibold">Purchased</span>
-              </div>
-              <div className="text-xs text-green-700 mt-1">
-                {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Recently'}
-              </div>
+          {/* Rating */}
+          {project.averageRating > 0 && (
+            <div className="flex items-center gap-1 mb-3">
+              {[...Array(5)].map((_, i) => (
+                <FaStar key={i} className={`text-sm ${i < Math.round(project.averageRating) ? 'text-yellow-400' : 'text-slate-200'}`} />
+              ))}
+              <span className="text-xs text-slate-500 ml-1">({project.averageRating.toFixed(1)})</span>
             </div>
           )}
 
-          {/* Actions */}
+          {/* Purchase Status Badge */}
+          {order && (
+            <div className="bg-green-50 border-2 border-green-200 rounded-xl p-3 mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FaShoppingCart className="text-green-600" />
+                  <div>
+                    <div className="text-sm font-bold text-green-800">Purchased</div>
+                    <div className="text-xs text-green-600">
+                      {order.$createdAt ? new Date(order.$createdAt).toLocaleDateString() : 'Recently'}
+                    </div>
+                  </div>
+                </div>
+                {showRemoveFavorite && (
+                  <button
+                    onClick={() => toggleFavorite(project.id)}
+                    className="text-red-500 hover:text-red-600 transition-colors"
+                    title="Remove from favorites"
+                  >
+                    <FaHeart className="text-lg" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer Actions */}
+        <div className="p-4 bg-slate-50 border-t border-slate-100">
           <div className="flex gap-2">
             {isPurchased ? (
-              <Link
-                to={`/projects/${project.id}/download-file`}
-                className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors font-semibold"
-              >
-                <FaDownload />
-                Download
-              </Link>
+              <>
+                <Link
+                  to={`/projects/${project.id}/download-file`}
+                  className={`flex-1 flex items-center justify-center gap-2 ${colors.icon} text-white font-bold px-4 py-3 rounded-xl hover:shadow-xl transition-all duration-300 group-hover:scale-[1.02]`}
+                >
+                  <FaDownload />
+                  <span>Download</span>
+                </Link>
+                <Link
+                  to={`/projects/${project.id}`}
+                  className="flex items-center justify-center gap-2 bg-slate-200 text-slate-700 font-semibold px-4 py-3 rounded-xl hover:bg-slate-300 transition-all"
+                >
+                  <FaEye />
+                </Link>
+              </>
             ) : (
               <Link
                 to={`/projects/${project.id}/payment`}
-                className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors font-semibold"
+                className={`w-full flex items-center justify-center gap-2 ${colors.icon} text-white font-bold px-4 py-3 rounded-xl hover:shadow-xl transition-all duration-300 group-hover:scale-[1.02]`}
               >
-                Purchase ₦{project.priceNGN?.toLocaleString()}
+                <span>Purchase ₦{project.priceNGN?.toLocaleString()}</span>
               </Link>
             )}
-            <Link
-              to={`/projects/${project.id}`}
-              className="flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              <FaEye />
-            </Link>
           </div>
         </div>
       </div>
@@ -235,127 +285,134 @@ const MyLibraryPage = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">My Library</h1>
-        <p className="text-gray-600">Manage your purchased and favorite projects</p>
+    <div className="max-w-7xl mx-auto space-y-8">
+      {/* Header Section */}
+      <div className="bg-white border-2 border-slate-200 rounded-2xl p-8 shadow-lg">
+        <h1 className="text-4xl font-extrabold text-slate-900 mb-2">My Library</h1>
+        <p className="text-lg text-slate-600">Your purchased projects and favorites in one place</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl p-4 md:p-6 shadow-lg">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="bg-white border-2 border-indigo-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-indigo-100 text-xs md:text-sm font-medium mb-1">Purchased Projects</p>
-              <p className="text-3xl md:text-4xl font-bold">{purchasedProjects.length}</p>
+              <p className="text-slate-600 text-sm font-medium mb-1">Purchased</p>
+              <p className="text-4xl font-bold text-indigo-600">{purchasedProjects.length}</p>
             </div>
-            <FaDownload className="text-4xl md:text-5xl text-indigo-200 opacity-50" />
+            <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center">
+              <FaDownload className="text-3xl text-indigo-600" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-pink-500 to-red-600 text-white rounded-xl p-4 md:p-6 shadow-lg">
+        <div className="bg-white border-2 border-pink-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-pink-100 text-xs md:text-sm font-medium mb-1">Favorite Projects</p>
-              <p className="text-3xl md:text-4xl font-bold">{favoriteProjects.length}</p>
+              <p className="text-slate-600 text-sm font-medium mb-1">Favorites</p>
+              <p className="text-4xl font-bold text-pink-600">{favoriteProjects.length}</p>
             </div>
-            <FaHeart className="text-4xl md:text-5xl text-pink-200 opacity-50" />
+            <div className="w-16 h-16 bg-pink-100 rounded-2xl flex items-center justify-center">
+              <FaHeart className="text-3xl text-pink-600" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-teal-600 text-white rounded-xl p-4 md:p-6 shadow-lg sm:col-span-2 lg:col-span-1">
+        <div className="bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-xs md:text-sm font-medium mb-1">Total Orders</p>
-              <p className="text-3xl md:text-4xl font-bold">{orders.length}</p>
+              <p className="text-slate-600 text-sm font-medium mb-1">Orders</p>
+              <p className="text-4xl font-bold text-slate-700">{orders.length}</p>
             </div>
-            <FaBook className="text-4xl md:text-5xl text-green-200 opacity-50" />
+            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center">
+              <FaShoppingCart className="text-3xl text-slate-600" />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-xl shadow-md p-2 flex flex-col sm:flex-row gap-2">
+      <div className="flex gap-2 border-b-2 border-slate-200">
         <button
           onClick={() => setActiveTab('purchased')}
-          className={`flex-1 px-4 md:px-6 py-3 rounded-lg font-semibold transition-all ${
+          className={`px-6 py-3 font-bold text-lg transition-all ${
             activeTab === 'purchased'
-              ? 'bg-indigo-600 text-white shadow-md'
-              : 'text-gray-600 hover:bg-gray-100'
+              ? 'text-indigo-600 border-b-4 border-indigo-600 -mb-0.5'
+              : 'text-slate-500 hover:text-slate-700'
           }`}
         >
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center gap-2">
             <FaDownload />
-            <span className="hidden sm:inline">Purchased</span>
-            <span className="sm:hidden">Purchased</span>
-            <span className="hidden sm:inline">({purchasedProjects.length})</span>
+            <span>Purchased ({purchasedProjects.length})</span>
           </div>
         </button>
         <button
           onClick={() => setActiveTab('favorites')}
-          className={`flex-1 px-4 md:px-6 py-3 rounded-lg font-semibold transition-all ${
+          className={`px-6 py-3 font-bold text-lg transition-all ${
             activeTab === 'favorites'
-              ? 'bg-indigo-600 text-white shadow-md'
-              : 'text-gray-600 hover:bg-gray-100'
+              ? 'text-pink-600 border-b-4 border-pink-600 -mb-0.5'
+              : 'text-slate-500 hover:text-slate-700'
           }`}
         >
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center gap-2">
             <FaHeart />
-            <span className="hidden sm:inline">Favorites</span>
-            <span className="sm:hidden">Favorites</span>
-            <span className="hidden sm:inline">({favoriteProjects.length})</span>
+            <span>Favorites ({favoriteProjects.length})</span>
           </div>
         </button>
       </div>
 
       {/* Content */}
-      <div>
-        {activeTab === 'purchased' ? (
-          <div>
-            {purchasedProjects.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-                {purchasedProjects.map(project => (
-                  <ProjectCard key={project.id} project={project} />
-                ))}
+      {activeTab === 'purchased' && (
+        <div>
+          {purchasedProjects.length === 0 ? (
+            <div className="text-center py-16 bg-white border-2 border-slate-200 rounded-2xl shadow-lg">
+              <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaBook className="text-5xl text-slate-400" />
               </div>
-            ) : (
-              <div className="bg-white rounded-xl shadow-md p-8 md:p-12 text-center">
-                <FaBook className="text-5xl md:text-6xl text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">No Purchased Projects</h3>
-                <p className="text-sm md:text-base text-gray-600 mb-6">You haven't purchased any projects yet</p>
-                <Link
-                  to="/projects"
-                  className="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 font-semibold"
-                >
-                  Browse Projects
-                </Link>
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">No Purchased Projects</h3>
+              <p className="text-slate-600 mb-6">Start building your library by purchasing projects</p>
+              <Link
+                to="/projects"
+                className="inline-flex items-center gap-2 bg-indigo-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-indigo-700 hover:shadow-xl transition-all"
+              >
+                Browse Projects
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {purchasedProjects.map(project => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'favorites' && (
+        <div>
+          {favoriteProjects.length === 0 ? (
+            <div className="text-center py-16 bg-white border-2 border-slate-200 rounded-2xl shadow-lg">
+              <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaHeart className="text-5xl text-slate-400" />
               </div>
-            )}
-          </div>
-        ) : (
-          <div>
-            {favoriteProjects.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-                {favoriteProjects.map(project => (
-                  <ProjectCard key={project.id} project={project} showRemoveFavorite={true} />
-                ))}
-              </div>
-            ) : (
-              <div className="bg-white rounded-xl shadow-md p-8 md:p-12 text-center">
-                <FaHeartBroken className="text-5xl md:text-6xl text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">No Favorite Projects</h3>
-                <p className="text-sm md:text-base text-gray-600 mb-6">Start adding projects to your favorites</p>
-                <Link
-                  to="/projects"
-                  className="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 font-semibold"
-                >
-                  Browse Projects
-                </Link>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">No Favorite Projects</h3>
+              <p className="text-slate-600 mb-6">Add projects to your favorites for quick access</p>
+              <Link
+                to="/projects"
+                className="inline-flex items-center gap-2 bg-pink-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-pink-700 hover:shadow-xl transition-all"
+              >
+                Browse Projects
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {favoriteProjects.map(project => (
+                <ProjectCard key={project.id} project={project} showRemoveFavorite={true} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
