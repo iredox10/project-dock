@@ -448,22 +448,43 @@ export const AIProjectUploadPage = () => {
 
       {/* Processing Status */}
       {isProcessing && (
-        <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <FaSpinner className="animate-spin text-xl text-blue-600" />
-            <div>
-              <p className="font-semibold text-blue-900">Processing...</p>
-              <p className="text-sm text-blue-700 truncate max-w-full">{currentFile}</p>
+        <div className="bg-blue-50 border border-blue-200 p-6 rounded-xl mb-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <FaSpinner className="animate-spin text-2xl text-blue-600" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                </div>
+              </div>
+              <div>
+                <p className="font-semibold text-blue-900">AI Processing Project...</p>
+                <p className="text-sm text-blue-700 truncate max-w-full">{currentFile || 'Analyzing content...'}</p>
+              </div>
+            </div>
+            <div className="sm:ml-auto w-full sm:w-auto">
+              {progress.total > 0 && (
+                <div className="text-right text-xs text-blue-700 mb-1">
+                  {progress.current} of {progress.total} files processed
+                </div>
+              )}
+              <div className="w-full bg-blue-200 rounded-full h-3">
+                <div
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500 ease-out flex items-center justify-end pr-2"
+                  style={{ width: progress.total > 0 ? `${(progress.current / progress.total) * 100}%` : '0%' }}
+                >
+                  {progress.total > 0 && (
+                    <span className="text-[10px] font-bold text-white whitespace-nowrap">
+                      {Math.round((progress.current / progress.total) * 100)}%
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-          {progress.total > 0 && (
-            <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
-              <div
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(progress.current / progress.total) * 100}%` }}
-              ></div>
-            </div>
-          )}
+          <div className="mt-4 text-xs text-blue-800 bg-blue-100 p-2 rounded-lg">
+            <p><span className="font-semibold">Note:</span> This process may take 10-30 seconds per document depending on length and complexity.</p>
+          </div>
         </div>
       )}
 

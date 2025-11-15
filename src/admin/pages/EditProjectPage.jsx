@@ -20,9 +20,12 @@ export const EditProjectPage = () => {
 
         if (projectData) {
           // Convert arrays back to comma-separated strings for the form inputs
+          // Also map abstractFileId and chapterOneFileId to abstract and chapterOne for form
           setFormData({
             ...projectData,
             id: projectData.$id, // Store the ID separately since Appwrite uses $id
+            abstract: projectData.abstractFileId || '', // Map abstractFileId to abstract for form
+            chapterOne: projectData.chapterOneFileId || '', // Map chapterOneFileId to chapterOne for form
             formats: Array.isArray(projectData.formats) ? projectData.formats.join(', ') : projectData.formats,
             includes: Array.isArray(projectData.includes) ? projectData.includes.join(', ') : projectData.includes,
           });
@@ -55,15 +58,19 @@ export const EditProjectPage = () => {
 
     try {
       const projectData = {
-        ...formData, // Include all form data
-        department: formData.department,
-        abstractFileId: formData.abstract, // Map 'abstract' to 'abstractFileId' field in your db
-        chapterOneFileId: formData.chapterOne, // Map 'chapterOne' to 'chapterOneFileId' field in your db
+        ...formData,
+        // Map form fields to database fields
+        abstractFileId: formData.abstract,
+        chapterOneFileId: formData.chapterOne,
         year: Number(formData.year),
         priceNGN: Number(formData.priceNGN),
         pages: Number(formData.pages) || 0,
         formats: typeof formData.formats === 'string' ? formData.formats : Array.isArray(formData.formats) ? formData.formats.join(', ') : formData.formats,
-        includes: typeof formData.includes === 'string' ? formData.includes : Array.isArray(formData.includes) ? formData.includes.join(', ') : formData.includes
+        includes: typeof formData.includes === 'string' ? formData.includes : Array.isArray(formData.includes) ? formData.includes.join(', ') : formData.includes,
+        // Remove the form-specific fields that shouldn't be saved to the database
+        id: undefined, // Don't save the temp id field
+        abstract: undefined, // Don't save the temp abstract field
+        chapterOne: undefined, // Don't save the temp chapterOne field
       };
 
       await updateProject(projectId, projectData);

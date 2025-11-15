@@ -191,8 +191,8 @@ Return the JSON object:`;
         chapterOne: projectData.chapterOne || '',
         pages: Number(projectData.pages) || 0,
         chapters: projectData.chapters || '1-5',
-        formats: 'PDF, DOCX',
-        includes: 'References, Questionnaire'
+        formats: projectData.formats || 'PDF, DOCX',
+        includes: projectData.includes || 'References, Questionnaire'
       };
 
       // Format Chapter One content to follow proper academic structure if it exists
@@ -206,17 +206,19 @@ Return the JSON object:`;
       }
       
       // Update chapters field to show range format (e.g., '1-5')
-      if (projectData.chapters) {
+      // Handle cases where projectData.chapters might be null, undefined, or empty
+      if (projectData.chapters && projectData.chapters !== null && projectData.chapters !== 'null' && projectData.chapters !== '') {
         // Try to extract the last chapter number from the chapters field
         const chapterNumbers = projectData.chapters.match(/\d+/g);
         if (chapterNumbers && chapterNumbers.length > 0) {
           const lastChapter = Math.max(...chapterNumbers.map(Number));
           result.chapters = `1-${lastChapter}`;
         } else {
-          // If we can't determine the number of chapters, keep the default
+          // If we can't determine the number of chapters from digits, default to '1-5'
           result.chapters = '1-5';
         }
       } else {
+        // If no chapters data exists, default to '1-5'
         result.chapters = '1-5';
       }
       
