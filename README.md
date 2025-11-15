@@ -9,7 +9,8 @@ A comprehensive platform for managing and distributing academic research project
 - 📤 **Bulk Upload**: Support for CSV/Excel bulk imports
 - 🔍 **Smart Search**: Filter and search projects by department, level, and keywords
 - 👥 **User Management**: Admin dashboard for managing users and orders
-- 💳 **Order Processing**: Track and manage project downloads
+- 💳 **Paystack Payment Integration**: Accept payments via Card, Bank Transfer, OPay, Kuda, Moniepoint, and other microfinance banks
+- 📦 **Order Processing**: Track and manage project downloads
 - ⭐ **Review System**: User reviews and ratings
 
 ## AI Project Extraction
@@ -48,11 +49,25 @@ The platform includes an AI-powered feature that can automatically extract struc
    cp .env.example .env
    ```
 
-4. Add your Gemini API key to `.env`:
+4. Configure your environment variables in `.env`:
+   ```env
+   # Gemini AI
+   VITE_GEMINI_API_KEY=your_gemini_api_key_here
+   
+   # Appwrite
+   VITE_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
+   VITE_APPWRITE_PROJECT_ID=your_project_id
+   VITE_APPWRITE_DATABASE_ID=your_database_id
+   
+   # Paystack Payment
+   VITE_PAYSTACK_PUBLIC_KEY=pk_test_your_paystack_key_here
+   VITE_PAYSTACK_DEMO_MODE=false
    ```
-   VITE_GEMINI_API_KEY=your_actual_api_key_here
-   ```
-   Get a free API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+   
+   **Get your keys:**
+   - Gemini: [Google AI Studio](https://makersuite.google.com/app/apikey)
+   - Appwrite: [Appwrite Console](https://console.appwrite.io)
+   - Paystack: [Paystack Dashboard](https://dashboard.paystack.com/settings/developer)
 
 5. Start the development server:
    ```bash
@@ -62,7 +77,9 @@ The platform includes an AI-powered feature that can automatically extract struc
 ## Tech Stack
 
 - **Frontend**: React 19, Tailwind CSS
-- **Backend**: Firebase (Firestore, Authentication)
+- **Backend**: Appwrite (Database, Authentication, Storage)
+- **Payment**: Paystack (Card, Bank Transfer, OPay, Microfinance Banks)
+- **AI**: Google Gemini API
 - **AI**: Google Gemini API
 - **Build Tool**: Vite
 - **Package Manager**: Bun

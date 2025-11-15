@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { FaArrowLeft, FaShieldAlt, FaCheckCircle, FaSpinner, FaCreditCard, FaLock, FaDownload } from 'react-icons/fa';
-import { getProjectById, getUserById, createUser, updateUser, createOrder, getOrderById, updateOrder, deleteOrder } from '../api/projectServices';
+import { FaArrowLeft, FaShieldAlt, FaCheckCircle, FaSpinner, FaCreditCard, FaLock, FaDownload, FaUniversity, FaMobileAlt } from 'react-icons/fa';
+import { getProjectById, getAllOrders, createOrder, updateProject } from '../api/projectServices';
 import { authService } from '../appwrite/auth';
 import { Query } from 'appwrite';
-import { initializePayment, verifyPayment, isOpayConfigured } from '../api/opayService.js';
+import { launchPaystackInline, verifyPaystackPayment, isPaystackConfigured, MICROFINANCE_BANKS } from '../api/paystackService.js';
 import { Modal, useModal } from '../components/Modal';
 
 const PaymentPage = () => {
@@ -18,7 +18,8 @@ const PaymentPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [hasPurchased, setHasPurchased] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('inline'); // 'inline' or 'redirect'
+  const [paymentMethod, setPaymentMethod] = useState('card'); // 'card', 'bank', 'opay'
+  const [selectedBank, setSelectedBank] = useState('');
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -61,17 +62,18 @@ const PaymentPage = () => {
         if (projectDoc) {
           setProject({ id: projectDoc.$id, ...projectDoc });
           
-          // Check if user already purchased
+          // Check if user already purchased by querying orders collection
           if (user) {
             try {
-              const userDoc = await getUserById(user.$id);
-              if (userDoc) {
-                const purchasedProjects = userDoc.purchasedProjects || [];
-                setHasPurchased(purchasedProjects.some(p => p === projectId));
-              }
-            } catch (userError) {
-              // User document doesn't exist yet, that's okay
-              console.log("User document not found, will be created on first purchase");
+              const { documents: orders } = await getAllOrders({
+                userId: user.$id,
+                projectId: projectId,
+                status: 'completed',
+                limit: 1
+              });
+              setHasPurchased(orders && orders.length > 0);
+            } catch (orderError) {
+              console.log("Error checking purchase status:", orderError);
               setHasPurchased(false);
             }
           }
@@ -102,7 +104,7 @@ const PaymentPage = () => {
           navigate(`/login?redirect=${currentURL}`);
           return;
         }
-        setUser(currentUser); // Update state in case it was outdated
+        setUser(currentUser);
       } catch (authError) {
         const currentURL = encodeURIComponent(`/projects/${projectId}/payment`);
         navigate(`/login?redirect=${currentURL}`);
@@ -110,7 +112,7 @@ const PaymentPage = () => {
       }
     }
 
-    if (!isOpayConfigured()) {
+    if (!isPaystackConfigured()) {
       showModal('Payment Unavailable', 'Payment gateway is not configured. Please contact support.', 'error');
       return;
     }
@@ -118,30 +120,46 @@ const PaymentPage = () => {
     setIsProcessing(true);
 
     try {
-      // Use the user object directly from auth service, as it already contains user details
-      const paymentData = {
-        amount: project.priceNGN,
-        email: user.email || user.emailAddress, // Appwrite uses emailAddress
-        firstName: (user.name || user.email?.split('@')[0])?.split(' ')[0] || 'User',
-        lastName: (user.name || user.email?.split('@')[0])?.split(' ').slice(1).join(' ') || '',
-        phone: user.phone || '',
-        productName: project.title,
-        productDesc: `${project.department} - ${project.level} Project`,
-        callbackUrl: `${window.location.origin}/payment/verify?projectId=${projectId}`,
-        returnUrl: `${window.location.origin}/payment/success?projectId=${projectId}`,
-      };
-
-      const response = await initializePayment(paymentData);
+      const userName = user.name || user.email?.split('@')[0] || 'User';
+      const nameParts = userName.split(' ');
       
-      if (response.success) {
-        // Store reference in sessionStorage for verification
-        sessionStorage.setItem('payment_reference', response.reference);
-        sessionStorage.setItem('payment_orderNo', response.orderNo);
-        sessionStorage.setItem('payment_projectId', projectId);
-        
-        // Redirect to OPay cashier
-        window.location.href = response.cashierUrl;
+      // Determine payment channels based on selected method
+      let channels = ['card', 'bank', 'bank_transfer', 'ussd'];
+      if (paymentMethod === 'card') {
+        channels = ['card'];
+      } else if (paymentMethod === 'bank') {
+        channels = ['bank', 'bank_transfer', 'ussd'];
+      } else if (paymentMethod === 'opay') {
+        channels = ['bank', 'bank_transfer'];
       }
+
+      const reference = await launchPaystackInline({
+        email: user.email || user.emailAddress,
+        amountNGN: project.priceNGN,
+        firstName: nameParts[0] || 'User',
+        lastName: nameParts.slice(1).join(' ') || '',
+        phone: user.phone || '',
+        projectTitle: project.title,
+        channels,
+        preferredMicrofinanceBank: paymentMethod === 'opay' ? selectedBank || 'OPay' : undefined,
+        metadata: {
+          projectId: projectId,
+          userId: user.$id,
+          department: project.department,
+          level: project.level,
+        },
+        onSuccess: async (response) => {
+          await handlePaymentSuccess(response.reference);
+        },
+        onCancel: () => {
+          setIsProcessing(false);
+          showModal('Payment Cancelled', 'You cancelled the payment process.', 'info');
+        },
+      });
+
+      // Store reference for potential later verification
+      sessionStorage.setItem('payment_reference', reference);
+      sessionStorage.setItem('payment_projectId', projectId);
     } catch (error) {
       console.error('Payment initialization error:', error);
       showModal('Payment Failed', error.message, 'error');
@@ -149,45 +167,28 @@ const PaymentPage = () => {
     }
   };
 
-  const handlePaymentSuccess = async (reference, orderNo) => {
+  const handlePaymentSuccess = async (reference) => {
     try {
       // Verify payment
-      const verification = await verifyPayment(reference, orderNo);
+      const verification = await verifyPaystackPayment(reference);
       
       if (verification.isPaid) {
-        // Create order record
+        // Create order record matching the existing schema
         const orderData = {
-          userId: user.$id, // Appwrite uses $id
-          userEmail: user.email || user.emailAddress, // Appwrite uses emailAddress
+          userId: user.$id,
           projectId: projectId,
           projectTitle: project.title,
           amount: project.priceNGN,
-          paymentReference: reference,
-          paymentStatus: 'completed',
-          orderNo: orderNo,
-          createdAt: new Date().toISOString(), // Appwrite uses ISO strings instead of serverTimestamp
+          status: 'completed',
+          paymentId: reference,
+          transactionId: reference,
+          quantity: 1
         };
 
         await createOrder(orderData);
 
-        // Update user's purchased projects
-        // First get user's document from the users collection (not the auth user object)
-        try {
-          const userData = await getUserById(user.$id);
-          const purchasedProjects = userData.purchasedProjects || [];
-          
-          if (!purchasedProjects.some(p => p === projectId)) { // Use array.some() instead of includes()
-            await updateUser(user.$id, {
-              ...userData,
-              purchasedProjects: [...purchasedProjects, projectId]
-            });
-          }
-        } catch (userError) {
-          // If user doesn't exist in the users collection, create or update the user record
-          await updateUser(user.$id, {
-            purchasedProjects: [projectId]
-          });
-        }
+        // Note: User purchases are tracked in the orders collection
+        // No need to update user document as it doesn't have purchasedProjects field
 
         // Update project download count
         const projectData = await getProjectById(projectId);
@@ -203,10 +204,12 @@ const PaymentPage = () => {
         }, 2000);
       } else {
         showModal('Payment Failed', 'Payment verification failed. Please contact support if amount was deducted.', 'error');
+        setIsProcessing(false);
       }
     } catch (error) {
       console.error('Payment success handling error:', error);
       showModal('Error', 'An error occurred while processing your payment. Please contact support.', 'error');
+      setIsProcessing(false);
     }
   };
 
@@ -283,49 +286,95 @@ const PaymentPage = () => {
                 <label className="block font-semibold text-gray-700 mb-4">Payment Method</label>
                 <div className="space-y-3">
                   <button
-                    onClick={() => setPaymentMethod('inline')}
+                    onClick={() => setPaymentMethod('card')}
                     className={`w-full flex items-center gap-4 p-4 border-2 rounded-xl transition-all ${
-                      paymentMethod === 'inline'
+                      paymentMethod === 'card'
                         ? 'border-indigo-600 bg-indigo-50'
                         : 'border-gray-200 hover:border-indigo-300'
                     }`}
                   >
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      paymentMethod === 'inline' ? 'border-indigo-600' : 'border-gray-300'
+                      paymentMethod === 'card' ? 'border-indigo-600' : 'border-gray-300'
                     }`}>
-                      {paymentMethod === 'inline' && (
+                      {paymentMethod === 'card' && (
                         <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
                       )}
                     </div>
                     <div className="flex-1 text-left">
-                      <div className="font-semibold text-gray-900">OPay Quick Pay</div>
-                      <div className="text-sm text-gray-600">Pay securely without leaving this page</div>
+                      <div className="font-semibold text-gray-900">Card Payment</div>
+                      <div className="text-sm text-gray-600">Pay with Debit/Credit Card (Visa, Mastercard, Verve)</div>
                     </div>
                     <FaCreditCard className="text-2xl text-indigo-600" />
                   </button>
 
                   <button
-                    onClick={() => setPaymentMethod('redirect')}
+                    onClick={() => setPaymentMethod('bank')}
                     className={`w-full flex items-center gap-4 p-4 border-2 rounded-xl transition-all ${
-                      paymentMethod === 'redirect'
+                      paymentMethod === 'bank'
                         ? 'border-indigo-600 bg-indigo-50'
                         : 'border-gray-200 hover:border-indigo-300'
                     }`}
                   >
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      paymentMethod === 'redirect' ? 'border-indigo-600' : 'border-gray-300'
+                      paymentMethod === 'bank' ? 'border-indigo-600' : 'border-gray-300'
                     }`}>
-                      {paymentMethod === 'redirect' && (
+                      {paymentMethod === 'bank' && (
                         <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
                       )}
                     </div>
                     <div className="flex-1 text-left">
-                      <div className="font-semibold text-gray-900">OPay Redirect</div>
-                      <div className="text-sm text-gray-600">Complete payment on OPay's secure page</div>
+                      <div className="font-semibold text-gray-900">Bank Transfer / USSD</div>
+                      <div className="text-sm text-gray-600">Pay via Bank Transfer or USSD</div>
                     </div>
-                    <FaLock className="text-2xl text-indigo-600" />
+                    <FaUniversity className="text-2xl text-indigo-600" />
+                  </button>
+
+                  <button
+                    onClick={() => setPaymentMethod('opay')}
+                    className={`w-full flex items-center gap-4 p-4 border-2 rounded-xl transition-all ${
+                      paymentMethod === 'opay'
+                        ? 'border-indigo-600 bg-indigo-50'
+                        : 'border-gray-200 hover:border-indigo-300'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      paymentMethod === 'opay' ? 'border-indigo-600' : 'border-gray-300'
+                    }`}>
+                      {paymentMethod === 'opay' && (
+                        <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
+                      )}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="font-semibold text-gray-900">OPay & Other Microfinance Banks</div>
+                      <div className="text-sm text-gray-600">Pay with OPay, Kuda, Moniepoint, PalmPay, etc.</div>
+                    </div>
+                    <FaMobileAlt className="text-2xl text-indigo-600" />
                   </button>
                 </div>
+
+                {/* Bank Selection for OPay method */}
+                {paymentMethod === 'opay' && (
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Your Bank (Optional)
+                    </label>
+                    <select
+                      value={selectedBank}
+                      onChange={(e) => setSelectedBank(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
+                    >
+                      <option value="">Select a bank...</option>
+                      {MICROFINANCE_BANKS.map((bank) => (
+                        <option key={bank} value={bank}>
+                          {bank}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-2 text-xs text-gray-500">
+                      Selecting your bank helps streamline the payment process
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Pay Button */}
@@ -351,7 +400,7 @@ const PaymentPage = () => {
               <div className="mt-6 flex items-start gap-3 text-sm text-gray-600">
                 <FaShieldAlt className="text-green-500 text-lg mt-0.5" />
                 <p>
-                  Your payment is secured by OPay's industry-standard encryption. 
+                  Your payment is secured by Paystack's industry-standard encryption. 
                   We never store your payment information.
                 </p>
               </div>

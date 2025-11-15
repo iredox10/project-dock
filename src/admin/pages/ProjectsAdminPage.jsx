@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Modal, useModal } from '../../components/Modal';
 import { Link, useNavigate } from 'react-router-dom';
@@ -14,7 +13,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
       <Modal {...modal} onClose={closeModal} />
-      
+
       <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-center">
         <h2 className="text-2xl font-bold mb-4 text-gray-900">{title}</h2>
         <p className="text-gray-600 mb-6">{message}</p>
@@ -69,9 +68,9 @@ export const ProjectsAdminPage = () => {
       });
 
       // Appwrite returns documents with $id as the ID field
-      const fetchedProjects = response.documents.map(doc => ({ 
-        id: doc.$id, 
-        ...doc 
+      const fetchedProjects = response.documents.map(doc => ({
+        id: doc.$id,
+        ...doc
       }));
 
       setProjects(fetchedProjects);
@@ -100,9 +99,9 @@ export const ProjectsAdminPage = () => {
         offset: projects.length
       });
 
-      const newProjects = response.documents.map(doc => ({ 
-        id: doc.$id, 
-        ...doc 
+      const newProjects = response.documents.map(doc => ({
+        id: doc.$id,
+        ...doc
       }));
 
       setProjects(prev => [...prev, ...newProjects]);
@@ -142,9 +141,9 @@ export const ProjectsAdminPage = () => {
   };
 
   const handleSelectProject = (projectId) => {
-    setSelectedProjects(prev => 
-      prev.includes(projectId) 
-        ? prev.filter(id => id !== projectId) 
+    setSelectedProjects(prev =>
+      prev.includes(projectId)
+        ? prev.filter(id => id !== projectId)
         : [...prev, projectId]
     );
   };
@@ -153,14 +152,14 @@ export const ProjectsAdminPage = () => {
     if (selectedProjects.length === 0) return;
     try {
       // Delete all selected projects
-      const deletePromises = selectedProjects.map(projectId => 
+      const deletePromises = selectedProjects.map(projectId =>
         deleteProject(projectId)
       );
       await Promise.all(deletePromises);
 
       // Update the local state to remove deleted projects
       setProjects(prev => prev.filter(p => !selectedProjects.includes(p.id)));
-      
+
       // Clear selection
       setSelectedProjects([]);
       setShowBulkConfirmModal(false);
@@ -178,34 +177,90 @@ export const ProjectsAdminPage = () => {
   }, [projects, searchTerm]);
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-4xl font-extrabold text-gray-900">Manage Projects</h1>
-        <div className="flex gap-3">
-          <Link to="/admin/projects/ai-upload" className="flex items-center gap-2 bg-purple-600 text-white font-bold px-5 py-3 rounded-lg hover:bg-purple-700 transition-all duration-300">
+    <div className="w-full">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">Manage Projects</h1>
+        <div className="flex flex-wrap gap-3">
+          <Link to="/admin/projects/ai-upload" className="flex items-center gap-2 bg-purple-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-purple-700 transition-all duration-300 text-sm">
             <FaRobot />
             <span>AI Extract</span>
           </Link>
-          <Link to="/admin/projects/add" className="flex items-center gap-2 bg-indigo-600 text-white font-bold px-5 py-3 rounded-lg hover:bg-indigo-700 transition-all duration-300">
+          <Link to="/admin/projects/add" className="flex items-center gap-2 bg-indigo-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-indigo-700 transition-all duration-300 text-sm">
             <FaPlus />
             <span>Add New</span>
           </Link>
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow-lg">
+      <div className="bg-white p-4 rounded-xl shadow-lg">
         <div className="mb-4 relative">
           <input type="text" placeholder="Search loaded projects..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full p-3 pl-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" />
           <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile view for projects */}
+        <div className="md:hidden">
+          {selectedProjects.length > 0 && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex justify-between items-center">
+              <span className="text-yellow-800 text-sm">
+                {selectedProjects.length} project{selectedProjects.length !== 1 ? 's' : ''} selected
+              </span>
+              <button
+                onClick={() => setShowBulkConfirmModal(true)}
+                className="flex items-center gap-2 bg-red-600 text-white font-bold px-3 py-2 rounded-lg hover:bg-red-700 transition-all duration-300 text-sm"
+              >
+                <FaTrash />
+                <span>Delete</span>
+              </button>
+            </div>
+          )}
+          {isLoading ? (
+            <div className="flex justify-center items-center py-10"><FaSpinner className="animate-spin text-3xl text-indigo-600" /></div>
+          ) : (
+            <div className="space-y-4">
+              {filteredProjects.map(project => (
+                <div key={project.id} className={`border rounded-lg p-4 ${selectedProjects.includes(project.id) ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'}`}>
+                  <div className="flex items-start justify-between">
+                    <input
+                      type="checkbox"
+                      checked={selectedProjects.includes(project.id)}
+                      onChange={() => handleSelectProject(project.id)}
+                      className="w-5 h-5 mt-1 mr-3"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-bold text-gray-800">{project.title}</h3>
+                      <div className="text-sm text-gray-600 mt-1">
+                        <p>Department: {project.department}</p>
+                        <p>Year: {project.year}</p>
+                        <p>Price: ₦{project.priceNGN}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3 mt-3">
+                    <Link to={`/admin/projects/edit/${project.id}`} className="text-blue-500 hover:text-blue-700 text-sm">
+                      <FaEdit className="inline mr-1" /> Edit
+                    </Link>
+                    <button 
+                      onClick={() => handleDeleteClick(project.id)} 
+                      className="text-red-500 hover:text-red-700 text-sm"
+                    >
+                      <FaTrash className="inline mr-1" /> Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop view for projects */}
+        <div className="hidden md:block overflow-x-auto">
           {selectedProjects.length > 0 && (
             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex justify-between items-center">
               <span className="text-yellow-800">
                 {selectedProjects.length} project{selectedProjects.length !== 1 ? 's' : ''} selected
               </span>
-              <button 
+              <button
                 onClick={() => setShowBulkConfirmModal(true)}
                 className="flex items-center gap-2 bg-red-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-red-700 transition-all duration-300"
               >
@@ -221,10 +276,10 @@ export const ProjectsAdminPage = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="p-3 w-12">
-                    <input 
-                      type="checkbox" 
-                      checked={selectedProjects.length > 0 && selectedProjects.length === filteredProjects.length} 
-                      onChange={handleSelectAll} 
+                    <input
+                      type="checkbox"
+                      checked={selectedProjects.length > 0 && selectedProjects.length === filteredProjects.length}
+                      onChange={handleSelectAll}
                       className="w-5 h-5"
                     />
                   </th>
@@ -235,9 +290,9 @@ export const ProjectsAdminPage = () => {
                 {filteredProjects.map(project => (
                   <tr key={project.id} className={`border-b hover:bg-gray-50 ${selectedProjects.includes(project.id) ? 'bg-blue-50' : ''}`}>
                     <td className="p-3">
-                      <input 
-                        type="checkbox" 
-                        checked={selectedProjects.includes(project.id)} 
+                      <input
+                        type="checkbox"
+                        checked={selectedProjects.includes(project.id)}
                         onChange={() => handleSelectProject(project.id)}
                         className="w-5 h-5"
                       />

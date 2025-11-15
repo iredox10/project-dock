@@ -14,23 +14,31 @@ const ProtectedRoute = ({ children, requiredRole = 'admin' }) => {
         const currentUser = await authService.getCurrentUser();
         
         if (!currentUser) {
+          console.log('No current user found');
           setIsAuthorized(false);
           return;
         }
 
+        console.log('Current user found:', currentUser.$id);
+
         // Then, check user's role from the database
         try {
           const userDoc = await usersService.getUserById(currentUser.$id);
+          console.log('Full user document from database:', userDoc);
           const role = userDoc?.role || 'user';
+          console.log('Retrieved role value:', role);
           setUserRole(role);
           
           // Check if user has required role
           if (requiredRole === 'admin') {
-            setIsAuthorized(role === 'admin');
+            const isAuth = role === 'admin';
+            console.log('Required role: admin, User role:', role, 'Is authorized:', isAuth);
+            setIsAuthorized(isAuth);
           } else {
             setIsAuthorized(true); // For other roles, implement as needed
           }
         } catch (dbError) {
+          console.error('Database error when fetching user:', dbError);
           // If user doesn't exist in database, default to 'user' role
           setUserRole('user');
           setIsAuthorized(false); // Admin pages require user to be in database with admin role

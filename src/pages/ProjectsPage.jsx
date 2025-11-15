@@ -20,13 +20,13 @@ const defaultColors = { border: 'border-slate-400', bg: 'bg-slate-50', text: 'te
 
 const ProjectCard = ({ project }) => {
   const colors = departmentColors[project.department] || defaultColors;
-  
+
   return (
-    <div className={`group bg-white rounded-2xl border-2 ${colors.border} border-opacity-20 hover:border-opacity-100 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col`}>
+    <div className={`group bg-black rounded-2xl border-2 ${colors.border} border-opacity-20 hover:border-opacity-100 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col`}>
       {/* Top accent bar */}
       <div className={`h-2 ${colors.icon}`}></div>
-      
-      <div className="p-6 flex-grow">
+
+      <div className="p-16 mt-32 flex-grow">
         {/* Department badge */}
         <div className="flex justify-between items-start mb-4">
           <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 ${colors.bg} ${colors.text} rounded-lg text-xs font-bold uppercase tracking-wide`}>
@@ -72,8 +72,8 @@ const ProjectCard = ({ project }) => {
 
       {/* Footer */}
       <div className="p-4 bg-slate-50 border-t border-slate-100">
-        <Link 
-          to={`/projects/${project.id}`} 
+        <Link
+          to={`/projects/${project.id}`}
           className={`w-full flex items-center justify-center gap-2 ${colors.icon} text-white font-bold px-4 py-3 rounded-xl hover:shadow-xl transition-all duration-300 group-hover:scale-[1.02]`}
         >
           <FaEye />
@@ -103,13 +103,13 @@ const ProjectsPage = () => {
         const response = await getAllProjects({
           limit: 100 // Adjust limit as needed
         });
-        
+
         // Appwrite returns documents with $id as the ID field
-        const fetchedProjects = response.documents.map(doc => ({ 
-          id: doc.$id, 
-          ...doc 
+        const fetchedProjects = response.documents.map(doc => ({
+          id: doc.$id,
+          ...doc
         }));
-        
+
         setAllProjects(fetchedProjects);
       } catch (error) {
         console.error("Error fetching projects: ", error);
@@ -157,7 +157,7 @@ const ProjectsPage = () => {
           <svg width="100%" height="100%">
             <defs>
               <pattern id="projects-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-                <circle cx="20" cy="20" r="1" fill="white"/>
+                <circle cx="20" cy="20" r="1" fill="white" />
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#projects-pattern)" />
@@ -177,7 +177,7 @@ const ProjectsPage = () => {
               Explore Our Project Library
             </h1>
             <p className="text-xl text-indigo-100 max-w-3xl mx-auto leading-relaxed">
-              Discover comprehensive academic research materials from top institutions across Nigeria. 
+              Discover comprehensive academic research materials from top institutions across Nigeria.
               All projects are peer-reviewed and verified for quality.
             </p>
 
@@ -216,7 +216,7 @@ const ProjectsPage = () => {
                     Departments
                   </h3>
                 </div>
-                
+
                 <div className="p-6">
                   <div className="mb-4 relative">
                     <input
@@ -228,16 +228,16 @@ const ProjectsPage = () => {
                     />
                     <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
                   </div>
-                  
+
                   <div className="max-h-96 overflow-y-auto space-y-1 custom-scrollbar">
                     {filteredDepartments.map(dept => {
                       const colors = departmentColors[dept] || defaultColors;
                       const count = allProjects.filter(p => p.department === dept).length;
-                      
+
                       return (
-                        <Link 
+                        <Link
                           key={dept}
-                          to={`/department/${encodeURIComponent(dept)}`} 
+                          to={`/department/${encodeURIComponent(dept)}`}
                           className={`flex justify-between items-center font-semibold text-slate-700 hover:${colors.text} hover:${colors.bg} p-3 rounded-xl transition-all duration-200 group`}
                         >
                           <span className="flex items-center gap-2">
@@ -252,10 +252,10 @@ const ProjectsPage = () => {
                       );
                     })}
                   </div>
-                  
+
                   <div className="mt-6 pt-6 border-t border-slate-200">
-                    <Link 
-                      to="/departments" 
+                    <Link
+                      to="/departments"
                       className="flex items-center justify-center gap-2 font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 py-2 rounded-lg transition-colors"
                     >
                       <span>View All Departments</span>
@@ -313,9 +313,9 @@ const ProjectsPage = () => {
                 />
                 <div className="space-y-1 max-h-64 overflow-y-auto">
                   {filteredDepartments.map(dept => (
-                    <Link 
+                    <Link
                       key={dept}
-                      to={`/department/${encodeURIComponent(dept)}`} 
+                      to={`/department/${encodeURIComponent(dept)}`}
                       className="flex justify-between items-center p-3 rounded-lg hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 transition-colors"
                       onClick={() => setShowFilters(false)}
                     >
@@ -383,7 +383,7 @@ const ProjectsPage = () => {
                 </div>
                 <h3 className="text-2xl font-bold text-slate-900 mb-2">No Projects Found</h3>
                 <p className="text-slate-600 mb-6 max-w-md mx-auto">
-                  {searchTerm 
+                  {searchTerm
                     ? `We couldn't find any projects matching "${searchTerm}". Try adjusting your search.`
                     : 'No projects available at the moment. Please check back later.'}
                 </p>

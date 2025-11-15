@@ -1,55 +1,22 @@
 
-import React from 'react';
-import { NavLink, Outlet, Link } from 'react-router-dom';
-import { FaTachometerAlt, FaFolder, FaUsers, FaSignOutAlt, FaFolderOpen, FaFileInvoiceDollar, FaComments } from 'react-icons/fa';
-import { authService } from '../../appwrite/auth';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Outlet } from 'react-router-dom';
+import AdminSidebar from './AdminSidebar';
 
+const AdminLayout = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-const AdminSidebar = () => {
-  const navigate = useNavigate();
-  const linkClasses = "flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-colors";
-  const activeLinkClasses = "bg-gray-700 text-white";
-
-  const handleLogout = async () => {
-    try {
-      await authService.logout();
-      navigate('/');
-    } catch (error) {
-      console.error("Error signing out: ", error);
-    }
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
   };
 
   return (
-    <aside className="w-64 bg-gray-800 text-white flex flex-col h-screen">
-      <div className="p-6 border-b border-gray-700">
-        <Link to="/admin" className="flex items-center gap-3">
-          <FaFolderOpen className="h-8 w-8 text-indigo-400" />
-          <span className="text-xl font-bold">Project Dock Admin</span>
-        </Link>
-      </div>
-      <nav className="flex-grow p-4 space-y-2">
-        <NavLink to="/admin" end className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}><FaTachometerAlt /><span>Dashboard</span></NavLink>
-        <NavLink to="/admin/orders" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}><FaFileInvoiceDollar /><span>Manage Orders</span></NavLink>
-        <NavLink to="/admin/projects" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}><FaFolder /><span>Manage Projects</span></NavLink>
-        <NavLink to="/admin/projects/ai-generate" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}><FaFolderOpen /><span>AI Generate Projects</span></NavLink>
-        <NavLink to="/admin/reviews" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}><FaComments /><span>Manage Reviews</span></NavLink>
-        <NavLink to="/admin/users" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}><FaUsers /><span>Manage Users</span></NavLink>
-      </nav>
-      <div className="p-4 border-t border-gray-700">
-        <button onClick={handleLogout} className={`${linkClasses} w-full`}><FaSignOutAlt /><span>Back to Main Site</span></button>
-      </div>
-    </aside>
-  );
-}
-
-
-const AdminLayout = () => {
-  return (
     <div className="flex bg-gray-100 min-h-screen" style={{ fontFamily: "'Inter', sans-serif" }}>
-      <AdminSidebar />
-      <main className="flex-grow p-8 overflow-y-auto">
-        <Outlet />
+      <AdminSidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      <main className={`flex-grow p-4 md:p-8 overflow-y-auto transition-all duration-300 ${isSidebarOpen ? 'lg:ml-0' : 'lg:ml-0'}`}>
+        <div className="max-w-full">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

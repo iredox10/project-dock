@@ -108,25 +108,25 @@ const CleanNavbar = () => {
           <div className="hidden md:flex items-center gap-6">
             <NavLink
               to="/"
-              className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}
+              className={({ isActive }) => isActive ? `${navLinkClasses} ${activeNavLinkClasses}` : navLinkClasses}
             >
               Home
             </NavLink>
             <NavLink
               to="/projects"
-              className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}
+              className={({ isActive }) => isActive ? `${navLinkClasses} ${activeNavLinkClasses}` : navLinkClasses}
             >
               Projects
             </NavLink>
             <NavLink
               to="/departments"
-              className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}
+              className={({ isActive }) => isActive ? `${navLinkClasses} ${activeNavLinkClasses}` : navLinkClasses}
             >
               Departments
             </NavLink>
             <NavLink
               to="/contact"
-              className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}
+              className={({ isActive }) => isActive ? `${navLinkClasses} ${activeNavLinkClasses}` : navLinkClasses}
             >
               Contact
             </NavLink>
@@ -224,28 +224,28 @@ const CleanNavbar = () => {
           <div className="px-4 py-2 space-y-1">
             <NavLink
               to="/"
-              className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}
+              className={({ isActive }) => isActive ? `${navLinkClasses} ${activeNavLinkClasses}` : navLinkClasses}
               onClick={() => setIsMenuOpen(false)}
             >
               Home
             </NavLink>
             <NavLink
               to="/projects"
-              className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}
+              className={({ isActive }) => isActive ? `${navLinkClasses} ${activeNavLinkClasses}` : navLinkClasses}
               onClick={() => setIsMenuOpen(false)}
             >
               Projects
             </NavLink>
             <NavLink
               to="/departments"
-              className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}
+              className={({ isActive }) => isActive ? `${navLinkClasses} ${activeNavLinkClasses}` : navLinkClasses}
               onClick={() => setIsMenuOpen(false)}
             >
               Departments
             </NavLink>
             <NavLink
               to="/contact"
-              className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}
+              className={({ isActive }) => isActive ? `${navLinkClasses} ${activeNavLinkClasses}` : navLinkClasses}
               onClick={() => setIsMenuOpen(false)}
             >
               Contact
@@ -261,7 +261,7 @@ const CleanNavbar = () => {
                 
                 <Link
                   to="/dashboard"
-                  className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}
+                  className={navLinkClasses}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <FaTachometerAlt className="text-gray-500" />
@@ -269,7 +269,7 @@ const CleanNavbar = () => {
                 </Link>
                 <Link
                   to="/dashboard/my-library"
-                  className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}
+                  className={navLinkClasses}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <FaFolderOpen className="text-gray-500" />
@@ -279,7 +279,7 @@ const CleanNavbar = () => {
                 {user?.role === 'admin' && (
                   <Link
                     to="/admin"
-                    className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}
+                    className={navLinkClasses}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <FaTachometerAlt className="text-gray-500" />

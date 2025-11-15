@@ -1,9 +1,8 @@
-
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Modal, useModal } from '../../components/Modal';
 import { FaSearch, FaEye, FaUserSlash, FaTrash, FaSpinner } from 'react-icons/fa';
-import { db } from '../../firebase/config'; // Your Firebase config
-import { collection, getDocs, deleteDoc, doc, updateDoc, query, orderBy, limit, startAfter } from 'firebase/firestore';
+import { databases, DATABASE_ID, COLLECTIONS } from '../../appwrite/config'; // Using Appwrite config
+import { Query } from 'appwrite';
 
 // Reusable Confirmation Modal - Enhanced for different actions
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, confirmText, confirmColor = 'bg-red-600' }) => {
@@ -40,14 +39,14 @@ export const UsersAdminPage = () => {
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, orderBy('createdAt', 'desc'), limit(USERS_PER_PAGE));
-      const docSnapshots = await getDocs(q);
-      const fetchedUsers = docSnapshots.docs.map(d => ({ id: d.id, ...d.data() }));
-      const lastDoc = docSnapshots.docs[docSnapshots.docs.length - 1];
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.USERS,
+        [Query.orderDesc('$createdAt'), Query.limit(USERS_PER_PAGE)]
+      );
+      const fetchedUsers = response.documents.map(d => ({ id: d.$id, ...d }));
       setUsers(fetchedUsers);
-      setLastVisible(lastDoc);
-      setHasMore(fetchedUsers.length === USERS_PER_PAGE);
+      setHasMore(response.documents.length === USERS_PER_PAGE);
     } catch (error) {
       console.error("Error fetching users: ", error);
     } finally {
@@ -60,17 +59,20 @@ export const UsersAdminPage = () => {
   }, [fetchUsers]);
 
   const fetchMoreUsers = async () => {
-    if (!hasMore || !lastVisible) return;
+    if (!hasMore) return;
     setIsMoreLoading(true);
     try {
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, orderBy('createdAt', 'desc'), startAfter(lastVisible), limit(USERS_PER_PAGE));
-      const docSnapshots = await getDocs(q);
-      const newUsers = docSnapshots.docs.map(d => ({ id: d.id, ...d.data() }));
-      const lastDoc = docSnapshots.docs[docSnapshots.docs.length - 1];
+      // For Appwrite, we need to use offset for pagination since cursor-based pagination
+      // requires cursor values which are not readily available from the documents
+      const offset = users.length;
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.USERS,
+        [Query.orderDesc('$createdAt'), Query.limit(USERS_PER_PAGE), Query.offset(offset)]
+      );
+      const newUsers = response.documents.map(d => ({ id: d.$id, ...d }));
       setUsers(prev => [...prev, ...newUsers]);
-      setLastVisible(lastDoc);
-      setHasMore(newUsers.length === USERS_PER_PAGE);
+      setHasMore(response.documents.length === USERS_PER_PAGE);
     } catch (error) {
       console.error("Error fetching more users: ", error);
     } finally {
@@ -86,20 +88,29 @@ export const UsersAdminPage = () => {
     if (!user) return;
 
     if (action === 'delete') {
-      // NOTE: This deletes the user's data from Firestore, but NOT from Firebase Authentication.
-      // A Cloud Function is required to safely delete a user from Firebase Auth.
+      // NOTE: This deletes the user's data from Appwrite database, but NOT from Appwrite Authentication.
+      // A Cloud Function is required to safely delete a user from Appwrite Auth.
       try {
-        await deleteDoc(doc(db, 'users', user.id));
+        await databases.deleteDocument(
+          DATABASE_ID,
+          COLLECTIONS.USERS,
+          user.id
+        );
         setUsers(prev => prev.filter(u => u.id !== user.id));
       } catch (error) { console.error("Error deleting user: ", error); }
     }
 
     if (action === 'suspend') {
-      // NOTE: This only changes the user's status in Firestore.
-      // A Cloud Function is required to truly disable a user in Firebase Auth.
+      // NOTE: This only changes the user's status in Appwrite database.
+      // A Cloud Function is required to truly disable a user in Appwrite Auth.
       try {
         const newStatus = user.status === 'Active' ? 'Suspended' : 'Active';
-        await updateDoc(doc(db, 'users', user.id), { status: newStatus });
+        await databases.updateDocument(
+          DATABASE_ID,
+          COLLECTIONS.USERS,
+          user.id,
+          { status: newStatus }
+        );
         setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: newStatus } : u));
       } catch (error) { console.error("Error suspending user: ", error); }
     }
@@ -114,41 +125,146 @@ export const UsersAdminPage = () => {
   }, [users, searchTerm]);
 
   return (
-    <div>
+    <div className="w-full">
       <Modal {...modal} onClose={closeNotificationModal} />
-      
-      <h1 className="text-4xl font-extrabold text-gray-900 mb-6">Manage Users</h1>
 
-      <div className="bg-white p-6 rounded-xl shadow-lg">
-        <div className="mb-4 relative"><input type="text" placeholder="Search loaded users by name or email..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full p-3 pl-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" /><FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" /></div>
+      <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-6">Manage Users</h1>
 
-        <div className="overflow-x-auto">
-          {isLoading ? <div className="flex justify-center items-center py-20"><FaSpinner className="animate-spin text-4xl text-indigo-600" /></div> : (
-            <table className="w-full text-left">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="p-3 font-semibold">User Name</th><th className="p-3 font-semibold">Email</th><th className="p-3 font-semibold">Registration Date</th><th className="p-3 font-semibold">Status</th><th className="p-3 font-semibold text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.map(user => (
-                  <tr key={user.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3 font-medium text-gray-800">{user.name}</td>
-                    <td className="p-3 text-gray-600">{user.email}</td>
-                    <td className="p-3 text-gray-600">{user.createdAt?.toDate().toLocaleDateString() || 'N/A'}</td>
-                    <td className="p-3"><span className={`px-3 py-1 text-xs font-bold rounded-full ${user.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{user.status}</span></td>
-                    <td className="p-3 text-center space-x-4">
-                      <button onClick={() => showModal('Feature Info', 'This would navigate to a user activity page.', 'info')} className="text-gray-500 hover:text-gray-700" title="View Activity"><FaEye /></button>
-                      <button onClick={() => openModal('suspend', user)} className="text-yellow-500 hover:text-yellow-700" title={user.status === 'Active' ? 'Suspend User' : 'Activate User'}><FaUserSlash /></button>
-                      <button onClick={() => openModal('delete', user)} className="text-red-500 hover:text-red-700" title="Delete User"><FaTrash /></button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+      <div className="bg-white p-4 rounded-xl shadow-lg">
+        <div className="mb-4 relative">
+          <input 
+            type="text" 
+            placeholder="Search loaded users by name or email..." 
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)} 
+            className="w-full p-3 pl-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" 
+          />
+          <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         </div>
-        {hasMore && !isLoading && <div className="text-center mt-6"><button onClick={fetchMoreUsers} disabled={isMoreLoading} className="bg-gray-200 text-gray-800 font-bold px-6 py-2 rounded-lg hover:bg-gray-300 disabled:opacity-50">{isMoreLoading ? 'Loading...' : 'Load More'}</button></div>}
+
+        {/* Mobile view for users */}
+        <div className="md:hidden">
+          {isLoading ? 
+            <div className="flex justify-center items-center py-10">
+              <FaSpinner className="animate-spin text-3xl text-indigo-600" />
+            </div> 
+            : (
+              <div className="space-y-4">
+                {filteredUsers.map(user => (
+                  <div key={user.id} className="border rounded-lg p-4 bg-gray-50">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h3 className="font-bold text-gray-800">{user.name}</h3>
+                        <p className="text-sm text-gray-600 mt-1">{user.email}</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Registered: {user.createdAt?.toDate().toLocaleDateString() || 'N/A'}
+                        </p>
+                        <div className="mt-2">
+                          <span className={`px-3 py-1 text-xs font-bold rounded-full ${user.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                            {user.status}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2 ml-2">
+                        <button 
+                          onClick={() => showModal('Feature Info', 'This would navigate to a user activity page.', 'info')} 
+                          className="text-gray-500 hover:text-gray-700 text-sm" 
+                          title="View Activity"
+                        >
+                          <FaEye className="inline mr-1" /> View
+                        </button>
+                        <button 
+                          onClick={() => openModal('suspend', user)} 
+                          className={`text-sm ${user.status === 'Active' ? 'text-yellow-500 hover:text-yellow-700' : 'text-green-500 hover:text-green-700'}`} 
+                          title={user.status === 'Active' ? 'Suspend User' : 'Activate User'}
+                        >
+                          <FaUserSlash className="inline mr-1" /> {user.status === 'Active' ? 'Suspend' : 'Activate'}
+                        </button>
+                        <button 
+                          onClick={() => openModal('delete', user)} 
+                          className="text-red-500 hover:text-red-700 text-sm" 
+                          title="Delete User"
+                        >
+                          <FaTrash className="inline mr-1" /> Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          }
+        </div>
+
+        {/* Desktop view for users */}
+        <div className="hidden md:block overflow-x-auto">
+          {isLoading ? 
+            <div className="flex justify-center items-center py-20">
+              <FaSpinner className="animate-spin text-4xl text-indigo-600" />
+            </div> 
+            : (
+              <table className="w-full text-left">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="p-3 font-semibold">User Name</th>
+                    <th className="p-3 font-semibold">Email</th>
+                    <th className="p-3 font-semibold">Registration Date</th>
+                    <th className="p-3 font-semibold">Status</th>
+                    <th className="p-3 font-semibold text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsers.map(user => (
+                    <tr key={user.id} className="border-b hover:bg-gray-50">
+                      <td className="p-3 font-medium text-gray-800">{user.name}</td>
+                      <td className="p-3 text-gray-600">{user.email}</td>
+                      <td className="p-3 text-gray-600">{user.createdAt?.toDate().toLocaleDateString() || 'N/A'}</td>
+                      <td className="p-3">
+                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${user.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                          {user.status}
+                        </span>
+                      </td>
+                      <td className="p-3 text-center space-x-4">
+                        <button 
+                          onClick={() => showModal('Feature Info', 'This would navigate to a user activity page.', 'info')} 
+                          className="text-gray-500 hover:text-gray-700" 
+                          title="View Activity"
+                        >
+                          <FaEye />
+                        </button>
+                        <button 
+                          onClick={() => openModal('suspend', user)} 
+                          className={`${user.status === 'Active' ? 'text-yellow-500 hover:text-yellow-700' : 'text-green-500 hover:text-green-700'}`} 
+                          title={user.status === 'Active' ? 'Suspend User' : 'Activate User'}
+                        >
+                          <FaUserSlash />
+                        </button>
+                        <button 
+                          onClick={() => openModal('delete', user)} 
+                          className="text-red-500 hover:text-red-700" 
+                          title="Delete User"
+                        >
+                          <FaTrash />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )
+          }
+        </div>
+        {hasMore && !isLoading && 
+          <div className="text-center mt-6">
+            <button 
+              onClick={fetchMoreUsers} 
+              disabled={isMoreLoading} 
+              className="bg-gray-200 text-gray-800 font-bold px-6 py-2 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+            >
+              {isMoreLoading ? 'Loading...' : 'Load More'}
+            </button>
+          </div>
+        }
       </div>
       <ConfirmationModal
         isOpen={modalState.isOpen}

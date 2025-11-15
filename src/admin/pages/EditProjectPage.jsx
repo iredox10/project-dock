@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { FaArrowLeft, FaSave, FaBook, FaInfoCircle, FaDollarSign, FaFileAlt, FaSpinner } from 'react-icons/fa';
@@ -56,7 +55,7 @@ export const EditProjectPage = () => {
 
     try {
       const projectData = {
-        ...formData, // Include all form data  
+        ...formData, // Include all form data
         department: formData.department,
         abstractFileId: formData.abstract, // Map 'abstract' to 'abstractFileId' field in your db
         chapterOneFileId: formData.chapterOne, // Map 'chapterOne' to 'chapterOneFileId' field in your db
@@ -69,7 +68,7 @@ export const EditProjectPage = () => {
 
       await updateProject(projectId, projectData);
 
-      showModal("Success!", `Project "${formData.title}" has been updated successfully!`, "success"); 
+      showModal("Success!", `Project "${formData.title}" has been updated successfully!`, "success");
       setTimeout(() => navigate("/admin/projects"), 2000);
 
     } catch (error) {
@@ -85,67 +84,164 @@ export const EditProjectPage = () => {
   }
 
   return (
-    <div>
+    <div className="w-full">
       <Modal {...modal} onClose={closeModal} />
-      
+
       <div className="mb-6">
         <Link to="/admin/projects" className="flex items-center gap-2 text-gray-600 hover:text-indigo-600 font-semibold">
           <FaArrowLeft />
           Back to Manage Projects
         </Link>
       </div>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-extrabold text-gray-900">Edit Project</h1>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">Edit Project</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content Column */}
-        <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white p-8 rounded-xl shadow-lg">
-            <h3 className="text-xl font-bold mb-6 text-gray-700 flex items-center gap-2"><FaBook /> Project Content</h3>
-            <div className="space-y-6">
-              <textarea name="abstract" value={formData.abstract} onChange={handleChange} placeholder="Project Abstract..." rows="6" className="w-full p-3 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-400" required></textarea>
-              <textarea name="chapterOne" value={formData.chapterOne} onChange={handleChange} placeholder="Chapter One Preview..." rows="10" className="w-full p-3 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-400" required></textarea>
-            </div>
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6">
+        <div className="bg-white p-6 rounded-xl shadow-lg">
+          <h3 className="text-xl font-bold mb-4 text-gray-700 flex items-center gap-2"><FaBook /> Project Content</h3>
+          <div className="space-y-4">
+            <textarea 
+              name="abstract" 
+              value={formData.abstract} 
+              onChange={handleChange} 
+              placeholder="Project Abstract..." 
+              rows="4" 
+              className="w-full p-3 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-400" 
+              required
+            ></textarea>
+            <textarea 
+              name="chapterOne" 
+              value={formData.chapterOne} 
+              onChange={handleChange} 
+              placeholder="Chapter One Preview..." 
+              rows="6" 
+              className="w-full p-3 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-400" 
+              required
+            ></textarea>
           </div>
         </div>
 
-        {/* Sidebar Column */}
-        <div className="lg:col-span-1 space-y-8">
-          <div className="bg-white p-8 rounded-xl shadow-lg">
-            <h3 className="text-xl font-bold mb-6 text-gray-700 flex items-center gap-2"><FaInfoCircle /> Basic Information</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white p-6 rounded-xl shadow-lg">
+            <h3 className="text-xl font-bold mb-4 text-gray-700 flex items-center gap-2"><FaInfoCircle /> Basic Information</h3>
             <div className="space-y-4">
-              <input type="text" name="title" value={formData.title} onChange={handleChange} placeholder="Project Title" className="w-full p-3 border rounded-lg" required />
-              <input type="text" name="author" value={formData.author} onChange={handleChange} placeholder="Author Name" className="w-full p-3 border rounded-lg" required />
-              <input type="text" name="department" value={formData.department} onChange={handleChange} placeholder="Department" className="w-full p-3 border rounded-lg" required />
-              <select name="level" value={formData.level} onChange={handleChange} className="w-full p-3 border rounded-lg bg-white">
-                <option>BSc</option> <option>MSc</option> <option>HND</option> <option>ND</option><option>PhD</option>
+              <input 
+                type="text" 
+                name="title" 
+                value={formData.title} 
+                onChange={handleChange} 
+                placeholder="Project Title" 
+                className="w-full p-3 border rounded-lg" 
+                required 
+              />
+              <input 
+                type="text" 
+                name="author" 
+                value={formData.author} 
+                onChange={handleChange} 
+                placeholder="Author Name" 
+                className="w-full p-3 border rounded-lg" 
+                required 
+              />
+              <input 
+                type="text" 
+                name="department" 
+                value={formData.department} 
+                onChange={handleChange} 
+                placeholder="Department" 
+                className="w-full p-3 border rounded-lg" 
+                required 
+              />
+              <select 
+                name="level" 
+                value={formData.level} 
+                onChange={handleChange} 
+                className="w-full p-3 border rounded-lg bg-white"
+              >
+                <option>BSc</option> 
+                <option>MSc</option> 
+                <option>HND</option> 
+                <option>ND</option>
+                <option>PhD</option>
               </select>
-              <input type="number" name="year" value={formData.year} onChange={handleChange} placeholder="Year" className="w-full p-3 border rounded-lg" required />
+              <input 
+                type="number" 
+                name="year" 
+                value={formData.year} 
+                onChange={handleChange} 
+                placeholder="Year" 
+                className="w-full p-3 border rounded-lg" 
+                required 
+              />
             </div>
           </div>
-          <div className="bg-white p-8 rounded-xl shadow-lg">
-            <h3 className="text-xl font-bold mb-6 text-gray-700 flex items-center gap-2"><FaDollarSign /> Pricing & Details</h3>
+          
+          <div className="bg-white p-6 rounded-xl shadow-lg">
+            <h3 className="text-xl font-bold mb-4 text-gray-700 flex items-center gap-2"><FaDollarSign /> Pricing & Details</h3>
             <div className="space-y-4">
-              <input type="number" name="priceNGN" value={formData.priceNGN} onChange={handleChange} placeholder="Price (NGN)" className="w-full p-3 border rounded-lg" required />
-              <input type="number" name="pages" value={formData.pages} onChange={handleChange} placeholder="Number of Pages" className="w-full p-3 border rounded-lg" />
-              <input type="text" name="fileSize" value={formData.fileSize} onChange={handleChange} placeholder="File Size (e.g., 2.5 MB)" className="w-full p-3 border rounded-lg" />
-              <input type="text" name="chapters" value={formData.chapters} onChange={handleChange} placeholder="Chapters (e.g., 1-5)" className="w-full p-3 border rounded-lg" />
+              <input 
+                type="number" 
+                name="priceNGN" 
+                value={formData.priceNGN} 
+                onChange={handleChange} 
+                placeholder="Price (NGN)" 
+                className="w-full p-3 border rounded-lg" 
+                required 
+              />
+              <input 
+                type="number" 
+                name="pages" 
+                value={formData.pages} 
+                onChange={handleChange} 
+                placeholder="Number of Pages" 
+                className="w-full p-3 border rounded-lg" 
+              />
+              <input 
+                type="text" 
+                name="fileSize" 
+                value={formData.fileSize} 
+                onChange={handleChange} 
+                placeholder="File Size (e.g., 2.5 MB)" 
+                className="w-full p-3 border rounded-lg" 
+              />
+              <input 
+                type="text" 
+                name="chapters" 
+                value={formData.chapters} 
+                onChange={handleChange} 
+                placeholder="Chapters (e.g., 1-5)" 
+                className="w-full p-3 border rounded-lg" 
+              />
+              <input 
+                type="text" 
+                name="formats" 
+                value={formData.formats} 
+                onChange={handleChange} 
+                placeholder="Formats (e.g., PDF, DOCX)" 
+                className="w-full p-3 border rounded-lg" 
+              />
+              <input 
+                type="text" 
+                name="includes" 
+                value={formData.includes} 
+                onChange={handleChange} 
+                placeholder="Included items (e.g., References, Questionnaire)" 
+                className="w-full p-3 border rounded-lg" 
+              />
             </div>
           </div>
-          <div className="bg-white p-8 rounded-xl shadow-lg">
-            <h3 className="text-xl font-bold mb-6 text-gray-700 flex items-center gap-2"><FaFileAlt /> Formats & Included Items</h3>
-            <div className="space-y-4">
-              <input type="text" name="formats" value={formData.formats} onChange={handleChange} placeholder="Formats (e.g., PDF, DOCX)" className="w-full p-3 border rounded-lg" />
-              <input type="text" name="includes" value={formData.includes} onChange={handleChange} placeholder="Included items (e.g., References, Questionnaire)" className="w-full p-3 border rounded-lg" />
-            </div>
-          </div>
-          <div>
-            <button type="submit" disabled={isSaving} className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold px-6 py-4 rounded-lg hover:bg-indigo-700 transition-all duration-300 disabled:bg-gray-400">
-              {isSaving ? <FaSpinner className="animate-spin" /> : <FaSave />}
-              <span>{isSaving ? 'Saving Changes...' : 'Save & Publish Changes'}</span>
-            </button>
-          </div>
+        </div>
+        
+        <div className="flex justify-center">
+          <button 
+            type="submit" 
+            disabled={isSaving} 
+            className="w-full md:w-auto flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-indigo-700 transition-all duration-300 disabled:bg-gray-400"
+          >
+            {isSaving ? <FaSpinner className="animate-spin" /> : <FaSave />}
+            <span>{isSaving ? 'Saving Changes...' : 'Save & Publish Changes'}</span>
+          </button>
         </div>
       </form>
     </div>

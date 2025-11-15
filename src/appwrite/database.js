@@ -212,14 +212,22 @@ export const usersService = {
 
   // Get user by ID
   async getUserById(userId) {
+    console.log('Attempting to get user with ID:', userId, 'from database:', DATABASE_ID, 'collection:', COLLECTIONS.USERS);
     try {
       const document = await databases.getDocument(
         DATABASE_ID,
         COLLECTIONS.USERS,
         userId
       );
+      console.log('Successfully retrieved user document:', document);
       return document;
     } catch (error) {
+      console.log('Error occurred when fetching user:', error);
+      // If document not found, return null instead of throwing
+      if (error.code === 404 || error.message?.includes('not be found')) {
+        console.log('User document not found in database');
+        return null;
+      }
       console.error('Error getting user:', error);
       throw new Error(error.message);
     }

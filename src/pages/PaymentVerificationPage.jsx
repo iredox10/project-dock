@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { FaSpinner, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
-import { verifyPayment } from '../api/opayService';
+import { verifyPaystackPayment } from '../api/paystackService';
 import { getProjectById, getUserById, createUser, updateUser, createOrder, updateProject } from '../api/projectServices';
 import { authService } from '../appwrite/auth';
 import { Query } from 'appwrite';
@@ -20,7 +20,6 @@ const PaymentVerificationPage = () => {
     try {
       // Get payment details from URL or sessionStorage
       const reference = searchParams.get('reference') || sessionStorage.getItem('payment_reference');
-      const orderNo = searchParams.get('orderNo') || sessionStorage.getItem('payment_orderNo');
       const projectId = searchParams.get('projectId') || sessionStorage.getItem('payment_projectId');
 
       if (!reference || !projectId) {
@@ -29,8 +28,8 @@ const PaymentVerificationPage = () => {
         return;
       }
 
-      // Verify with OPay
-      const verification = await verifyPayment(reference, orderNo);
+      // Verify with Paystack
+      const verification = await verifyPaystackPayment(reference);
 
       if (verification.isPaid) {
         // Payment successful
@@ -44,7 +43,7 @@ const PaymentVerificationPage = () => {
         // Get project details
         const project = await getProjectById(projectId);
 
-        // Create order record
+        // Create order record matching the existing schema
         await createOrder({
           userId: user.$id,
           projectId: projectId,
@@ -52,35 +51,12 @@ const PaymentVerificationPage = () => {
           amount: project.priceNGN,
           status: 'completed',
           paymentId: reference,
-          transactionId: orderNo,
-          quantity: 1 // Add quantity field to match schema (defaults to 1)
+          transactionId: reference,
+          quantity: 1
         });
 
-        // Update user's purchased projects - Check if field exists in schema
-        try {
-          const userData = await getUserById(user.$id);
-          
-          // Check if purchasedProjects field exists in the user document
-          if (userData.hasOwnProperty('purchasedProjects')) {
-            // If purchasedProjects field exists, update it
-            const purchasedProjects = userData.purchasedProjects || [];
-            
-            if (!purchasedProjects.some(p => p === projectId)) { // Use array.some() instead of includes()
-              await updateUser(user.$id, {
-                ...userData,
-                purchasedProjects: [...purchasedProjects, projectId]
-              });
-            }
-          } else {
-            // If purchasedProjects field doesn't exist, we'll skip updating user
-            // (The project purchase is already recorded in the orders collection)
-            console.log("purchasedProjects field doesn't exist in user schema, purchase recorded in orders collection.");
-          }
-        } catch (userError) {
-          // If there's an error fetching user data, just continue
-          // (The purchase is already recorded in the orders collection)
-          console.log("User may not exist in users collection, purchase recorded in orders collection.");
-        }
+        // Note: User purchases are tracked in the orders collection
+        // No need to update user document as it doesn't have purchasedProjects field
 
         // Optionally update project download count if the field exists
         try {
@@ -101,7 +77,6 @@ const PaymentVerificationPage = () => {
 
         // Clear session storage
         sessionStorage.removeItem('payment_reference');
-        sessionStorage.removeItem('payment_orderNo');
         sessionStorage.removeItem('payment_projectId');
 
         setStatus('success');

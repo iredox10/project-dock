@@ -137,8 +137,8 @@ export const AIProjectUploadPage = () => {
 
       const successCount = batchResults.filter(r => r.success).length;
       showModal(
-        'Batch Processing Complete', 
-        `Successfully processed ${successCount} out of ${batchResults.length} files.`, 
+        'Batch Processing Complete',
+        `Successfully processed ${successCount} out of ${batchResults.length} files.`,
         successCount > 0 ? 'success' : 'error'
       );
     } catch (error) {
@@ -167,11 +167,11 @@ export const AIProjectUploadPage = () => {
 
     try {
       console.log('Starting save process...', { extractedData, originalFile });
-      
+
       // Standardize department name to avoid duplicates
       const standardizedDepartment = await getStandardizedDepartment(extractedData.department);
       console.log('Standardized department:', standardizedDepartment);
-      
+
       const projectData = {
         title: extractedData.title,
         author: extractedData.author,
@@ -182,7 +182,7 @@ export const AIProjectUploadPage = () => {
         year: Number(extractedData.year),
         pages: Number(extractedData.pages) || 0,
         priceNGN: Number(extractedData.priceNGN) || 0,
-        formats: typeof extractedData.formats === 'string' 
+        formats: typeof extractedData.formats === 'string'
           ? extractedData.formats
           : Array.isArray(extractedData.formats) ? extractedData.formats.join(', ') : 'PDF, DOCX',
         includes: typeof extractedData.includes === 'string'
@@ -217,14 +217,14 @@ export const AIProjectUploadPage = () => {
       console.log('Project updated with file info:', updatedProject);
 
       showModal('Project Saved!', `Project "${extractedData.title}" saved successfully with file uploaded to storage!`, 'success');
-      
+
       // Reset form after a short delay
       setTimeout(() => {
         setExtractedData(null);
         setSelectedFiles([]);
         setOriginalFile(null);
       }, 2000);
-      
+
     } catch (error) {
       console.error('Error saving project:', error);
       console.error('Error details:', {
@@ -241,7 +241,7 @@ export const AIProjectUploadPage = () => {
 
   const handleSaveBatchResults = async () => {
     const successfulResults = results.filter(r => r.success);
-    
+
     if (successfulResults.length === 0) {
       showModal('No Projects to Save', 'No successful extractions to save', 'warning');
       return;
@@ -251,11 +251,11 @@ export const AIProjectUploadPage = () => {
 
     try {
       let savedCount = 0;
-      
+
       for (const result of successfulResults) {
         // Standardize department name to avoid duplicates
         const standardizedDepartment = await getStandardizedDepartment(result.data.department);
-        
+
         const projectData = {
           title: result.data.title,
           author: result.data.author,
@@ -309,11 +309,11 @@ export const AIProjectUploadPage = () => {
       }
 
       showModal('Batch Save Complete!', `Successfully saved ${savedCount} projects to database with files uploaded!`, 'success');
-      
+
       setTimeout(() => {
         navigate('/admin/projects');
       }, 2000);
-      
+
     } catch (error) {
       console.error('Error saving projects:', error);
       showModal('Save Failed', 'Failed to save projects: ' + error.message, 'error');
@@ -327,15 +327,15 @@ export const AIProjectUploadPage = () => {
   };
 
   return (
-    <div>
-      <Modal 
+    <div className="w-full">
+      <Modal
         isOpen={modal.isOpen}
         onClose={closeModal}
         title={modal.title}
         message={modal.message}
         type={modal.type}
       />
-      
+
       <div className="mb-6">
         <Link to="/admin/projects" className="flex items-center gap-2 text-gray-600 hover:text-indigo-600 font-semibold">
           <FaArrowLeft />
@@ -343,9 +343,9 @@ export const AIProjectUploadPage = () => {
         </Link>
       </div>
 
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
-          <h1 className="text-4xl font-extrabold text-gray-900 flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 flex items-center gap-3">
             <FaRobot className="text-indigo-600" />
             AI Project Extractor
           </h1>
@@ -354,13 +354,13 @@ export const AIProjectUploadPage = () => {
       </div>
 
       {/* Mode Selection */}
-      <div className="bg-white p-6 rounded-xl shadow-lg mb-6">
-        <div className="flex gap-4">
+      <div className="bg-white p-4 rounded-xl shadow-lg mb-6">
+        <div className="flex flex-wrap gap-4">
           <button
             onClick={() => setIsSingleMode(true)}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-              isSingleMode 
-                ? 'bg-indigo-600 text-white' 
+            className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+              isSingleMode
+                ? 'bg-indigo-600 text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
@@ -368,9 +368,9 @@ export const AIProjectUploadPage = () => {
           </button>
           <button
             onClick={() => setIsSingleMode(false)}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-              !isSingleMode 
-                ? 'bg-indigo-600 text-white' 
+            className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+              !isSingleMode
+                ? 'bg-indigo-600 text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
@@ -380,13 +380,13 @@ export const AIProjectUploadPage = () => {
       </div>
 
       {/* File Upload Section */}
-      <div className="bg-white p-8 rounded-xl shadow-lg mb-6">
+      <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg mb-6">
         <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
           <FaFileUpload className="text-indigo-600" />
           Upload Files
         </h3>
-        
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
           <input
             type="file"
             accept=".pdf,.docx"
@@ -400,8 +400,8 @@ export const AIProjectUploadPage = () => {
             htmlFor="fileInput"
             className="cursor-pointer flex flex-col items-center gap-3"
           >
-            <FaFileUpload className="text-5xl text-gray-400" />
-            <span className="text-lg font-semibold text-gray-700">
+            <FaFileUpload className="text-4xl text-gray-400" />
+            <span className="text-base font-semibold text-gray-700">
               Click to select {isSingleMode ? 'a file' : 'files'} (PDF or DOCX)
             </span>
             <span className="text-sm text-gray-500">
@@ -413,9 +413,9 @@ export const AIProjectUploadPage = () => {
         {selectedFiles.length > 0 && (
           <div className="mt-4">
             <p className="font-semibold mb-2">Selected Files ({selectedFiles.length}):</p>
-            <ul className="space-y-1">
+            <ul className="space-y-1 max-h-32 overflow-y-auto">
               {selectedFiles.map((file, idx) => (
-                <li key={idx} className="text-sm text-gray-600">
+                <li key={idx} className="text-sm text-gray-600 truncate">
                   • {file.name} ({(file.size / 1024).toFixed(2)} KB)
                 </li>
               ))}
@@ -424,7 +424,7 @@ export const AIProjectUploadPage = () => {
         )}
 
         {selectedFiles.length > 0 && !isProcessing && !extractedData && (
-          <div className="mt-6 flex gap-4">
+          <div className="mt-6 flex justify-center">
             {isSingleMode ? (
               <button
                 onClick={handleSingleFileExtraction}
@@ -448,18 +448,18 @@ export const AIProjectUploadPage = () => {
 
       {/* Processing Status */}
       {isProcessing && (
-        <div className="bg-blue-50 border border-blue-200 p-6 rounded-xl mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <FaSpinner className="animate-spin text-2xl text-blue-600" />
+        <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <FaSpinner className="animate-spin text-xl text-blue-600" />
             <div>
               <p className="font-semibold text-blue-900">Processing...</p>
-              <p className="text-sm text-blue-700">{currentFile}</p>
+              <p className="text-sm text-blue-700 truncate max-w-full">{currentFile}</p>
             </div>
           </div>
           {progress.total > 0 && (
-            <div className="w-full bg-blue-200 rounded-full h-3">
+            <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
               <div
-                className="bg-blue-600 h-3 rounded-full transition-all duration-300"
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${(progress.current / progress.total) * 100}%` }}
               ></div>
             </div>
@@ -469,10 +469,10 @@ export const AIProjectUploadPage = () => {
 
       {/* Single File: Extracted Data Form */}
       {extractedData && isSingleMode && (
-        <div className="bg-white p-8 rounded-xl shadow-lg mb-6">
-          <h3 className="text-xl font-bold mb-6 text-gray-700">Review & Edit Extracted Data</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg mb-6">
+          <h3 className="text-xl font-bold mb-4 text-gray-700">Review & Edit Extracted Data</h3>
+
+          <div className="grid grid-cols-1 gap-4 mb-6">
             <div>
               <label className="block font-semibold mb-2">Title *</label>
               <input
@@ -502,47 +502,51 @@ export const AIProjectUploadPage = () => {
                 required
               />
             </div>
-            <div>
-              <label className="block font-semibold mb-2">Level</label>
-              <select
-                value={extractedData.level}
-                onChange={(e) => handleFieldChange('level', e.target.value)}
-                className="w-full p-3 border rounded-lg bg-white"
-              >
-                <option>BSc</option>
-                <option>MSc</option>
-                <option>HND</option>
-                <option>ND</option>
-                <option>PhD</option>
-              </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-semibold mb-2">Level</label>
+                <select
+                  value={extractedData.level}
+                  onChange={(e) => handleFieldChange('level', e.target.value)}
+                  className="w-full p-3 border rounded-lg bg-white"
+                >
+                  <option>BSc</option>
+                  <option>MSc</option>
+                  <option>HND</option>
+                  <option>ND</option>
+                  <option>PhD</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-semibold mb-2">Year</label>
+                <input
+                  type="number"
+                  value={extractedData.year}
+                  onChange={(e) => handleFieldChange('year', e.target.value)}
+                  className="w-full p-3 border rounded-lg"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block font-semibold mb-2">Year</label>
-              <input
-                type="number"
-                value={extractedData.year}
-                onChange={(e) => handleFieldChange('year', e.target.value)}
-                className="w-full p-3 border rounded-lg"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold mb-2">Pages</label>
-              <input
-                type="number"
-                value={extractedData.pages}
-                onChange={(e) => handleFieldChange('pages', e.target.value)}
-                className="w-full p-3 border rounded-lg"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold mb-2">Price (NGN)</label>
-              <input
-                type="number"
-                value={extractedData.priceNGN || ''}
-                onChange={(e) => handleFieldChange('priceNGN', e.target.value)}
-                className="w-full p-3 border rounded-lg"
-                placeholder="Enter price"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-semibold mb-2">Pages</label>
+                <input
+                  type="number"
+                  value={extractedData.pages}
+                  onChange={(e) => handleFieldChange('pages', e.target.value)}
+                  className="w-full p-3 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold mb-2">Price (NGN)</label>
+                <input
+                  type="number"
+                  value={extractedData.priceNGN || ''}
+                  onChange={(e) => handleFieldChange('priceNGN', e.target.value)}
+                  className="w-full p-3 border rounded-lg"
+                  placeholder="Enter price"
+                />
+              </div>
             </div>
             <div>
               <label className="block font-semibold mb-2">Chapters</label>
@@ -561,7 +565,7 @@ export const AIProjectUploadPage = () => {
               value={extractedData.abstract}
               onChange={(e) => handleFieldChange('abstract', e.target.value)}
               className="w-full p-3 border rounded-lg"
-              rows="6"
+              rows="4"
             />
           </div>
 
@@ -571,31 +575,33 @@ export const AIProjectUploadPage = () => {
               value={extractedData.chapterOne}
               onChange={(e) => handleFieldChange('chapterOne', e.target.value)}
               className="w-full p-3 border rounded-lg"
-              rows="10"
+              rows="6"
             />
           </div>
 
-          <button
-            onClick={handleSaveExtractedProject}
-            disabled={isProcessing}
-            className="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 flex items-center gap-2 disabled:opacity-50"
-          >
-            <FaPlus />
-            Save Project to Database
-          </button>
+          <div className="flex justify-center">
+            <button
+              onClick={handleSaveExtractedProject}
+              disabled={isProcessing}
+              className="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 flex items-center gap-2 disabled:opacity-50"
+            >
+              <FaPlus />
+              Save Project to Database
+            </button>
+          </div>
         </div>
       )}
 
       {/* Batch Mode: Results */}
       {results.length > 0 && !isSingleMode && (
-        <div className="bg-white p-8 rounded-xl shadow-lg">
-          <div className="flex justify-between items-center mb-6">
+        <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h3 className="text-xl font-bold text-gray-700">Batch Processing Results</h3>
             {results.filter(r => r.success).length > 0 && (
               <button
                 onClick={handleSaveBatchResults}
                 disabled={isProcessing}
-                className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 flex items-center gap-2 disabled:opacity-50"
+                className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 flex items-center gap-2 disabled:opacity-50 text-sm"
               >
                 <FaPlus />
                 Save All Successful ({results.filter(r => r.success).length})
@@ -603,11 +609,11 @@ export const AIProjectUploadPage = () => {
             )}
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-96 overflow-y-auto">
             {results.map((result, idx) => (
               <div
                 key={idx}
-                className={`p-4 rounded-lg border-2 ${
+                className={`p-4 rounded-lg border ${
                   result.success
                     ? 'bg-green-50 border-green-300'
                     : 'bg-red-50 border-red-300'
@@ -620,13 +626,13 @@ export const AIProjectUploadPage = () => {
                     <FaTimesCircle className="text-red-600 text-xl mt-1" />
                   )}
                   <div className="flex-1">
-                    <p className="font-semibold">{result.fileName}</p>
+                    <p className="font-semibold truncate">{result.fileName}</p>
                     {result.success ? (
                       <p className="text-sm text-gray-700 mt-1">
                         Title: {result.data.title || 'N/A'} | Department: {result.data.department || 'N/A'}
                       </p>
                     ) : (
-                      <p className="text-sm text-red-700 mt-1">{result.error}</p>
+                      <p className="text-sm text-red-700 mt-1 truncate">{result.error}</p>
                     )}
                   </div>
                 </div>
@@ -637,7 +643,7 @@ export const AIProjectUploadPage = () => {
       )}
 
       {/* API Key Warning */}
-      <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-xl mt-6">
+      <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl mt-6">
         <p className="text-sm text-yellow-800">
           <strong>Note:</strong> Make sure you have set your <code>VITE_GEMINI_API_KEY</code> in your .env file.
           You can get a free API key from{' '}

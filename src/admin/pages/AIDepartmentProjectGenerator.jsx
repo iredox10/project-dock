@@ -33,7 +33,7 @@ const AIDepartmentProjectGenerator = () => {
     setGeneratedDepartments([]);
     setGeneratedProjects([]);
     setShowResults(false);
-    
+
     try {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       if (!apiKey) {
@@ -51,7 +51,7 @@ const AIDepartmentProjectGenerator = () => {
 
       // Generate Nigerian university departments
       const departmentsPrompt = `
-        Generate a comprehensive list of academic departments found in Nigerian universities and polytechnics. 
+        Generate a comprehensive list of academic departments found in Nigerian universities and polytechnics.
         Focus on departments relevant to the following areas:
         - Engineering (Civil, Mechanical, Electrical, Computer, Chemical, etc.)
         - Sciences (Computer Science, Mathematics, Physics, Chemistry, Biology, Biochemistry, etc.)
@@ -60,7 +60,7 @@ const AIDepartmentProjectGenerator = () => {
         - Arts and Humanities (English, History, Philosophy, etc.)
         - Medicine and Allied Health Sciences
         - Agriculture and Environmental Sciences
-        
+
         Return the response in this exact JSON format:
         {
           "departments": [
@@ -133,12 +133,12 @@ const AIDepartmentProjectGenerator = () => {
 
           // Filter out departments that already exist in the system
           setGenerationProgress({ current: 0, total: resultData.departments.length });
-          
+
           const filteredDepartments = [];
           for (let i = 0; i < resultData.departments.length; i++) {
             const dept = resultData.departments[i];
             setGenerationProgress(prev => ({ ...prev, current: i + 1 }));
-            
+
             const exists = await checkDepartmentExists(dept.name);
             if (!exists) {
               filteredDepartments.push(dept);
@@ -146,10 +146,10 @@ const AIDepartmentProjectGenerator = () => {
           }
 
           setGeneratedDepartments(filteredDepartments);
-          setGeneratedProjects(resultData.departments.flatMap(dept => 
+          setGeneratedProjects(resultData.departments.flatMap(dept =>
             dept.projects.map(project => ({ ...project, department: dept.name, level: dept.level }))
           ));
-          
+
           return; // Exit if successful
         } catch (error) {
           console.log(`Model ${modelName} failed:`, error.message);
@@ -172,13 +172,13 @@ const AIDepartmentProjectGenerator = () => {
   // Save generated departments and projects to database
   const saveToDatabase = async () => {
     if (!generatedDepartments.length) return;
-    
+
     setIsGenerating(true);
     setError('');
-    
+
     try {
       let savedCount = 0;
-      
+
       for (const department of generatedDepartments) {
         // Save each project in the department
         for (const project of department.projects) {
@@ -195,10 +195,10 @@ const AIDepartmentProjectGenerator = () => {
           savedCount++;
         }
       }
-      
+
       alert(`Successfully saved ${savedCount} projects across ${generatedDepartments.length} departments!`);
       navigate('/admin/projects');
-      
+
     } catch (error) {
       console.error('Error saving to database:', error);
       setError('Failed to save to database: ' + error.message);
@@ -209,52 +209,54 @@ const AIDepartmentProjectGenerator = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header */}
-        <div className="mb-8">
-          <Link 
-            to="/admin/projects" 
+        <div className="mb-6">
+          <Link
+            to="/admin/projects"
             className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-semibold mb-4"
           >
             <FaArrowLeft />
             Back to Manage Projects
           </Link>
-          
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center">
-                <FaMagic className="text-white text-3xl" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-                  <FaRobot className="text-indigo-600" />
-                  AI Department & Project Generator
-                </h1>
-                <p className="text-slate-600 mt-2">
-                  Generate departments and projects relevant to Nigerian institutions using AI
-                </p>
+
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="flex flex-col items-start gap-4 mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                  <FaMagic className="text-white text-2xl" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+                    <FaRobot className="text-indigo-600" />
+                    AI Department & Project Generator
+                  </h1>
+                  <p className="text-slate-600 mt-1 text-sm">
+                    Generate departments and projects relevant to Nigerian institutions using AI
+                  </p>
+                </div>
               </div>
             </div>
-            
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 mb-6">
+
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 mb-6">
               <div className="flex items-start gap-3">
-                <FaGraduationCap className="text-blue-600 text-xl mt-0.5 flex-shrink-0" />
+                <FaGraduationCap className="text-blue-600 text-lg mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="font-bold text-blue-900 mb-1">Nigerian Academic Focus</h3>
-                  <p className="text-blue-800 text-sm">
-                    This tool generates realistic departments and projects commonly found in Nigerian universities, 
+                  <h3 className="font-bold text-blue-900 mb-1 text-sm">Nigerian Academic Focus</h3>
+                  <p className="text-blue-800 text-xs">
+                    This tool generates realistic departments and projects commonly found in Nigerian universities,
                     polytechnics, and colleges of education. All content is contextually relevant to the Nigerian academic environment.
                   </p>
                 </div>
               </div>
             </div>
-            
+
             {!showResults ? (
               <div className="text-center">
                 <button
                   onClick={generateDepartmentsAndProjects}
                   disabled={isGenerating}
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:from-indigo-700 hover:to-purple-700 transition-all flex items-center gap-3 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-bold text-base hover:from-indigo-700 hover:to-purple-700 transition-all flex items-center gap-3 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isGenerating ? (
                     <>
@@ -268,9 +270,9 @@ const AIDepartmentProjectGenerator = () => {
                     </>
                   )}
                 </button>
-                
+
                 {error && (
-                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                     {error}
                   </div>
                 )}
@@ -279,37 +281,37 @@ const AIDepartmentProjectGenerator = () => {
               <div>
                 {generatedDepartments.length > 0 ? (
                   <div className="space-y-6">
-                    <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-3">
                       <div className="flex items-center gap-2 text-green-800">
                         <FaUniversity className="text-green-600" />
-                        <span className="font-semibold">
+                        <span className="font-semibold text-sm">
                           Found {generatedDepartments.length} new departments with {generatedProjects.length} projects
                         </span>
                       </div>
                     </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto p-2">
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto">
                       {generatedDepartments.map((dept, index) => (
-                        <div key={index} className="bg-white border border-slate-200 rounded-xl p-4">
+                        <div key={index} className="bg-white border border-slate-200 rounded-xl p-3">
                           <div className="flex items-start justify-between mb-2">
-                            <h3 className="font-bold text-slate-900">{dept.name}</h3>
-                            <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">
+                            <h3 className="font-bold text-slate-900 text-sm">{dept.name}</h3>
+                            <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">
                               {dept.level}
                             </span>
                           </div>
-                          <p className="text-sm text-slate-600 mb-3">{dept.description}</p>
+                          <p className="text-xs text-slate-600 mb-2">{dept.description}</p>
                           <div className="text-xs text-slate-500">
                             {dept.projects.length} projects
                           </div>
                         </div>
                       ))}
                     </div>
-                    
-                    <div className="flex gap-4 justify-center pt-4">
+
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                       <button
                         onClick={saveToDatabase}
                         disabled={isGenerating}
-                        className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50"
+                        className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 justify-center hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 text-sm"
                       >
                         {isGenerating ? (
                           <>
@@ -323,26 +325,26 @@ const AIDepartmentProjectGenerator = () => {
                           </>
                         )}
                       </button>
-                      
+
                       <button
                         onClick={() => {
                           setShowResults(false);
                           setGeneratedDepartments([]);
                           setGeneratedProjects([]);
                         }}
-                        className="bg-slate-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-slate-700 transition-all"
+                        className="bg-slate-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-slate-700 transition-all text-sm"
                       >
                         Generate New
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <FaUniversity className="text-2xl text-slate-400" />
+                  <div className="text-center py-6">
+                    <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <FaUniversity className="text-xl text-slate-400" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">All Departments Already Exist</h3>
-                    <p className="text-slate-600 mb-4">
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">All Departments Already Exist</h3>
+                    <p className="text-slate-600 mb-3 text-sm">
                       The generated departments already exist in your system. No new departments to add.
                     </p>
                     <button
@@ -351,7 +353,7 @@ const AIDepartmentProjectGenerator = () => {
                         setGeneratedDepartments([]);
                         setGeneratedProjects([]);
                       }}
-                      className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all"
+                      className="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-indigo-700 transition-all text-sm"
                     >
                       Generate Different Departments
                     </button>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaFileExcel, FaCloudUploadAlt, FaTrash, FaCheckCircle, FaSpinner } from 'react-icons/fa';
@@ -94,43 +93,124 @@ export const BulkUploadPage = () => {
   };
 
   return (
-    <div>
-      <div className="mb-6"><Link to="/admin/projects" className="flex items-center gap-2 text-gray-600 hover:text-indigo-600 font-semibold"><FaArrowLeft />Back to Manage Projects</Link></div>
-      <h1 className="text-4xl font-extrabold text-gray-900 mb-6">Bulk Upload Projects</h1>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        <div className="bg-white p-8 rounded-xl shadow-lg">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">How It Works</h3>
+    <div className="w-full">
+      <div className="mb-6">
+        <Link to="/admin/projects" className="flex items-center gap-2 text-gray-600 hover:text-indigo-600 font-semibold">
+          <FaArrowLeft />
+          Back to Manage Projects
+        </Link>
+      </div>
+      <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-6">Bulk Upload Projects</h1>
+      
+      <div className="grid grid-cols-1 gap-6">
+        <div className="bg-white p-6 rounded-xl shadow-lg">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">How It Works</h3>
           <div className="space-y-4">
-            <div className="flex gap-4"><div className="flex-shrink-0 w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-lg">1</div><div><h4 className="font-bold">Download the Template</h4><p className="text-gray-600">Start by downloading our Excel template to ensure your data is structured correctly.</p><button onClick={handleDownloadTemplate} className="font-bold text-indigo-600 hover:underline mt-1 inline-block">Download Excel Template &rarr;</button></div></div>
-            <div className="flex gap-4"><div className="flex-shrink-0 w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-lg">2</div><div><h4 className="font-bold">Fill in Your Data</h4><p className="text-gray-600">Open the template with any spreadsheet software and add your project details. Do not change the column headers.</p></div></div>
-            <div className="flex gap-4"><div className="flex-shrink-0 w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-lg">3</div><div><h4 className="font-bold">Upload the File</h4><p className="text-gray-600">Drag and drop your completed spreadsheet file into the uploader to add all projects to the library.</p></div></div>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-lg">1</div>
+              <div>
+                <h4 className="font-bold">Download the Template</h4>
+                <p className="text-gray-600">Start by downloading our Excel template to ensure your data is structured correctly.</p>
+                <button 
+                  onClick={handleDownloadTemplate} 
+                  className="font-bold text-indigo-600 hover:underline mt-1 inline-block"
+                >
+                  Download Excel Template &rarr;
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-lg">2</div>
+              <div>
+                <h4 className="font-bold">Fill in Your Data</h4>
+                <p className="text-gray-600">Open the template with any spreadsheet software and add your project details. Do not change the column headers.</p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-lg">3</div>
+              <div>
+                <h4 className="font-bold">Upload the File</h4>
+                <p className="text-gray-600">Drag and drop your completed spreadsheet file into the uploader to add all projects to the library.</p>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="bg-white p-8 rounded-xl shadow-lg flex flex-col">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">Upload Your File</h3>
-          <div onDragEnter={handleDragEnter} onDragLeave={handleDragLeave} onDragOver={handleDragOver} onDrop={handleDrop} className={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-300 ${isDragging ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}>
+        
+        <div className="bg-white p-6 rounded-xl shadow-lg">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">Upload Your File</h3>
+          <div 
+            onDragEnter={handleDragEnter} 
+            onDragLeave={handleDragLeave} 
+            onDragOver={handleDragOver} 
+            onDrop={handleDrop} 
+            className={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-300 ${
+              isDragging ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
+            }`}
+          >
             <label htmlFor="dropzone-file" className="w-full h-full flex flex-col items-center justify-center">
               <FaCloudUploadAlt className={`w-12 h-12 mb-3 transition-colors duration-300 ${isDragging ? 'text-indigo-600' : 'text-gray-400'}`} />
-              <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+              <p className="mb-2 text-sm text-gray-500">
+                <span className="font-semibold">Click to upload</span> or drag and drop
+              </p>
               <p className="text-xs text-gray-500">XLSX, XLS, or CSV</p>
-              <input id="dropzone-file" type="file" className="hidden" onChange={handleFileChange} accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
+              <input 
+                id="dropzone-file" 
+                type="file" 
+                className="hidden" 
+                onChange={handleFileChange} 
+                accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" 
+              />
             </label>
           </div>
 
-          {uploadSuccess && <div className="mt-4 p-4 bg-green-100 text-green-800 rounded-lg font-semibold flex items-center gap-3"><FaCheckCircle />Upload complete! Redirecting...</div>}
-          {uploadError && <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-lg font-semibold">{uploadError}</div>}
-          {isUploading && progressMessage && <div className="mt-4 p-4 bg-blue-100 text-blue-800 rounded-lg font-semibold flex items-center gap-3"><FaSpinner className="animate-spin" /> {progressMessage}</div>}
-
-          {uploadedFile && !uploadSuccess && (
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg font-semibold flex items-center justify-between">
-              <div className="flex items-center gap-3"><FaFileExcel className="text-green-600 text-2xl" /> <span className="text-gray-800">{uploadedFile.name}</span></div>
-              <button onClick={() => setUploadedFile(null)} className="text-red-500 hover:text-red-700"><FaTrash /></button>
+          {uploadSuccess && (
+            <div className="mt-4 p-4 bg-green-100 text-green-800 rounded-lg font-semibold flex items-center gap-3">
+              <FaCheckCircle /> Upload complete! Redirecting...
+            </div>
+          )}
+          {uploadError && (
+            <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-lg font-semibold">
+              {uploadError}
+            </div>
+          )}
+          {isUploading && progressMessage && (
+            <div className="mt-4 p-4 bg-blue-100 text-blue-800 rounded-lg font-semibold flex items-center gap-3">
+              <FaSpinner className="animate-spin" /> {progressMessage}
             </div>
           )}
 
-          <div className="mt-auto pt-6">
-            <button onClick={handleUpload} disabled={!uploadedFile || isUploading} className="w-full flex items-center justify-center gap-2 bg-green-600 text-white font-bold py-4 px-6 rounded-lg hover:bg-green-700 transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed">
-              {isUploading ? <><FaSpinner className="animate-spin" /><span>Processing...</span></> : <><FaCloudUploadAlt /><span>Process & Upload File</span></>}
+          {uploadedFile && !uploadSuccess && (
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg font-semibold flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FaFileExcel className="text-green-600 text-2xl" /> 
+                <span className="text-gray-800 truncate">{uploadedFile.name}</span>
+              </div>
+              <button 
+                onClick={() => setUploadedFile(null)} 
+                className="text-red-500 hover:text-red-700 flex-shrink-0 ml-4"
+              >
+                <FaTrash />
+              </button>
+            </div>
+          )}
+
+          <div className="mt-6">
+            <button 
+              onClick={handleUpload} 
+              disabled={!uploadedFile || isUploading} 
+              className="w-full flex items-center justify-center gap-2 bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {isUploading ? (
+                <>
+                  <FaSpinner className="animate-spin" />
+                  <span>Processing...</span>
+                </>
+              ) : (
+                <>
+                  <FaCloudUploadAlt />
+                  <span>Process & Upload File</span>
+                </>
+              )}
             </button>
           </div>
         </div>
