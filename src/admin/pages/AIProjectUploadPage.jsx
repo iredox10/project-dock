@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaRobot, FaFileUpload, FaCheckCircle, FaTimesCircle, FaSpinner, FaPlus, FaTimes } from 'react-icons/fa';
-import { extractProjectFromFile, batchExtractProjects } from '../../api/aiExtractionService';
+import { extractProjectFromFile, batchExtractProjects } from '../../appwrite/aiExtractionService';
 import { getStandardizedDepartment } from '../../api/departmentService';
 import { uploadProjectFile } from '../../api/fileStorageService';
 import { createProject, updateProject } from '../../api/projectServices';

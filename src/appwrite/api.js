@@ -6,7 +6,7 @@
 import authService from './auth';
 import { projectsService, usersService, ordersService, reviewsService } from './database';
 import storageService from './storage';
-import { extractProjectFromFile, batchExtractProjects } from './aiExtractionService';
+import { extractProjectFromFile, batchExtractProjects, formatChapterOneContent, formatAbstractContent } from './aiExtractionService';
 import { getStandardizedDepartment } from './departmentService';
 
 /**
@@ -35,7 +35,9 @@ export {
 // AI extraction services
 export {
   extractProjectFromFile,
-  batchExtractProjects
+  batchExtractProjects,
+  formatChapterOneContent,
+  formatAbstractContent
 };
 
 // Department service
@@ -55,7 +57,9 @@ export const appwriteAPI = {
   storage: storageService,
   ai: {
     extractProjectFromFile,
-    batchExtractProjects
+    batchExtractProjects,
+    formatChapterOneContent,
+    formatAbstractContent
   },
   utils: {
     getStandardizedDepartment

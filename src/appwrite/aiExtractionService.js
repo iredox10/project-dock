@@ -179,7 +179,7 @@ Return the JSON object:`;
       console.log(`Successfully used model: ${modelName}`);
 
       // Validate and set defaults
-      return {
+      const result = {
         title: projectData.title || '',
         author: projectData.author || '',
         department: projectData.department || '',
@@ -194,6 +194,33 @@ Return the JSON object:`;
         formats: 'PDF, DOCX',
         includes: 'References, Questionnaire'
       };
+
+      // Format Chapter One content to follow proper academic structure if it exists
+      if (result.chapterOne) {
+        result.chapterOne = await formatChapterOneContent(result.chapterOne);
+      }
+      
+      // Format Abstract content to follow proper academic structure if it exists
+      if (result.abstract) {
+        result.abstract = await formatAbstractContent(result.abstract);
+      }
+      
+      // Update chapters field to show range format (e.g., '1-5')
+      if (projectData.chapters) {
+        // Try to extract the last chapter number from the chapters field
+        const chapterNumbers = projectData.chapters.match(/\d+/g);
+        if (chapterNumbers && chapterNumbers.length > 0) {
+          const lastChapter = Math.max(...chapterNumbers.map(Number));
+          result.chapters = `1-${lastChapter}`;
+        } else {
+          // If we can't determine the number of chapters, keep the default
+          result.chapters = '1-5';
+        }
+      } else {
+        result.chapters = '1-5';
+      }
+      
+      return result;
     } catch (error) {
       console.log(`Model ${modelName} failed:`, error.message);
       lastError = error;
@@ -203,6 +230,162 @@ Return the JSON object:`;
 
   // If all models failed
   throw new Error('Failed to parse project data with AI: ' + (lastError?.message || 'All models failed'));
+};
+
+/**
+ * Format Abstract content to follow academic structure
+ * @param {string} content - Original Abstract content
+ * @returns {Promise<string>} - Formatted Abstract content
+ */
+export const formatAbstractContent = async (content) => {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('VITE_GEMINI_API_KEY is not set in environment variables');
+  }
+
+  // List of models to try in order for formatting
+  const modelsToTry = [
+    'gemini-2.5-flash',
+    'gemini-1.5-flash-latest',
+    'gemini-1.5-pro-latest',
+  ];
+
+  const prompt = `Please format the following Abstract text to follow proper academic structure for a research project.
+Preserve ALL the original content and meaning, but organize it into proper academic sections with clear headings.
+DO NOT change the actual content - only improve the formatting.
+Maintain the original paragraphs and information, but add proper structure with section headings like Background, Objective, Methodology, Results, Conclusion.
+
+Original text:
+${content.substring(0, 10000)}
+
+Return only the formatted text with proper academic structure but with all the original content preserved. Do not add any explanatory text, just return the formatted content.`;
+
+  let lastError;
+
+  // Try each model for formatting
+  for (const modelName of modelsToTry) {
+    try {
+      console.log(`Formatting abstract with model: ${modelName}`);
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: prompt
+              }]
+            }]
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!responseText) {
+        throw new Error('No response text from AI for abstract formatting');
+      }
+
+      console.log(`Successfully formatted Abstract with model: ${modelName}`);
+      return responseText; // Return the formatted content
+    } catch (error) {
+      console.log(`Abstract formatting with model ${modelName} failed:`, error.message);
+      lastError = error;
+      continue;
+    }
+  }
+
+  // If all models failed for formatting, return the original content
+  console.warn('Abstract formatting failed, returning original content:', lastError);
+  return content;
+};
+
+/**
+ * Format Chapter One content to follow academic structure
+ * @param {string} content - Original Chapter One content
+ * @returns {Promise<string>} - Formatted Chapter One content
+ */
+export const formatChapterOneContent = async (content) => {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('VITE_GEMINI_API_KEY is not set in environment variables');
+  }
+
+  // List of models to try in order for formatting
+  const modelsToTry = [
+    'gemini-2.5-flash',
+    'gemini-1.5-flash-latest',
+    'gemini-1.5-pro-latest',
+  ];
+
+  const prompt = `Please format the following Chapter One text to follow proper academic structure for a research project.
+Preserve ALL the original content and meaning, but organize it into proper academic sections with clear headings.
+DO NOT change the actual content - only improve the formatting.
+Maintain the original paragraphs and information, but add proper structure with section headings.
+
+Original text:
+${content.substring(0, 10000)}
+
+Return only the formatted text with proper academic structure (Introduction, Background of Study, Statement of the Problem, etc.) but with all the original content preserved. Do not add any explanatory text, just return the formatted content.`;
+
+  let lastError;
+
+  // Try each model for formatting
+  for (const modelName of modelsToTry) {
+    try {
+      console.log(`Formatting chapter one with model: ${modelName}`);
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: prompt
+              }]
+            }]
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!responseText) {
+        throw new Error('No response text from AI for formatting');
+      }
+
+      console.log(`Successfully formatted Chapter One with model: ${modelName}`);
+      return responseText; // Return the formatted content
+    } catch (error) {
+      console.log(`Chapter One formatting with model ${modelName} failed:`, error.message);
+      lastError = error;
+      continue;
+    }
+  }
+
+  // If all models failed for formatting, return the original content
+  console.warn('Chapter One formatting failed, returning original content:', lastError);
+  return content;
 };
 
 /**

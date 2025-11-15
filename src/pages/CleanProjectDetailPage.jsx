@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { FaUser, FaCalendar, FaDownload, FaStar, FaChevronLeft, FaBook, FaFilePdf, FaHeart, FaShareAlt, FaCheck } from 'react-icons/fa';
 import { getProjectById, getReviewsByProject } from '../api/projectServices';
 import { authService } from '../appwrite/auth';
+import ReactMarkdown from 'react-markdown';
 
 const CleanProjectDetailPage = () => {
   const { projectId } = useParams();
@@ -166,7 +167,7 @@ const CleanProjectDetailPage = () => {
             <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
               <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">Abstract</h2>
               <div className="prose max-w-none text-gray-700 text-base">
-                <p>{project.abstractFileId}</p>
+                <ReactMarkdown>{project.abstractFileId || 'No abstract available'}</ReactMarkdown>
               </div>
             </div>
 
@@ -174,7 +175,7 @@ const CleanProjectDetailPage = () => {
             <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
               <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">Chapter One Preview</h2>
               <div className="prose max-w-none text-gray-700 text-base">
-                <p>{project.chapterOneFileId}</p>
+                <ReactMarkdown>{project.chapterOneFileId || 'No chapter one preview available'}</ReactMarkdown>
               </div>
             </div>
 
