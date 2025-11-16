@@ -59,6 +59,34 @@ const CleanProjectDetailPage = () => {
     if (projectId) fetchProjectAndReviews();
   }, [projectId]);
 
+  // Handle sharing functionality
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    const shareTitle = project?.title || 'Academic Project';
+    const shareText = `Check out this academic project: ${project?.title} from Project Dock`;
+    
+    // Try to use the Web Share API if available
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl
+        });
+      } catch (error) {
+        console.log('Error sharing:', error);
+      }
+    } else {
+      // Fallback: Copy link to clipboard
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        alert('Link copied to clipboard!');
+      } catch (error) {
+        console.log('Error copying link:', error);
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -136,10 +164,16 @@ const CleanProjectDetailPage = () => {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <button className="p-2 text-gray-400 hover:text-indigo-600 transition-colors">
+                  <button 
+                    onClick={() => setIsFavorite(!isFavorite)}
+                    className="p-2 text-gray-400 hover:text-indigo-600 transition-colors"
+                  >
                     <FaHeart className={isFavorite ? 'fill-current text-red-500' : ''} />
                   </button>
-                  <button className="p-2 text-gray-400 hover:text-indigo-600 transition-colors">
+                  <button 
+                    onClick={handleShare}
+                    className="p-2 text-gray-400 hover:text-indigo-600 transition-colors"
+                  >
                     <FaShareAlt />
                   </button>
                 </div>

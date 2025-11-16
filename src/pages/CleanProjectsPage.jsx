@@ -75,7 +75,6 @@ const ProjectsPage = () => {
   const initialSearchTerm = searchParams.get('search') || '';
 
   const [allProjects, setAllProjects] = useState([]);
-  const [filteredProjects, setFilteredProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
@@ -105,8 +104,25 @@ const ProjectsPage = () => {
     fetchProjects();
   }, []);
 
-  // Effect to filter projects
+  // Reset to first page when search term changes
   useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setSearchTerm(initialSearchTerm);
+  }, [initialSearchTerm]);
+
+  // Pagination constants
+  const PROJECTS_PER_PAGE = 9;
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  // Limit departments to show in sidebar
+  const [showAllDepartments, setShowAllDepartments] = useState(false);
+  const MAX_DEPARTMENTS_VISIBLE = 10; // Show only 10 departments initially
+  
+  // Filter projects based on search term
+  const filteredProjects = useMemo(() => {
     let projectsToFilter = [...allProjects];
 
     if (searchTerm) {
@@ -117,17 +133,29 @@ const ProjectsPage = () => {
       );
     }
 
-    setFilteredProjects(projectsToFilter);
-  }, [searchTerm, allProjects]);
+    return projectsToFilter;
+  }, [allProjects, searchTerm]);
 
-  useEffect(() => {
-    setSearchTerm(initialSearchTerm);
-  }, [initialSearchTerm]);
+  // Pagination for filtered projects
+  const paginatedProjects = useMemo(() => {
+    const startIndex = (currentPage - 1) * PROJECTS_PER_PAGE;
+    return filteredProjects.slice(startIndex, startIndex + PROJECTS_PER_PAGE);
+  }, [filteredProjects, currentPage]);
+
+  // Calculate page count
+  const totalPages = Math.ceil(filteredProjects.length / PROJECTS_PER_PAGE);
 
   const departments = useMemo(() => {
     const uniqueDepartments = [...new Set(allProjects.map(p => p.department))];
     return uniqueDepartments.sort();
   }, [allProjects]);
+  
+  const visibleDepartments = useMemo(() => {
+    if (showAllDepartments) {
+      return departments;
+    }
+    return departments.slice(0, MAX_DEPARTMENTS_VISIBLE);
+  }, [departments, showAllDepartments]);
 
   return (
     <div className="min-h-screen  bg-gray-50">
@@ -171,15 +199,23 @@ const ProjectsPage = () => {
                   Departments
                 </h3>
                 <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {departments.map(dept => (
+                  {visibleDepartments.map(dept => (
                     <Link
                       key={dept}
                       to={`/department/${encodeURIComponent(dept)}`}
-                      className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                      className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md transition-colors truncate"
                     >
                       {dept}
                     </Link>
                   ))}
+                  {departments.length > MAX_DEPARTMENTS_VISIBLE && (
+                    <button
+                      onClick={() => setShowAllDepartments(!showAllDepartments)}
+                      className="w-full px-3 py-2 text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors text-left"
+                    >
+                      {showAllDepartments ? 'Show Less' : `+${departments.length - MAX_DEPARTMENTS_VISIBLE} more`}
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -216,16 +252,27 @@ const ProjectsPage = () => {
               <div className="mt-4 bg-white p-6 rounded-lg border border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Departments</h3>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {departments.map(dept => (
+                  {visibleDepartments.map(dept => (
                     <Link
                       key={dept}
                       to={`/department/${encodeURIComponent(dept)}`}
-                      className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                      className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md transition-colors truncate"
                       onClick={() => setShowFilters(false)}
                     >
                       {dept}
                     </Link>
                   ))}
+                  {departments.length > MAX_DEPARTMENTS_VISIBLE && (
+                    <button
+                      onClick={() => {
+                        setShowAllDepartments(!showAllDepartments);
+                        setShowFilters(false);
+                      }}
+                      className="w-full px-3 py-2 text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors text-left"
+                    >
+                      {showAllDepartments ? 'Show Less' : `+${departments.length - MAX_DEPARTMENTS_VISIBLE} more`}
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -234,13 +281,13 @@ const ProjectsPage = () => {
           {/* Main Content */}
           <main className="flex-1">
             {/* Results Header */}
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">
                   {searchTerm ? 'Search Results' : 'All Projects'}
                 </h2>
                 <p className="text-gray-600 mt-1">
-                  Showing <span className="font-medium">{filteredProjects.length}</span> {filteredProjects.length === 1 ? 'project' : 'projects'}
+                  Showing <span className="font-medium">{paginatedProjects.length}</span> of <span className="font-medium">{filteredProjects.length}</span> {filteredProjects.length === 1 ? 'project' : 'projects'}
                   {searchTerm && <span> for "{searchTerm}"</span>}
                 </p>
               </div>
@@ -251,10 +298,50 @@ const ProjectsPage = () => {
               <div className="flex justify-center items-center py-20">
                 <FaSpinner className="animate-spin text-3xl text-indigo-600" />
               </div>
-            ) : filteredProjects.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProjects.map(project => <ProjectCard key={project.id} project={project} />)}
-              </div>
+            ) : paginatedProjects.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginatedProjects.map(project => <ProjectCard key={project.id} project={project} />)}
+                </div>
+                
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center mt-10 space-x-2">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    
+                    {/* Page numbers */}
+                    <div className="flex space-x-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`px-3 py-2 rounded-lg ${
+                            currentPage === page
+                              ? 'bg-indigo-600 text-white'
+                              : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
                 <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">

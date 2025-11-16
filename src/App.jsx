@@ -1,5 +1,3 @@
-
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 
 // Import regular page components
@@ -113,7 +111,7 @@ const MainApp = () => {
 
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
-          
+
           {/* Catch-all route for 404 - should be the last route */}
           <Route path="*" element={<CleanNotFoundPage />} />
         </Routes>

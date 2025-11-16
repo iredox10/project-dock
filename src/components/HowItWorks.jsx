@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { FaSearch, FaMousePointer, FaCloudDownloadAlt, FaCheckCircle, FaArrowRight, FaBook, FaEye, FaDownload, FaRocket } from 'react-icons/fa';
 
 const HowItWorks = () => {
@@ -226,15 +227,15 @@ const HowItWorks = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a 
-                href="/projects"
+              <Link 
+                to="/projects"
                 className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group"
               >
                 <FaBook className="group-hover:rotate-12 transition-transform" />
                 <span className="text-lg">Browse Projects</span>
-              </a>
-              <a 
-                href="/departments"
+              </Link>
+              <Link 
+                to="/departments"
                 className="inline-flex items-center justify-center gap-3 bg-white text-indigo-600 font-bold px-8 py-4 rounded-xl border-2 border-indigo-200 hover:bg-indigo-50 hover:scale-105 transition-all duration-300 group"
               >
                 <span className="text-lg">View Departments</span>

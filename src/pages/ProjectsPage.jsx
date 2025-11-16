@@ -22,11 +22,11 @@ const ProjectCard = ({ project }) => {
   const colors = departmentColors[project.department] || defaultColors;
 
   return (
-    <div className={`group bg-black rounded-2xl border-2 ${colors.border} border-opacity-20 hover:border-opacity-100 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col`}>
+    <div className={`group bg-white rounded-2xl border-2 ${colors.border} border-opacity-20 hover:border-opacity-100 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col`}>
       {/* Top accent bar */}
       <div className={`h-2 ${colors.icon}`}></div>
 
-      <div className="p-16 mt-32 flex-grow">
+      <div className="p-6 flex-grow">
         {/* Department badge */}
         <div className="flex justify-between items-start mb-4">
           <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 ${colors.bg} ${colors.text} rounded-lg text-xs font-bold uppercase tracking-wide`}>
