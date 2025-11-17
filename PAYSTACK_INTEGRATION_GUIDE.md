@@ -14,11 +14,9 @@ Add the new keys and Appwrite function IDs to `.env` (or `.env.local`):
 
 ```env
 VITE_PAYSTACK_PUBLIC_KEY=pk_test_your_public_key
-VITE_PAYSTACK_DEMO_MODE=false
 VITE_APPWRITE_PAYSTACK_FUNCTION_ID=paystack-handler
 ```
 
-- Set `VITE_PAYSTACK_DEMO_MODE=true` to bypass live verification during local development (all payments auto-succeed).
 - Keep `VITE_APPWRITE_PAYSTACK_FUNCTION_ID` in sync with the function ID shown in the Appwrite console.
 
 ## 3. Configure the Appwrite Function
@@ -48,7 +46,7 @@ Microfinance customers choose their preferred bank (e.g., OPay, Kuda, Moniepoint
 
 ## 6. Going Live
 - Swap test keys for live keys.
-- Disable both `VITE_PAYSTACK_DEMO_MODE` and `VITE_OPAY_DEMO_MODE`.
+- Disable `VITE_OPAY_DEMO_MODE` (Paystack now relies on real test/live keys only).
 - Monitor Paystack Dashboard analytics and Appwrite logs for early transactions.
 
 ## Troubleshooting

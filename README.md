@@ -59,9 +59,8 @@ The platform includes an AI-powered feature that can automatically extract struc
    VITE_APPWRITE_PROJECT_ID=your_project_id
    VITE_APPWRITE_DATABASE_ID=your_database_id
    
-   # Paystack Payment
-   VITE_PAYSTACK_PUBLIC_KEY=pk_test_your_paystack_key_here
-   VITE_PAYSTACK_DEMO_MODE=false
+      # Paystack Payment
+      VITE_PAYSTACK_PUBLIC_KEY=pk_test_your_paystack_key_here
    ```
    
    **Get your keys:**

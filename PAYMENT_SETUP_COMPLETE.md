@@ -117,7 +117,7 @@ When ready for real payments:
 ### Payment popup not showing?
 - ✅ Restart dev server
 - ✅ Check browser console for errors
-- ✅ Verify `VITE_PAYSTACK_DEMO_MODE=false`
+- ✅ Confirm `VITE_PAYSTACK_PUBLIC_KEY` starts with `pk_test_` or `pk_live_`
 
 ### "Payment gateway not configured" error?
 - ✅ Check `.env` has Paystack key

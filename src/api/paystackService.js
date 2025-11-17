@@ -3,7 +3,6 @@ import { functions } from '../appwrite/config';
 
 const PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
 const PAYSTACK_FUNCTION_ID = import.meta.env.VITE_APPWRITE_PAYSTACK_FUNCTION_ID;
-const PAYSTACK_DEMO_MODE = import.meta.env.VITE_PAYSTACK_DEMO_MODE === 'true';
 
 let paystackScriptPromise = null;
 
@@ -40,13 +39,7 @@ export const MICROFINANCE_BANKS = [
   'FairMoney'
 ];
 
-export const isPaystackConfigured = () => {
-  if (PAYSTACK_DEMO_MODE) {
-    return true;
-  }
-
-  return Boolean(PAYSTACK_PUBLIC_KEY && PAYSTACK_FUNCTION_ID);
-};
+export const isPaystackConfigured = () => Boolean(PAYSTACK_PUBLIC_KEY);
 
 export const launchPaystackInline = async ({
   email,
@@ -61,7 +54,7 @@ export const launchPaystackInline = async ({
   onSuccess,
   onCancel
 }) => {
-  if (!PAYSTACK_PUBLIC_KEY && !PAYSTACK_DEMO_MODE) {
+  if (!PAYSTACK_PUBLIC_KEY) {
     throw new Error('Paystack public key is not configured.');
   }
 
@@ -77,34 +70,6 @@ export const launchPaystackInline = async ({
 
   const reference = metadata?.reference || `PDK-${uuidv4()}`;
   const amountInKobo = Math.round(Number(amountNGN) * 100);
-
-  if (PAYSTACK_DEMO_MODE) {
-    // Show a simulated payment popup
-    const confirmPayment = window.confirm(
-      `DEMO MODE - Simulated Payment\n\n` +
-      `Amount: ₦${amountNGN.toLocaleString()}\n` +
-      `Email: ${email}\n` +
-      `Project: ${projectTitle}\n\n` +
-      `Click OK to simulate successful payment\n` +
-      `Click Cancel to simulate failed payment`
-    );
-    
-    if (confirmPayment) {
-      setTimeout(() => {
-        onSuccess?.({
-          reference,
-          status: 'success',
-          message: 'Demo mode approval',
-          gateway_response: 'Approved',
-        });
-      }, 1000);
-    } else {
-      setTimeout(() => {
-        onCancel?.();
-      }, 500);
-    }
-    return reference;
-  }
 
   const baseMetadata = {
     projectId: metadata?.projectId,
@@ -160,19 +125,6 @@ export const launchPaystackInline = async ({
 export const verifyPaystackPayment = async (reference) => {
   if (!reference) {
     throw new Error('Transaction reference is required for verification.');
-  }
-
-  if (PAYSTACK_DEMO_MODE) {
-    return {
-      success: true,
-      isPaid: true,
-      data: {
-        reference,
-        status: 'success',
-        channel: 'demo',
-        paid_at: new Date().toISOString(),
-      },
-    };
   }
 
   // If function ID is not configured, trust the inline popup callback

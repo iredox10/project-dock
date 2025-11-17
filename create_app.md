@@ -210,7 +210,7 @@
      - Paystack integration with multiple payment methods
      - Payment verification via webhooks
      - Order tracking and download access control
-     - Demo mode for testing
+  - Supports Paystack sandbox cards for testing
 
    4. Authentication & Authorization
 
@@ -236,9 +236,8 @@
      VITE_APPWRITE_PROJECT_ID=your_project_id
      VITE_APPWRITE_DATABASE_ID=your_database_id
 
-     # Paystack
-     VITE_PAYSTACK_PUBLIC_KEY=pk_test_xxx
-     VITE_PAYSTACK_DEMO_MODE=false
+  # Paystack
+  VITE_PAYSTACK_PUBLIC_KEY=pk_test_xxx
 
 
    UI/UX Requirements

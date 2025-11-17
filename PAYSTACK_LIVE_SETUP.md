@@ -21,13 +21,11 @@ Edit your `.env` file and update these values:
 ```env
 # Paystack Configuration
 VITE_PAYSTACK_PUBLIC_KEY=pk_test_your_actual_key_here
-VITE_PAYSTACK_DEMO_MODE=false
 ```
 
 For production/live:
 ```env
 VITE_PAYSTACK_PUBLIC_KEY=pk_live_your_actual_key_here
-VITE_PAYSTACK_DEMO_MODE=false
 ```
 
 ## Step 3: Test Cards (Test Mode Only)

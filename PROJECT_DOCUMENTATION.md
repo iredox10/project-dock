@@ -330,11 +330,6 @@ The system can automatically extract from PDF/DOCX:
 8. Grants download access
 9. Redirects to download page
 
-### **Demo Mode**
-- For testing without real payment gateway
-- Set `VITE_PAYSTACK_DEMO_MODE=true`
-- Simulates successful payment
-
 ---
 
 ## 🤖 AI Document Extraction
@@ -455,7 +450,6 @@ VITE_APPWRITE_DATABASE_ID=your_database_id
 # Paystack
 VITE_PAYSTACK_PUBLIC_KEY=pk_test_xxxxx
 VITE_APPWRITE_PAYSTACK_FUNCTION_ID=paystack-handler
-VITE_PAYSTACK_DEMO_MODE=false
 
 # OPay (Optional)
 VITE_OPAY_MERCHANT_ID=your_merchant_id
