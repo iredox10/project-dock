@@ -1,72 +1,33 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { FaSearch, FaFilePdf, FaBook, FaSpinner, FaUniversity, FaFilter, FaStar, FaCalendar, FaUser, FaChevronDown } from 'react-icons/fa';
+import { FaSearch, FaBook, FaSpinner, FaChevronRight, FaTimes, FaFilter, FaChevronDown, FaFileAlt } from 'react-icons/fa';
 import { getAllProjects } from '../api/projectServices';
 
 const ProjectCard = ({ project }) => {
-  const getDepartmentColor = (dept) => {
-    const colors = {
-      'Computer Science': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-      'Electrical Engineering': 'bg-amber-100 text-amber-800 border-amber-200',
-      'Economics': 'bg-emerald-100 text-emerald-800 border-emerald-200',
-      'Mechanical Engineering': 'bg-red-100 text-red-800 border-red-200',
-      'Civil Engineering': 'bg-purple-100 text-purple-800 border-purple-200',
-      'Business Administration': 'bg-blue-100 text-blue-800 border-blue-200',
-      'Mass Communication': 'bg-pink-100 text-pink-800 border-pink-200',
-    };
-    return colors[dept] || 'bg-gray-100 text-gray-800 border-gray-200';
-  };
-
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-      <div className="flex justify-between items-start mb-4">
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getDepartmentColor(project.department)}`}>
-          <FaUniversity className="mr-1" />
+    <Link
+      to={`/projects/${project.id}`}
+      className="block bg-white border border-gray-200 rounded-lg p-5 hover:border-indigo-300 hover:shadow-lg transition-all duration-200 group"
+    >
+      <div className="flex items-start justify-between mb-3">
+        <span className="inline-block px-2.5 py-0.5 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-full">
           {project.department}
         </span>
-        <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
-          {project.formats?.includes('PDF') ? (
-            <FaFilePdf className="text-red-500" />
-          ) : (
-            <FaFilePdf className="text-red-500" />
-          )}
-        </div>
+        <span className="text-xs text-gray-500">{project.year || 'N/A'}</span>
       </div>
 
-      <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 line-clamp-2">
+      <h3 className="text-sm font-semibold text-gray-900 mb-4 leading-relaxed group-hover:text-indigo-600 transition-colors min-h-[60px]">
         {project.title}
       </h3>
 
-      <div className="space-y-2 mb-4">
-        <div className="flex items-center text-sm md:text-base text-gray-600">
-          <FaUser className="mr-2 text-gray-400" />
-          <span>{project.author}</span>
+      <div className="flex items-center justify-between text-xs text-gray-600">
+        <div className="flex items-center gap-1">
+          <FaFileAlt className="text-gray-400" />
+          <span>{project.pages || 'N/A'} pages</span>
         </div>
-        <div className="flex items-center text-sm md:text-base text-gray-600">
-          <FaCalendar className="mr-2 text-gray-400" />
-          <span>{project.year || 'N/A'}</span>
-        </div>
+        <FaChevronRight className="text-gray-400 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
       </div>
-
-      {project.rating && (
-        <div className="flex items-center mb-4">
-          <div className="flex text-yellow-400 mr-2">
-            {[...Array(5)].map((_, i) => (
-              <FaStar key={i} className={i < Math.floor(project.rating) ? 'fill-current' : 'text-gray-300'} />
-            ))}
-          </div>
-          <span className="text-sm md:text-base text-gray-600">({project.rating.toFixed(1)})</span>
-        </div>
-      )}
-
-      <Link
-        to={`/projects/${project.id}`}
-        className="w-full flex items-center justify-center gap-1 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md font-medium hover:bg-gray-50 transition-colors"
-      >
-        View Details
-        <FaChevronDown className="transform rotate-90 text-xs" />
-      </Link>
-    </div>
+    </Link>
   );
 };
 
@@ -77,18 +38,34 @@ const ProjectsPage = () => {
   const [allProjects, setAllProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [isLoading, setIsLoading] = useState(true);
-  const [showFilters, setShowFilters] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showDepartmentFilter, setShowDepartmentFilter] = useState(false);
+  const [departmentSearch, setDepartmentSearch] = useState('');
 
-  // Fetch all projects on initial load.
+  const PROJECTS_PER_PAGE = 24;
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showDepartmentFilter && !event.target.closest('.department-filter-container')) {
+        setShowDepartmentFilter(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showDepartmentFilter]);
+
+  // Fetch all projects on initial load
   useEffect(() => {
     const fetchProjects = async () => {
       setIsLoading(true);
       try {
         const response = await getAllProjects({
-          limit: 100 // Adjust limit as needed
+          limit: 100
         });
 
-        // Appwrite returns documents with $id as the ID field
         const fetchedProjects = response.documents.map(doc => ({
           id: doc.$id,
           ...doc
@@ -104,26 +81,36 @@ const ProjectsPage = () => {
     fetchProjects();
   }, []);
 
-  // Reset to first page when search term changes
+  // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, selectedDepartment]);
 
   useEffect(() => {
     setSearchTerm(initialSearchTerm);
   }, [initialSearchTerm]);
+  
+  // Get unique departments
+  const departments = useMemo(() => {
+    const uniqueDepartments = [...new Set(allProjects.map(p => p.department))];
+    return uniqueDepartments.sort();
+  }, [allProjects]);
 
-  // Pagination constants
-  const PROJECTS_PER_PAGE = 9;
-  const [currentPage, setCurrentPage] = useState(1);
-  
-  // Limit departments to show in sidebar
-  const [showAllDepartments, setShowAllDepartments] = useState(false);
-  const MAX_DEPARTMENTS_VISIBLE = 10; // Show only 10 departments initially
-  
-  // Filter projects based on search term
+  // Filter departments based on search
+  const filteredDepartments = useMemo(() => {
+    if (!departmentSearch) return departments;
+    return departments.filter(dept => 
+      dept.toLowerCase().includes(departmentSearch.toLowerCase())
+    );
+  }, [departments, departmentSearch]);
+
+  // Filter projects based on search and department
   const filteredProjects = useMemo(() => {
     let projectsToFilter = [...allProjects];
+
+    if (selectedDepartment) {
+      projectsToFilter = projectsToFilter.filter(p => p.department === selectedDepartment);
+    }
 
     if (searchTerm) {
       projectsToFilter = projectsToFilter.filter(p =>
@@ -134,7 +121,7 @@ const ProjectsPage = () => {
     }
 
     return projectsToFilter;
-  }, [allProjects, searchTerm]);
+  }, [allProjects, searchTerm, selectedDepartment]);
 
   // Pagination for filtered projects
   const paginatedProjects = useMemo(() => {
@@ -145,226 +132,274 @@ const ProjectsPage = () => {
   // Calculate page count
   const totalPages = Math.ceil(filteredProjects.length / PROJECTS_PER_PAGE);
 
-  const departments = useMemo(() => {
-    const uniqueDepartments = [...new Set(allProjects.map(p => p.department))];
-    return uniqueDepartments.sort();
-  }, [allProjects]);
-  
-  const visibleDepartments = useMemo(() => {
-    if (showAllDepartments) {
-      return departments;
-    }
-    return departments.slice(0, MAX_DEPARTMENTS_VISIBLE);
-  }, [departments, showAllDepartments]);
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedDepartment('');
+  };
 
   return (
-    <div className="min-h-screen  bg-gray-50">
-      {/* Clean Header */}
-      <div className="bg-white border-b border-gray-200 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <div className="bg-gray-50 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Project Library</h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">Explore Projects</h1>
             <p className="text-lg text-gray-600">
-              Browse {allProjects.length.toLocaleString()}+ academic projects
+              Discover {allProjects.length.toLocaleString()}+ academic research projects
             </p>
           </div>
 
-          {/* Search Bar */}
-          <div className="max-w-2xl mx-auto">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaSearch className="text-gray-400" />
+          {/* Search Bar with Filter */}
+          <div className="max-w-4xl mx-auto relative">
+            <div className="flex gap-3">
+              {/* Search Input */}
+              <div className="relative flex-1">
+                <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search projects by title or department..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <FaTimes />
+                  </button>
+                )}
               </div>
-              <input
-                type="text"
-                placeholder="Search by project title, author, or department..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full pl-10 pr-3 py-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              />
+
+              {/* Department Filter Button */}
+              <div className="relative department-filter-container">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowDepartmentFilter(!showDepartmentFilter);
+                  }}
+                  className={`flex items-center justify-center gap-2 px-4 sm:px-5 py-3.5 border rounded-lg font-medium transition-all whitespace-nowrap ${
+                    selectedDepartment
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <FaFilter className="flex-shrink-0" />
+                  <span className="text-sm sm:text-base">
+                    {selectedDepartment ? (
+                      <span className="hidden sm:inline">{selectedDepartment}</span>
+                    ) : (
+                      'Filter'
+                    )}
+                  </span>
+                  <FaChevronDown className={`text-xs transition-transform flex-shrink-0 ${showDepartmentFilter ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown Menu */}
+                {showDepartmentFilter && (
+                  <>
+                    {/* Backdrop for mobile */}
+                    <div 
+                      className="fixed inset-0 bg-black/20 z-40 md:hidden"
+                      onClick={() => setShowDepartmentFilter(false)}
+                    />
+                    
+                    {/* Dropdown */}
+                    <div className="fixed md:absolute left-4 right-4 md:left-auto md:right-0 top-auto bottom-4 md:bottom-auto md:top-full mt-0 md:mt-2 w-auto md:w-80 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 max-h-[70vh] md:max-h-96 flex flex-col">
+                      <div className="p-3 border-b border-gray-200 flex-shrink-0">
+                        <div className="relative">
+                          <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+                          <input
+                            type="text"
+                            placeholder="Search departments..."
+                            value={departmentSearch}
+                            onChange={(e) => setDepartmentSearch(e.target.value)}
+                            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      </div>
+                      <div className="overflow-y-auto p-2 flex-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setSelectedDepartment('');
+                            setShowDepartmentFilter(false);
+                            setDepartmentSearch('');
+                          }}
+                          className={`w-full text-left px-4 py-2.5 rounded-md transition-colors ${
+                            !selectedDepartment
+                              ? 'bg-indigo-50 text-indigo-700 font-medium'
+                              : 'text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          All Departments
+                        </button>
+                        {filteredDepartments.length > 0 ? (
+                          filteredDepartments.map(dept => (
+                            <button
+                              key={dept}
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setSelectedDepartment(dept);
+                                setShowDepartmentFilter(false);
+                                setDepartmentSearch('');
+                              }}
+                              className={`w-full text-left px-4 py-2.5 rounded-md transition-colors ${
+                                selectedDepartment === dept
+                                  ? 'bg-indigo-50 text-indigo-700 font-medium'
+                                  : 'text-gray-700 hover:bg-gray-50'
+                              }`}
+                            >
+                              {dept}
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                            No departments found
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar - Desktop */}
-          <aside className="lg:w-64 flex-shrink-0">
-            <div className="sticky top-24 space-y-6">
-              <div className="bg-white p-6 rounded-lg border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <FaUniversity className="mr-2" />
-                  Departments
-                </h3>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {visibleDepartments.map(dept => (
-                    <Link
-                      key={dept}
-                      to={`/department/${encodeURIComponent(dept)}`}
-                      className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md transition-colors truncate"
-                    >
-                      {dept}
-                    </Link>
-                  ))}
-                  {departments.length > MAX_DEPARTMENTS_VISIBLE && (
-                    <button
-                      onClick={() => setShowAllDepartments(!showAllDepartments)}
-                      className="w-full px-3 py-2 text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors text-left"
-                    >
-                      {showAllDepartments ? 'Show Less' : `+${departments.length - MAX_DEPARTMENTS_VISIBLE} more`}
-                    </button>
-                  )}
-                </div>
-              </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
-              <div className="bg-white p-6 rounded-lg border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Statistics</h3>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex justify-between">
-                    <span>Total Projects:</span>
-                    <span className="font-medium">{allProjects.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Departments:</span>
-                    <span className="font-medium">{departments.length}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </aside>
-
-          {/* Mobile Filter Toggle */}
-          <div className="lg:hidden">
+        {/* Results Header */}
+        <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <p className="text-gray-600">
+            Showing <span className="font-semibold text-gray-900">{paginatedProjects.length}</span> of <span className="font-semibold text-gray-900">{filteredProjects.length}</span> {filteredProjects.length === 1 ? 'project' : 'projects'}
+            {searchTerm && <span> matching "{searchTerm}"</span>}
+            {selectedDepartment && <span> in {selectedDepartment}</span>}
+          </p>
+          {(searchTerm || selectedDepartment) && (
             <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="w-full flex items-center justify-between bg-white border border-gray-300 rounded-lg px-4 py-3 font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              onClick={clearFilters}
+              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
             >
-              <span className="flex items-center">
-                <FaFilter className="mr-2" />
-                Filters
-              </span>
-              <FaChevronDown className={`transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+              Clear all filters
             </button>
+          )}
+        </div>
 
-            {showFilters && (
-              <div className="mt-4 bg-white p-6 rounded-lg border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Departments</h3>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {visibleDepartments.map(dept => (
-                    <Link
-                      key={dept}
-                      to={`/department/${encodeURIComponent(dept)}`}
-                      className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md transition-colors truncate"
-                      onClick={() => setShowFilters(false)}
-                    >
-                      {dept}
-                    </Link>
-                  ))}
-                  {departments.length > MAX_DEPARTMENTS_VISIBLE && (
-                    <button
-                      onClick={() => {
-                        setShowAllDepartments(!showAllDepartments);
-                        setShowFilters(false);
-                      }}
-                      className="w-full px-3 py-2 text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors text-left"
-                    >
-                      {showAllDepartments ? 'Show Less' : `+${departments.length - MAX_DEPARTMENTS_VISIBLE} more`}
-                    </button>
-                  )}
+        {/* Projects Grid */}
+        {isLoading ? (
+          <div className="flex flex-col justify-center items-center py-32">
+            <FaSpinner className="animate-spin text-4xl text-indigo-600 mb-4" />
+            <p className="text-gray-600">Loading projects...</p>
+          </div>
+        ) : paginatedProjects.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+              {paginatedProjects.map(project => <ProjectCard key={project.id} project={project} />)}
+            </div>
+            
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    First
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Previous
+                  </button>
+                  
+                  <div className="flex gap-1">
+                    {(() => {
+                      const pages = [];
+                      const maxVisible = 5;
+                      let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+                      let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+                      
+                      if (endPage - startPage < maxVisible - 1) {
+                        startPage = Math.max(1, endPage - maxVisible + 1);
+                      }
+                      
+                      for (let i = startPage; i <= endPage; i++) {
+                        pages.push(
+                          <button
+                            key={i}
+                            onClick={() => setCurrentPage(i)}
+                            className={`w-10 h-10 rounded-lg font-medium transition-colors ${
+                              currentPage === i
+                                ? 'bg-indigo-600 text-white'
+                                : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            {i}
+                          </button>
+                        );
+                      }
+                      
+                      return pages;
+                    })()}
+                  </div>
+                  
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Last
+                  </button>
+                </div>
+                <div className="text-sm text-gray-600">
+                  Page {currentPage} of {totalPages}
                 </div>
               </div>
+            )}
+          </>
+        ) : (
+          <div className="text-center py-20">
+            <div className="mx-auto w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+              <FaBook className="text-gray-400 text-2xl" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No projects found</h3>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+              {searchTerm || selectedDepartment
+                ? "We couldn't find any projects matching your criteria. Try adjusting your filters."
+                : 'No projects available at the moment.'}
+            </p>
+            {(searchTerm || selectedDepartment) && (
+              <button
+                onClick={clearFilters}
+                className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                Clear Filters
+              </button>
             )}
           </div>
-
-          {/* Main Content */}
-          <main className="flex-1">
-            {/* Results Header */}
-            <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">
-                  {searchTerm ? 'Search Results' : 'All Projects'}
-                </h2>
-                <p className="text-gray-600 mt-1">
-                  Showing <span className="font-medium">{paginatedProjects.length}</span> of <span className="font-medium">{filteredProjects.length}</span> {filteredProjects.length === 1 ? 'project' : 'projects'}
-                  {searchTerm && <span> for "{searchTerm}"</span>}
-                </p>
-              </div>
-            </div>
-
-            {/* Projects Grid */}
-            {isLoading ? (
-              <div className="flex justify-center items-center py-20">
-                <FaSpinner className="animate-spin text-3xl text-indigo-600" />
-              </div>
-            ) : paginatedProjects.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {paginatedProjects.map(project => <ProjectCard key={project.id} project={project} />)}
-                </div>
-                
-                {/* Pagination Controls */}
-                {totalPages > 1 && (
-                  <div className="flex justify-center items-center mt-10 space-x-2">
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                      className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Previous
-                    </button>
-                    
-                    {/* Page numbers */}
-                    <div className="flex space-x-1">
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                        <button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          className={`px-3 py-2 rounded-lg ${
-                            currentPage === page
-                              ? 'bg-indigo-600 text-white'
-                              : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      ))}
-                    </div>
-                    
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                      disabled={currentPage === totalPages}
-                      className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Next
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <FaBook className="text-gray-400 text-xl" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-1">No projects found</h3>
-                <p className="text-gray-600 mb-6">
-                  {searchTerm
-                    ? `No projects match "${searchTerm}". Try a different search.`
-                    : 'No projects available at the moment.'}
-                </p>
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="inline-flex items-center bg-indigo-600 text-white px-4 py-2 rounded-md font-medium hover:bg-indigo-700 transition-colors"
-                  >
-                    Clear Search
-                  </button>
-                )}
-              </div>
-            )}
-          </main>
-        </div>
+        )}
       </div>
     </div>
   );
