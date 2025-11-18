@@ -102,7 +102,6 @@ const MainApp = () => {
           <Route path="/payment/demo" element={<DemoPaymentPage />} />
           <Route path="/departments" element={<CleanDepartmentsPage />} />
           <Route path="/department/:departmentName" element={<CleanDepartmentPage />} />
-          <Route path="/department/:departmentName/topics" element={<CleanProjectTopicsPage />} />
           <Route path="/login" element={<CleanLoginPage />} />
           <Route path="/signup" element={<CleanSignupPage />} />
           <Route path="/get-started" element={<CleanSignupPage />} />

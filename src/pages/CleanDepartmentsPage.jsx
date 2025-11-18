@@ -21,7 +21,7 @@ const CleanDepartmentCard = ({ name, count }) => {
 
   return (
     <Link
-      to={`/department/${encodeURIComponent(name)}/topics`}
+      to={`/department/${encodeURIComponent(name)}`}
       className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow flex justify-between items-center"
     >
       <div>
@@ -72,7 +72,7 @@ const CleanDepartmentsPage = () => {
   }, [allProjects, isLoading]);
 
   const filteredDepartments = useMemo(() => {
-    return departments.filter(dept => 
+    return departments.filter(dept =>
       dept.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [departments, searchTerm]);
