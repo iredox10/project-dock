@@ -89,7 +89,7 @@ const ProjectsPage = () => {
   useEffect(() => {
     setSearchTerm(initialSearchTerm);
   }, [initialSearchTerm]);
-  
+
   // Get unique departments
   const departments = useMemo(() => {
     const uniqueDepartments = [...new Set(allProjects.map(p => p.department))];
@@ -99,7 +99,7 @@ const ProjectsPage = () => {
   // Filter departments based on search
   const filteredDepartments = useMemo(() => {
     if (!departmentSearch) return departments;
-    return departments.filter(dept => 
+    return departments.filter(dept =>
       dept.toLowerCase().includes(departmentSearch.toLowerCase())
     );
   }, [departments, departmentSearch]);
@@ -141,7 +141,7 @@ const ProjectsPage = () => {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="bg-gray-50 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">Explore Projects</h1>
             <p className="text-lg text-gray-600">
@@ -181,11 +181,10 @@ const ProjectsPage = () => {
                     e.stopPropagation();
                     setShowDepartmentFilter(!showDepartmentFilter);
                   }}
-                  className={`flex items-center justify-center gap-2 px-4 sm:px-5 py-3.5 border rounded-lg font-medium transition-all whitespace-nowrap ${
-                    selectedDepartment
+                  className={`flex items-center justify-center gap-2 px-4 sm:px-5 py-3.5 border rounded-lg font-medium transition-all whitespace-nowrap ${selectedDepartment
                       ? 'bg-indigo-600 text-white border-indigo-600'
                       : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <FaFilter className="flex-shrink-0" />
                   <span className="text-sm sm:text-base">
@@ -202,11 +201,11 @@ const ProjectsPage = () => {
                 {showDepartmentFilter && (
                   <>
                     {/* Backdrop for mobile */}
-                    <div 
+                    <div
                       className="fixed inset-0 bg-black/20 z-40 md:hidden"
                       onClick={() => setShowDepartmentFilter(false)}
                     />
-                    
+
                     {/* Dropdown */}
                     <div className="fixed md:absolute left-4 right-4 md:left-auto md:right-0 top-auto bottom-4 md:bottom-auto md:top-full mt-0 md:mt-2 w-auto md:w-80 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 max-h-[70vh] md:max-h-96 flex flex-col">
                       <div className="p-3 border-b border-gray-200 flex-shrink-0">
@@ -232,11 +231,10 @@ const ProjectsPage = () => {
                             setShowDepartmentFilter(false);
                             setDepartmentSearch('');
                           }}
-                          className={`w-full text-left px-4 py-2.5 rounded-md transition-colors ${
-                            !selectedDepartment
+                          className={`w-full text-left px-4 py-2.5 rounded-md transition-colors ${!selectedDepartment
                               ? 'bg-indigo-50 text-indigo-700 font-medium'
                               : 'text-gray-700 hover:bg-gray-50'
-                          }`}
+                            }`}
                         >
                           All Departments
                         </button>
@@ -252,11 +250,10 @@ const ProjectsPage = () => {
                                 setShowDepartmentFilter(false);
                                 setDepartmentSearch('');
                               }}
-                              className={`w-full text-left px-4 py-2.5 rounded-md transition-colors ${
-                                selectedDepartment === dept
+                              className={`w-full text-left px-4 py-2.5 rounded-md transition-colors ${selectedDepartment === dept
                                   ? 'bg-indigo-50 text-indigo-700 font-medium'
                                   : 'text-gray-700 hover:bg-gray-50'
-                              }`}
+                                }`}
                             >
                               {dept}
                             </button>
@@ -307,7 +304,7 @@ const ProjectsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
               {paginatedProjects.map(project => <ProjectCard key={project.id} project={project} />)}
             </div>
-            
+
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
@@ -326,38 +323,37 @@ const ProjectsPage = () => {
                   >
                     Previous
                   </button>
-                  
+
                   <div className="flex gap-1">
                     {(() => {
                       const pages = [];
                       const maxVisible = 5;
                       let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
                       let endPage = Math.min(totalPages, startPage + maxVisible - 1);
-                      
+
                       if (endPage - startPage < maxVisible - 1) {
                         startPage = Math.max(1, endPage - maxVisible + 1);
                       }
-                      
+
                       for (let i = startPage; i <= endPage; i++) {
                         pages.push(
                           <button
                             key={i}
                             onClick={() => setCurrentPage(i)}
-                            className={`w-10 h-10 rounded-lg font-medium transition-colors ${
-                              currentPage === i
+                            className={`w-10 h-10 rounded-lg font-medium transition-colors ${currentPage === i
                                 ? 'bg-indigo-600 text-white'
                                 : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                            }`}
+                              }`}
                           >
                             {i}
                           </button>
                         );
                       }
-                      
+
                       return pages;
                     })()}
                   </div>
-                  
+
                   <button
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
