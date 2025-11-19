@@ -15,18 +15,35 @@ const CleanProjectDetailPage = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [hasPurchased, setHasPurchased] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [userFavorites, setUserFavorites] = useState([]);
 
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
         const user = await authService.getCurrentUser();
         setCurrentUser(user);
+
+        if (user) {
+          // Get user details including favorites
+          try {
+            const { usersService } = await import('../appwrite/database');
+            const userDoc = await usersService.getUserById(user.$id);
+            setUserFavorites(userDoc?.favoriteProjects || []);
+
+            // Check if current project is in favorites
+            if (project && userDoc?.favoriteProjects?.includes(project.id)) {
+              setIsFavorite(true);
+            }
+          } catch (dbError) {
+            console.error('Error fetching user favorites:', dbError);
+          }
+        }
       } catch (error) {
         setCurrentUser(null);
       }
     };
     checkAuthStatus();
-  }, []);
+  }, [project?.id]);
 
   useEffect(() => {
     const fetchProjectAndReviews = async () => {
@@ -64,7 +81,7 @@ const CleanProjectDetailPage = () => {
     const shareUrl = window.location.href;
     const shareTitle = project?.title || 'Academic Project';
     const shareText = `Check out this academic project: ${project?.title} from Project Dock`;
-    
+
     // Try to use the Web Share API if available
     if (navigator.share) {
       try {
@@ -84,6 +101,45 @@ const CleanProjectDetailPage = () => {
       } catch (error) {
         console.log('Error copying link:', error);
       }
+    }
+  };
+
+  // Handle toggling favorite status
+  const handleToggleFavorite = async () => {
+    if (!currentUser) {
+      alert('Please log in to add projects to favorites');
+      return;
+    }
+
+    if (!project) return;
+
+    try {
+      const { usersService } = await import('../appwrite/database');
+      const userDoc = await usersService.getUserById(currentUser.$id);
+      let updatedFavorites = [...(userDoc?.favoriteProjects || [])];
+
+      if (isFavorite) {
+        // Remove from favorites
+        updatedFavorites = updatedFavorites.filter(id => id !== project.id);
+        setIsFavorite(false);
+      } else {
+        // Add to favorites
+        if (!updatedFavorites.includes(project.id)) {
+          updatedFavorites.push(project.id);
+        }
+        setIsFavorite(true);
+      }
+
+      // Update user document with new favorites list
+      await usersService.updateUser(currentUser.$id, {
+        ...userDoc,
+        favoriteProjects: updatedFavorites
+      });
+
+      setUserFavorites(updatedFavorites);
+    } catch (error) {
+      console.error('Error updating favorites:', error);
+      alert('Failed to update favorites');
     }
   };
 
@@ -164,13 +220,13 @@ const CleanProjectDetailPage = () => {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <button 
-                    onClick={() => setIsFavorite(!isFavorite)}
-                    className="p-2 text-gray-400 hover:text-indigo-600 transition-colors"
+                  <button
+                    onClick={handleToggleFavorite}
+                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
                   >
                     <FaHeart className={isFavorite ? 'fill-current text-red-500' : ''} />
                   </button>
-                  <button 
+                  <button
                     onClick={handleShare}
                     className="p-2 text-gray-400 hover:text-indigo-600 transition-colors"
                   >
