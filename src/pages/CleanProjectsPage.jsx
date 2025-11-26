@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { FiSearch, FiChevronLeft, FiChevronRight, FiFilter, FiX } from 'react-icons/fi';
-import { getAllProjects } from '../api/projectServices';
+import { FiSearch, FiChevronLeft, FiChevronRight, FiFilter, FiX, FiLoader, FiBook } from 'react-icons/fi';
+import { getAllProjects, getUniqueDepartments } from '../api/projectServices';
 
 const ProjectCard = ({ project }) => {
   return (
@@ -20,9 +20,81 @@ const ProjectCard = ({ project }) => {
       <div className="flex items-center gap-3 text-xs text-gray-500">
         <span className="font-medium text-gray-900">{project.department}</span>
         <span>•</span>
+        <span className="font-medium text-gray-900">{project.level || 'BSc'}</span>
+        <span>•</span>
         <span>{project.pages || '?'} pages</span>
       </div>
     </Link>
+  );
+};
+
+const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      }
+    }
+    return pages;
+  };
+
+  return (
+    <div className="flex items-center justify-between border-t border-gray-100 pt-8 mt-8">
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 disabled:opacity-30 disabled:hover:text-gray-500 transition-colors"
+      >
+        <FiChevronLeft /> Previous
+      </button>
+
+      <div className="flex items-center gap-2">
+        {getPageNumbers().map((page, index) => (
+          <React.Fragment key={index}>
+            {page === '...' ? (
+              <span className="text-gray-400 text-sm px-2">...</span>
+            ) : (
+              <button
+                onClick={() => onPageChange(page)}
+                className={`w-8 h-8 flex items-center justify-center rounded-md text-sm transition-colors ${currentPage === page
+                    ? 'bg-gray-900 text-white font-medium'
+                    : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+              >
+                {page}
+              </button>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 disabled:opacity-30 disabled:hover:text-gray-500 transition-colors"
+      >
+        Next <FiChevronRight />
+      </button>
+    </div>
   );
 };
 
@@ -30,64 +102,109 @@ const ProjectsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialSearchTerm = searchParams.get('search') || '';
   const initialDept = searchParams.get('department') || '';
+  const initialLevel = searchParams.get('level') || '';
+  const initialPage = parseInt(searchParams.get('page')) || 1;
 
-  const [allProjects, setAllProjects] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [totalProjects, setTotalProjects] = useState(0);
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDepartment, setSelectedDepartment] = useState(initialDept);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [showFilters, setShowFilters] = useState(false);
+  const [selectedLevel, setSelectedLevel] = useState(initialLevel);
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const [showDeptFilters, setShowDeptFilters] = useState(false);
+  const [showLevelFilters, setShowLevelFilters] = useState(false);
+  const [departments, setDepartments] = useState([]);
+  const [deptSearchTerm, setDeptSearchTerm] = useState('');
 
   const PROJECTS_PER_PAGE = 20;
+  const LEVELS = ['BSc', 'MSc', 'HND', 'ND', 'PhD'];
 
+  // Fetch departments from DB on mount
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const depts = await getUniqueDepartments();
+        setDepartments(depts);
+      } catch (error) {
+        console.error("Error fetching departments:", error);
+      }
+    };
+    fetchDepartments();
+  }, []);
+
+  // Filter departments based on search
+  const filteredDepartments = useMemo(() => {
+    if (!deptSearchTerm) return departments;
+    return departments.filter(dept =>
+      dept.toLowerCase().includes(deptSearchTerm.toLowerCase())
+    );
+  }, [departments, deptSearchTerm]);
+
+  // Fetch projects when params change
   useEffect(() => {
     const fetchProjects = async () => {
       setIsLoading(true);
       try {
-        const response = await getAllProjects({ limit: 100 });
+        const offset = (currentPage - 1) * PROJECTS_PER_PAGE;
+        const response = await getAllProjects({
+          limit: PROJECTS_PER_PAGE,
+          offset: offset,
+          search: searchTerm,
+          department: selectedDepartment,
+          level: selectedLevel
+        });
+
         const fetchedProjects = response.documents.map(doc => ({
           id: doc.$id,
           ...doc
         }));
-        setAllProjects(fetchedProjects);
+
+        setProjects(fetchedProjects);
+        setTotalProjects(response.total);
       } catch (error) {
         console.error("Error fetching projects: ", error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchProjects();
-  }, []);
 
-  // Update URL params when filters change
+    // Debounce search to avoid excessive API calls
+    const timeoutId = setTimeout(() => {
+      fetchProjects();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [currentPage, searchTerm, selectedDepartment, selectedLevel]);
+
+  // Update URL params
   useEffect(() => {
     const params = {};
     if (searchTerm) params.search = searchTerm;
     if (selectedDepartment) params.department = selectedDepartment;
+    if (selectedLevel) params.level = selectedLevel;
+    if (currentPage > 1) params.page = currentPage;
     setSearchParams(params);
-    setCurrentPage(1);
-  }, [searchTerm, selectedDepartment, setSearchParams]);
+  }, [searchTerm, selectedDepartment, selectedLevel, currentPage, setSearchParams]);
 
-  const departments = useMemo(() => {
-    return [...new Set(allProjects.map(p => p.department))].sort();
-  }, [allProjects]);
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page on search
+  };
 
-  const filteredProjects = useMemo(() => {
-    return allProjects.filter(p => {
-      const matchesSearch = !searchTerm ||
-        p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.author.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesDept = !selectedDepartment || p.department === selectedDepartment;
-      return matchesSearch && matchesDept;
-    });
-  }, [allProjects, searchTerm, selectedDepartment]);
+  const handleDepartmentChange = (dept) => {
+    setSelectedDepartment(dept);
+    setShowDeptFilters(false);
+    setCurrentPage(1); // Reset to first page on filter
+  };
 
-  const paginatedProjects = useMemo(() => {
-    const startIndex = (currentPage - 1) * PROJECTS_PER_PAGE;
-    return filteredProjects.slice(startIndex, startIndex + PROJECTS_PER_PAGE);
-  }, [filteredProjects, currentPage]);
+  const handleLevelChange = (level) => {
+    setSelectedLevel(level);
+    setShowLevelFilters(false);
+    setCurrentPage(1); // Reset to first page on filter
+  };
 
-  const totalPages = Math.ceil(filteredProjects.length / PROJECTS_PER_PAGE);
+  const totalPages = Math.ceil(totalProjects / PROJECTS_PER_PAGE);
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans pt-24 pb-20">
@@ -102,48 +219,106 @@ const ProjectsPage = () => {
               type="text"
               placeholder="Search for projects..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
               className="w-full bg-transparent border-b border-gray-200 py-4 text-lg placeholder-gray-400 focus:border-gray-900 focus:outline-none transition-colors"
             />
-            {searchTerm && (
+            {searchTerm ? (
               <button
-                onClick={() => setSearchTerm('')}
+                onClick={() => handleSearchChange({ target: { value: '' } })}
                 className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-900"
               >
                 <FiX />
               </button>
+            ) : (
+              <FiSearch className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400" />
             )}
           </div>
 
           {/* Filters Bar */}
-          <div className="flex items-center justify-between mt-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-6 gap-4">
             <div className="flex items-center gap-4">
+
+              {/* Department Filter */}
               <div className="relative">
                 <button
-                  onClick={() => setShowFilters(!showFilters)}
+                  onClick={() => { setShowDeptFilters(!showDeptFilters); setShowLevelFilters(false); }}
                   className={`text-sm font-medium flex items-center gap-2 transition-colors ${selectedDepartment ? 'text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
                 >
                   <FiFilter className="w-4 h-4" />
                   {selectedDepartment || 'All Departments'}
                 </button>
 
-                {showFilters && (
+                {showDeptFilters && (
                   <>
-                    <div className="fixed inset-0 z-10" onClick={() => setShowFilters(false)} />
-                    <div className="absolute top-full left-0 mt-2 w-64 max-h-80 overflow-y-auto bg-white border border-gray-100 rounded-lg shadow-lg z-20 py-2">
+                    <div className="fixed inset-0 z-10" onClick={() => setShowDeptFilters(false)} />
+                    <div className="absolute top-full left-0 mt-2 w-72 max-h-96 overflow-hidden bg-white border border-gray-100 rounded-lg shadow-lg z-20 flex flex-col">
+                      <div className="p-2 border-b border-gray-50 sticky top-0 bg-white">
+                        <div className="relative">
+                          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-3 h-3" />
+                          <input
+                            type="text"
+                            placeholder="Find department..."
+                            value={deptSearchTerm}
+                            onChange={(e) => setDeptSearchTerm(e.target.value)}
+                            className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-100 rounded text-xs focus:outline-none focus:border-gray-300"
+                            autoFocus
+                          />
+                        </div>
+                      </div>
+                      <div className="overflow-y-auto flex-1 py-1">
+                        <button
+                          onClick={() => handleDepartmentChange('')}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                        >
+                          All Departments
+                        </button>
+                        {filteredDepartments.map(dept => (
+                          <button
+                            key={dept}
+                            onClick={() => handleDepartmentChange(dept)}
+                            className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 hover:text-gray-900 ${selectedDepartment === dept ? 'text-gray-900 font-medium bg-gray-50' : 'text-gray-500'}`}
+                          >
+                            {dept}
+                          </button>
+                        ))}
+                        {filteredDepartments.length === 0 && (
+                          <div className="px-4 py-3 text-xs text-gray-400 text-center">
+                            No departments found
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Level Filter */}
+              <div className="relative">
+                <button
+                  onClick={() => { setShowLevelFilters(!showLevelFilters); setShowDeptFilters(false); }}
+                  className={`text-sm font-medium flex items-center gap-2 transition-colors ${selectedLevel ? 'text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
+                >
+                  <FiBook className="w-4 h-4" />
+                  {selectedLevel || 'All Levels'}
+                </button>
+
+                {showLevelFilters && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowLevelFilters(false)} />
+                    <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-20 py-2">
                       <button
-                        onClick={() => { setSelectedDepartment(''); setShowFilters(false); }}
+                        onClick={() => handleLevelChange('')}
                         className="w-full text-left px-4 py-2 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                       >
-                        All Departments
+                        All Levels
                       </button>
-                      {departments.map(dept => (
+                      {LEVELS.map(level => (
                         <button
-                          key={dept}
-                          onClick={() => { setSelectedDepartment(dept); setShowFilters(false); }}
-                          className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 hover:text-gray-900 ${selectedDepartment === dept ? 'text-gray-900 font-medium bg-gray-50' : 'text-gray-500'}`}
+                          key={level}
+                          onClick={() => handleLevelChange(level)}
+                          className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 hover:text-gray-900 ${selectedLevel === level ? 'text-gray-900 font-medium bg-gray-50' : 'text-gray-500'}`}
                         >
-                          {dept}
+                          {level}
                         </button>
                       ))}
                     </div>
@@ -153,17 +328,20 @@ const ProjectsPage = () => {
             </div>
 
             <div className="text-xs text-gray-400 font-mono">
-              {filteredProjects.length} results
+              {totalProjects} results
             </div>
           </div>
         </div>
 
         {/* Projects List */}
-        <div className="space-y-1 mb-16">
+        <div className="space-y-1 mb-16 min-h-[400px]">
           {isLoading ? (
-            <div className="py-20 text-center text-gray-400 text-sm">Loading library...</div>
-          ) : paginatedProjects.length > 0 ? (
-            paginatedProjects.map(project => (
+            <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+              <FiLoader className="w-8 h-8 animate-spin mb-4" />
+              <span className="text-sm">Loading library...</span>
+            </div>
+          ) : projects.length > 0 ? (
+            projects.map(project => (
               <ProjectCard key={project.id} project={project} />
             ))
           ) : (
@@ -175,25 +353,11 @@ const ProjectsPage = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-gray-100 pt-8">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="text-sm font-medium text-gray-500 hover:text-gray-900 disabled:opacity-30 disabled:hover:text-gray-500 flex items-center gap-2 transition-colors"
-            >
-              <FiChevronLeft /> Previous
-            </button>
-            <span className="text-xs text-gray-400 font-mono">
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="text-sm font-medium text-gray-500 hover:text-gray-900 disabled:opacity-30 disabled:hover:text-gray-500 flex items-center gap-2 transition-colors"
-            >
-              Next <FiChevronRight />
-            </button>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         )}
       </div>
     </div>

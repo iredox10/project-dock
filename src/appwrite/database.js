@@ -11,41 +11,41 @@ export const projectsService = {
   async getAllProjects(params = {}) {
     try {
       const queries = [];
-      
+
       // Add filters if provided
       if (params.department) {
         queries.push(Query.equal('department', params.department));
       }
-      
+
       if (params.level) {
         queries.push(Query.equal('level', params.level));
       }
-      
+
       if (params.year) {
         queries.push(Query.equal('year', params.year));
       }
-      
+
       if (params.search) {
         queries.push(Query.search('title', params.search));
       }
-      
+
       if (params.limit) {
         queries.push(Query.limit(params.limit));
       }
-      
+
       if (params.offset) {
         queries.push(Query.offset(params.offset));
       }
-      
+
       // Default to sort by creation date descending
       queries.push(Query.orderDesc('$createdAt'));
-      
+
       const response = await databases.listDocuments(
         DATABASE_ID,
         COLLECTIONS.PROJECTS,
         queries
       );
-      
+
       return response;
     } catch (error) {
       console.error('Error getting projects:', error);
@@ -123,27 +123,27 @@ export const projectsService = {
   async getProjectsByDepartment(department, params = {}) {
     try {
       const queries = [Query.equal('department', department)];
-      
+
       if (params.level) {
         queries.push(Query.equal('level', params.level));
       }
-      
+
       if (params.limit) {
         queries.push(Query.limit(params.limit));
       }
-      
+
       if (params.offset) {
         queries.push(Query.offset(params.offset));
       }
-      
+
       queries.push(Query.orderDesc('$createdAt'));
-      
+
       const response = await databases.listDocuments(
         DATABASE_ID,
         COLLECTIONS.PROJECTS,
         queries
       );
-      
+
       return response;
     } catch (error) {
       console.error('Error getting projects by department:', error);
@@ -155,27 +155,49 @@ export const projectsService = {
   async getProjectsByLevel(level, params = {}) {
     try {
       const queries = [Query.equal('level', level)];
-      
+
       if (params.department) {
         queries.push(Query.equal('department', params.department));
       }
-      
+
       if (params.limit) {
         queries.push(Query.limit(params.limit));
       }
-      
+
       queries.push(Query.orderDesc('$createdAt'));
-      
+
       const response = await databases.listDocuments(
         DATABASE_ID,
         COLLECTIONS.PROJECTS,
         queries
       );
-      
+
       return response;
     } catch (error) {
       console.error('Error getting projects by level:', error);
       throw new Error(error.message);
+    }
+  },
+
+  // Get unique departments from existing projects
+  async getUniqueDepartments() {
+    try {
+      // Fetch projects to extract departments
+      // Using a high limit to cover most projects
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.PROJECTS,
+        [
+          Query.limit(1000),
+          Query.orderDesc('$createdAt')
+        ]
+      );
+
+      const departments = [...new Set(response.documents.map(p => p.department).filter(Boolean))].sort();
+      return departments;
+    } catch (error) {
+      console.error('Error getting unique departments:', error);
+      return [];
     }
   }
 };
@@ -186,23 +208,23 @@ export const usersService = {
   async getAllUsers(params = {}) {
     try {
       const queries = [];
-      
+
       if (params.limit) {
         queries.push(Query.limit(params.limit));
       }
-      
+
       if (params.offset) {
         queries.push(Query.offset(params.offset));
       }
-      
+
       queries.push(Query.orderDesc('$createdAt'));
-      
+
       const response = await databases.listDocuments(
         DATABASE_ID,
         COLLECTIONS.USERS,
         queries
       );
-      
+
       return response;
     } catch (error) {
       console.error('Error getting users:', error);
@@ -290,7 +312,7 @@ export const usersService = {
         COLLECTIONS.USERS,
         [Query.equal('email', email)]
       );
-      
+
       if (response.documents.length > 0) {
         return response.documents[0];
       }
@@ -308,31 +330,31 @@ export const ordersService = {
   async getAllOrders(params = {}) {
     try {
       const queries = [];
-      
+
       if (params.userId) {
         queries.push(Query.equal('userId', params.userId));
       }
-      
+
       if (params.status) {
         queries.push(Query.equal('status', params.status));
       }
-      
+
       if (params.projectId) {
         queries.push(Query.equal('projectId', params.projectId));
       }
-      
+
       if (params.limit) {
         queries.push(Query.limit(params.limit));
       }
-      
+
       queries.push(Query.orderDesc('$createdAt'));
-      
+
       const response = await databases.listDocuments(
         DATABASE_ID,
         COLLECTIONS.ORDERS,
         queries
       );
-      
+
       return response;
     } catch (error) {
       console.error('Error getting orders:', error);
@@ -413,19 +435,19 @@ export const reviewsService = {
   async getReviewsByProject(projectId, params = {}) {
     try {
       const queries = [Query.equal('projectId', projectId)];
-      
+
       if (params.limit) {
         queries.push(Query.limit(params.limit));
       }
-      
+
       queries.push(Query.orderDesc('$createdAt'));
-      
+
       const response = await databases.listDocuments(
         DATABASE_ID,
         COLLECTIONS.REVIEWS,
         queries
       );
-      
+
       return response;
     } catch (error) {
       console.error('Error getting reviews:', error);
@@ -441,7 +463,7 @@ export const reviewsService = {
         COLLECTIONS.REVIEWS,
         [Query.equal('userId', userId), Query.orderDesc('$createdAt')]
       );
-      
+
       return response;
     } catch (error) {
       console.error('Error getting user reviews:', error);

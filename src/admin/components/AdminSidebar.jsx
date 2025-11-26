@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
-import { FiGrid, FiFolder, FiUsers, FiLogOut, FiFileText, FiMessageSquare, FiMenu, FiX, FiLayers } from 'react-icons/fi';
+import { FiGrid, FiFolder, FiUsers, FiLogOut, FiFileText, FiMessageSquare, FiMenu, FiX, FiLayers, FiArrowLeft } from 'react-icons/fi';
 import { authService } from '../../appwrite/auth';
 import { useNavigate } from 'react-router-dom';
 
@@ -115,7 +115,14 @@ const AdminSidebar = ({ isSidebarOpen, toggleSidebar }) => {
           </NavLink>
         </nav>
 
-        <div className="p-6 border-t border-gray-50">
+        <div className="p-6 border-t border-gray-50 space-y-1">
+          <Link 
+            to="/" 
+            className={`${linkClasses} w-full justify-start text-gray-600 hover:text-gray-900`}
+          >
+            <FiArrowLeft className="w-5 h-5" />
+            <span>Back to Main Page</span>
+          </Link>
           <button onClick={handleLogout} className={`${linkClasses} w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50`}>
             <FiLogOut className="w-5 h-5" />
             <span>Sign Out</span>

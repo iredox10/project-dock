@@ -8,7 +8,8 @@ export const {
   updateProject,
   deleteProject,
   getProjectsByDepartment,
-  getProjectsByLevel
+  getProjectsByLevel,
+  getUniqueDepartments
 } = projectsService;
 
 export const {
