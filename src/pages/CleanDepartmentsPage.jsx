@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FiSearch, FiArrowRight, FiGrid, FiLoader } from 'react-icons/fi';
+import { FiSearch, FiArrowRight, FiGrid, FiLoader, FiX } from 'react-icons/fi';
 import { getAllProjects } from '../api/projectServices';
 
 const CleanDepartmentsPage = () => {
@@ -43,44 +43,36 @@ const CleanDepartmentsPage = () => {
   }, [departments, searchTerm]);
 
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-900">
-      {/* Header */}
-      <div className="border-b border-gray-100 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
-            Academic Departments
+    <div className="min-h-screen bg-white font-sans text-gray-900 pt-24 pb-20">
+      <div className="max-w-4xl mx-auto px-6">
+
+        {/* Header & Search */}
+        <div className="mb-16">
+          <h1 className="text-3xl font-semibold tracking-tight mb-2">
+            Departments
           </h1>
-          <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-10">
-            Explore our comprehensive collection of research projects across {departments.length} departments.
+          <p className="text-gray-500 mb-8">
+            Browse research projects by department
           </p>
 
-          {/* Search Bar */}
-          <div className="max-w-xl mx-auto relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <FiSearch className="text-gray-400 text-lg" />
-            </div>
+          <div className="relative">
             <input
               type="text"
               placeholder="Search departments..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="block w-full pl-12 pr-4 py-4 bg-gray-50 border-b-2 border-transparent focus:border-gray-900 focus:bg-white transition-all outline-none text-lg placeholder-gray-400"
+              className="w-full bg-transparent border-b border-gray-200 py-4 text-lg placeholder-gray-400 focus:border-gray-900 focus:outline-none transition-colors"
             />
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        {/* Results Info */}
-        <div className="flex justify-between items-end mb-8 border-b border-gray-100 pb-4">
-          <div>
-            <h2 className="text-lg font-semibold">
-              {searchTerm ? 'Search Results' : 'All Departments'}
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              {filteredDepartments.length} {filteredDepartments.length === 1 ? 'department' : 'departments'} available
-            </p>
+            {searchTerm ? (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-900"
+              >
+                <FiX />
+              </button>
+            ) : (
+              <FiSearch className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400" />
+            )}
           </div>
         </div>
 
@@ -90,27 +82,23 @@ const CleanDepartmentsPage = () => {
             <FiLoader className="animate-spin text-3xl text-gray-300" />
           </div>
         ) : filteredDepartments.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {filteredDepartments.map((dept) => (
               <Link
                 key={dept.name}
                 to={`/department/${encodeURIComponent(dept.name)}`}
-                className="group block p-8 bg-white border border-gray-100 rounded-lg hover:border-gray-300 transition-all hover:shadow-sm"
+                className="group flex items-center justify-between p-6 bg-white border border-gray-100 rounded-lg hover:border-gray-300 hover:shadow-sm transition-all"
               >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center group-hover:bg-gray-100 transition-colors">
-                    <FiGrid className="text-gray-400 group-hover:text-gray-900 transition-colors" />
-                  </div>
-                  <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                    {dept.count} projects
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-1 group-hover:text-gray-600 transition-colors">
+                    {dept.name}
+                  </h3>
+                  <span className="text-sm text-gray-500">
+                    {dept.count} {dept.count === 1 ? 'project' : 'projects'}
                   </span>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:underline decoration-1 underline-offset-4">
-                  {dept.name}
-                </h3>
-                <div className="flex items-center text-sm text-gray-500 group-hover:text-gray-900 transition-colors mt-4">
-                  <span>Browse Projects</span>
-                  <FiArrowRight className="ml-2 transform group-hover:translate-x-1 transition-transform" />
+                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
+                  <FiArrowRight className="text-gray-400 group-hover:text-gray-900 transition-colors" />
                 </div>
               </Link>
             ))}
@@ -132,30 +120,6 @@ const CleanDepartmentsPage = () => {
             </button>
           </div>
         )}
-
-        {/* CTA Section */}
-        <div className="mt-24 text-center border-t border-gray-100 pt-16">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
-            Can't find what you're looking for?
-          </h3>
-          <p className="text-gray-500 mb-8 max-w-xl mx-auto">
-            We are constantly updating our database with new departments and research projects.
-          </p>
-          <div className="flex justify-center gap-4">
-            <Link
-              to="/contact"
-              className="inline-flex items-center justify-center px-6 py-3 border border-gray-200 text-base font-medium rounded-md text-gray-900 bg-white hover:bg-gray-50 transition-colors"
-            >
-              Contact Support
-            </Link>
-            <Link
-              to="/projects"
-              className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gray-900 hover:bg-black transition-colors"
-            >
-              Browse All Projects
-            </Link>
-          </div>
-        </div>
       </div>
     </div>
   );
