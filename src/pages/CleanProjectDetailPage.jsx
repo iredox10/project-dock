@@ -14,6 +14,20 @@ const CleanProjectDetailPage = () => {
   const [error, setError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showFloatingButton, setShowFloatingButton] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 400) {
+        setShowFloatingButton(true);
+      } else {
+        setShowFloatingButton(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -146,6 +160,16 @@ const CleanProjectDetailPage = () => {
               </div>
             </div>
 
+            {/* Mobile Top Download Button */}
+            <div className="md:hidden mb-12">
+              <Link
+                to={`/projects/${projectId}/payment`}
+                className="block w-full bg-gray-900 text-white text-center py-4 rounded-lg font-medium hover:bg-gray-800 transition-colors"
+              >
+                Get Full Access (₦{project.priceNGN?.toLocaleString() || '0'})
+              </Link>
+            </div>
+
             <div className="prose prose-gray max-w-none mb-16">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Abstract</h3>
               <div className="text-gray-600 leading-relaxed">
@@ -259,6 +283,15 @@ const CleanProjectDetailPage = () => {
 
         </div>
       </div>
+      {/* Mobile Floating Download Button */}
+      {showFloatingButton && (
+        <Link
+          to={`/projects/${projectId}/payment`}
+          className="md:hidden fixed bottom-24 right-6 z-50 flex items-center justify-center w-14 h-14 bg-gray-900 text-white rounded-full shadow-lg hover:bg-gray-800 transition-all animate-bounce"
+        >
+          <FiDownload className="text-xl" />
+        </Link>
+      )}
     </div>
   );
 };
