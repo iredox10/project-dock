@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaCheckCircle, FaTimesCircle, FaTimes, FaExclamationTriangle, FaInfoCircle } from 'react-icons/fa';
+import { FiCheckCircle, FiAlertCircle, FiInfo, FiX } from 'react-icons/fi';
 
 /**
  * Reusable Modal Component
@@ -12,50 +12,35 @@ import { FaCheckCircle, FaTimesCircle, FaTimes, FaExclamationTriangle, FaInfoCir
 export const Modal = ({ isOpen, onClose, title, message, type = 'info' }) => {
   if (!isOpen) return null;
 
-  const typeStyles = {
-    success: 'bg-green-50 border-green-500 text-green-900',
-    error: 'bg-red-50 border-red-500 text-red-900',
-    info: 'bg-blue-50 border-blue-500 text-blue-900',
-    warning: 'bg-yellow-50 border-yellow-500 text-yellow-900',
-  };
-
   const iconStyles = {
-    success: <FaCheckCircle className="text-green-600 text-3xl" />,
-    error: <FaTimesCircle className="text-red-600 text-3xl" />,
-    info: <FaInfoCircle className="text-blue-600 text-3xl" />,
-    warning: <FaExclamationTriangle className="text-yellow-600 text-3xl" />,
+    success: <FiCheckCircle className="text-gray-900 text-2xl" />,
+    error: <FiAlertCircle className="text-gray-900 text-2xl" />,
+    info: <FiInfo className="text-gray-900 text-2xl" />,
+    warning: <FiAlertCircle className="text-gray-900 text-2xl" />,
   };
 
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" 
+    <div
+      className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300"
       onClick={onClose}
     >
-      <div 
-        className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden" 
+      <div
+        className="bg-white border border-gray-200 rounded-lg shadow-xl max-w-sm w-full mx-4 overflow-hidden transform transition-all"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className={`p-6 border-l-4 ${typeStyles[type]}`}>
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 mt-1">
+        <div className="p-6 text-center">
+          <div className="flex justify-center mb-4">
+            <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center">
               {iconStyles[type]}
             </div>
-            <div className="flex-1">
-              <h3 className="text-xl font-bold mb-2">{title}</h3>
-              <p className="text-sm leading-relaxed">{message}</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <FaTimes className="text-xl" />
-            </button>
           </div>
-        </div>
-        <div className="p-4 bg-gray-50 flex justify-end">
+
+          <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
+          <p className="text-sm text-gray-500 leading-relaxed mb-6">{message}</p>
+
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-semibold transition-all"
+            className="w-full py-2.5 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-black transition-colors"
           >
             Close
           </button>

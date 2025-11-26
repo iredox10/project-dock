@@ -1,47 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaSearch, FaUniversity, FaSpinner, FaChevronRight, FaGraduationCap } from 'react-icons/fa';
+import { FiSearch, FiArrowRight, FiGrid, FiLoader } from 'react-icons/fi';
 import { getAllProjects } from '../api/projectServices';
-
-// Clean department card component
-const CleanDepartmentCard = ({ name, count }) => {
-  // Simple color classes for departments
-  const getColorClass = (dept) => {
-    const colors = {
-      'Computer Science': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-      'Electrical Engineering': 'bg-amber-100 text-amber-800 border-amber-200',
-      'Mechanical Engineering': 'bg-red-100 text-red-800 border-red-200',
-      'Civil Engineering': 'bg-purple-100 text-purple-800 border-purple-200',
-      'Economics': 'bg-emerald-100 text-emerald-800 border-emerald-200',
-      'Business Administration': 'bg-blue-100 text-blue-800 border-blue-200',
-      'Mass Communication': 'bg-pink-100 text-pink-800 border-pink-200',
-    };
-    return colors[dept] || 'bg-gray-100 text-gray-800 border-gray-200';
-  };
-
-  return (
-    <Link
-      to={`/department/${encodeURIComponent(name)}`}
-      className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow flex justify-between items-center"
-    >
-      <div>
-        <div className="flex items-center mb-2">
-          <FaUniversity className="text-gray-400 mr-2" />
-          <h3 className="text-lg font-semibold text-gray-900">{name}</h3>
-        </div>
-        <p className="text-sm text-gray-600">{count} projects</p>
-      </div>
-      <FaChevronRight className="text-gray-400" />
-    </Link>
-  );
-};
 
 const CleanDepartmentsPage = () => {
   const [allProjects, setAllProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch all projects to aggregate department data
   useEffect(() => {
     const fetchAllProjects = async () => {
       setIsLoading(true);
@@ -58,7 +24,6 @@ const CleanDepartmentsPage = () => {
     fetchAllProjects();
   }, []);
 
-
   const departments = useMemo(() => {
     if (isLoading) return [];
     const departmentCounts = allProjects.reduce((acc, project) => {
@@ -68,7 +33,7 @@ const CleanDepartmentsPage = () => {
 
     return Object.entries(departmentCounts)
       .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count); // Sort by count (most projects first)
+      .sort((a, b) => b.count - a.count);
   }, [allProjects, isLoading]);
 
   const filteredDepartments = useMemo(() => {
@@ -78,98 +43,114 @@ const CleanDepartmentsPage = () => {
   }, [departments, searchTerm]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Clean Header */}
-      <div className="bg-white border-b border-gray-200 py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Academic Departments</h1>
-            <p className="text-lg text-gray-600">
-              Browse {departments.length} departments with {allProjects.length.toLocaleString()}+ projects
-            </p>
-          </div>
+    <div className="min-h-screen bg-white font-sans text-gray-900">
+      {/* Header */}
+      <div className="border-b border-gray-100 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28 text-center">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+            Academic Departments
+          </h1>
+          <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-10">
+            Explore our comprehensive collection of research projects across {departments.length} departments.
+          </p>
 
           {/* Search Bar */}
-          <div className="max-w-2xl mx-auto">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaSearch className="text-gray-400" />
-              </div>
-              <input
-                type="text"
-                placeholder={`Search from ${departments.length} departments...`}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full pl-10 pr-3 py-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              />
+          <div className="max-w-xl mx-auto relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <FiSearch className="text-gray-400 text-lg" />
             </div>
+            <input
+              type="text"
+              placeholder="Search departments..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="block w-full pl-12 pr-4 py-4 bg-gray-50 border-b-2 border-transparent focus:border-gray-900 focus:bg-white transition-all outline-none text-lg placeholder-gray-400"
+            />
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Results Header */}
-        <div className="mb-6">
-          <h2 className="text-xl font-bold text-gray-900">
-            {searchTerm ? 'Search Results' : 'All Departments'}
-          </h2>
-          <p className="text-gray-600 mt-1">
-            Showing <span className="font-medium">{filteredDepartments.length}</span> {filteredDepartments.length === 1 ? 'department' : 'departments'}
-            {searchTerm && <span> matching "{searchTerm}"</span>}
-          </p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        {/* Results Info */}
+        <div className="flex justify-between items-end mb-8 border-b border-gray-100 pb-4">
+          <div>
+            <h2 className="text-lg font-semibold">
+              {searchTerm ? 'Search Results' : 'All Departments'}
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              {filteredDepartments.length} {filteredDepartments.length === 1 ? 'department' : 'departments'} available
+            </p>
+          </div>
         </div>
 
         {/* Departments Grid */}
         {isLoading ? (
-          <div className="flex justify-center items-center py-20">
-            <FaSpinner className="animate-spin text-3xl text-indigo-600" />
+          <div className="flex justify-center items-center py-32">
+            <FiLoader className="animate-spin text-3xl text-gray-300" />
           </div>
         ) : filteredDepartments.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredDepartments.map(dept => <CleanDepartmentCard key={dept.name} {...dept} />)}
+            {filteredDepartments.map((dept) => (
+              <Link
+                key={dept.name}
+                to={`/department/${encodeURIComponent(dept.name)}`}
+                className="group block p-8 bg-white border border-gray-100 rounded-lg hover:border-gray-300 transition-all hover:shadow-sm"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center group-hover:bg-gray-100 transition-colors">
+                    <FiGrid className="text-gray-400 group-hover:text-gray-900 transition-colors" />
+                  </div>
+                  <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                    {dept.count} projects
+                  </span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:underline decoration-1 underline-offset-4">
+                  {dept.name}
+                </h3>
+                <div className="flex items-center text-sm text-gray-500 group-hover:text-gray-900 transition-colors mt-4">
+                  <span>Browse Projects</span>
+                  <FiArrowRight className="ml-2 transform group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+            ))}
           </div>
         ) : (
-          <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-            <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <FaUniversity className="text-gray-400 text-xl" />
+          <div className="text-center py-24 border border-dashed border-gray-200 rounded-lg">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FiSearch className="text-2xl text-gray-400" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-1">No departments found</h3>
-            <p className="text-gray-600 mb-6">
-              {searchTerm
-                ? `No departments match "${searchTerm}". Try a different search.`
-                : 'No departments available at the moment.'}
+            <p className="text-gray-500 mb-6">
+              We couldn't find any departments matching "{searchTerm}".
             </p>
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm('')}
-                className="inline-flex items-center bg-indigo-600 text-white px-4 py-2 rounded-md font-medium hover:bg-indigo-700 transition-colors"
-              >
-                Clear Search
-              </button>
-            )}
+            <button
+              onClick={() => setSearchTerm('')}
+              className="text-sm font-medium text-gray-900 underline hover:text-gray-600"
+            >
+              Clear search
+            </button>
           </div>
         )}
 
         {/* CTA Section */}
-        <div className="mt-16 bg-indigo-600 rounded-lg p-8 text-center">
-          <h3 className="text-2xl font-bold text-white mb-4">
-            Can't Find Your Department?
+        <div className="mt-24 text-center border-t border-gray-100 pt-16">
+          <h3 className="text-2xl font-bold text-gray-900 mb-4">
+            Can't find what you're looking for?
           </h3>
-          <p className="text-indigo-100 mb-6 max-w-2xl mx-auto">
-            We're constantly adding new departments and projects. Contact us to request your department.
+          <p className="text-gray-500 mb-8 max-w-xl mx-auto">
+            We are constantly updating our database with new departments and research projects.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex justify-center gap-4">
             <Link
               to="/contact"
-              className="inline-flex items-center justify-center gap-2 bg-white text-indigo-600 font-bold px-6 py-3 rounded-md hover:bg-gray-100 transition-colors"
+              className="inline-flex items-center justify-center px-6 py-3 border border-gray-200 text-base font-medium rounded-md text-gray-900 bg-white hover:bg-gray-50 transition-colors"
             >
-              Contact Us
-              <FaChevronRight className="text-sm" />
+              Contact Support
             </Link>
             <Link
               to="/projects"
-              className="inline-flex items-center justify-center gap-2 bg-indigo-700 text-white font-bold px-6 py-3 rounded-md hover:bg-indigo-800 transition-colors"
+              className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gray-900 hover:bg-black transition-colors"
             >
               Browse All Projects
             </Link>

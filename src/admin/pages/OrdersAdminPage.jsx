@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Modal, useModal } from '../../components/Modal';
-import { FaCheckCircle, FaSpinner } from 'react-icons/fa';
+import { FiCheckCircle, FiLoader, FiSearch } from 'react-icons/fi';
 import { databases, DATABASE_ID, COLLECTIONS } from '../../appwrite/config';
 import { Query } from 'appwrite';
 
 export const OrdersAdminPage = () => {
-    const { modal, showModal, closeModal } = useModal();
+  const { modal, showModal, closeModal } = useModal();
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(null); // Store the ID of the order being updated
@@ -52,7 +52,7 @@ export const OrdersAdminPage = () => {
         COLLECTIONS.USERS,
         [Query.equal('uid', order.userId)]
       );
-      
+
       if (userResponse.documents && userResponse.documents.length > 0) {
         const userDoc = userResponse.documents[0];
         const purchasedProjects = userDoc.purchasedProjects || [];
@@ -86,41 +86,47 @@ export const OrdersAdminPage = () => {
     <div className="w-full">
       <Modal {...modal} onClose={closeModal} />
 
-      <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-6">Manage Orders</h1>
-      <div className="bg-white p-4 rounded-xl shadow-lg">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Orders</h1>
+        <p className="text-sm text-gray-500 mt-1">Manage and verify payment orders.</p>
+      </div>
+
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
         {/* Mobile view for orders */}
         <div className="md:hidden">
-          {isLoading ? 
-            <div className="flex justify-center items-center py-10">
-              <FaSpinner className="animate-spin text-3xl text-indigo-600" />
-            </div> 
+          {isLoading ?
+            <div className="flex justify-center items-center py-12">
+              <FiLoader className="animate-spin text-2xl text-gray-400" />
+            </div>
             : (
-              <div className="space-y-4">
+              <div className="divide-y divide-gray-100">
                 {orders.map(order => (
-                  <div key={order.id} className="border rounded-lg p-4 bg-gray-50">
+                  <div key={order.id} className="p-4 bg-white">
                     <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h3 className="font-bold text-gray-800">{order.projectTitle}</h3>
-                        <p className="text-sm text-gray-600 mt-1">User: {order.userEmail}</p>
-                        <p className="text-sm text-gray-600 mt-1">Amount: ₦{order.amount?.toLocaleString()}</p>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-gray-900 truncate">{order.projectTitle}</h3>
+                        <p className="text-xs text-gray-500 mt-0.5 truncate">User: {order.userEmail}</p>
+                        <p className="text-sm font-medium text-gray-900 mt-2">₦{order.amount?.toLocaleString()}</p>
                         <div className="mt-2">
-                          <span className={`px-3 py-1 text-xs font-bold rounded-full ${order.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${order.status === 'completed' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
                             {order.status}
                           </span>
                         </div>
                       </div>
-                      <div className="ml-2">
+                      <div className="ml-4">
                         {order.status !== 'completed' ? (
                           <button
                             onClick={() => handleConfirmPayment(order)}
                             disabled={isUpdating === order.id}
-                            className="flex items-center justify-center gap-2 bg-green-500 text-white font-bold px-3 py-2 rounded-lg hover:bg-green-600 transition disabled:bg-gray-400 text-sm"
+                            className="flex items-center justify-center gap-2 bg-gray-900 text-white font-medium px-3 py-1.5 rounded-md hover:bg-black transition disabled:bg-gray-400 text-xs shadow-sm"
                           >
-                            {isUpdating === order.id ? <FaSpinner className="animate-spin" /> : <FaCheckCircle />}
+                            {isUpdating === order.id ? <FiLoader className="animate-spin" /> : <FiCheckCircle />}
                             <span>Confirm</span>
                           </button>
                         ) : (
-                          <span className="text-green-600 font-semibold text-sm">Completed</span>
+                          <span className="text-green-600 font-medium text-xs flex items-center gap-1">
+                            <FiCheckCircle className="w-3 h-3" /> Completed
+                          </span>
                         )}
                       </div>
                     </div>
@@ -133,44 +139,46 @@ export const OrdersAdminPage = () => {
 
         {/* Desktop view for orders */}
         <div className="hidden md:block overflow-x-auto">
-          {isLoading ? 
+          {isLoading ?
             <div className="flex justify-center items-center py-20">
-              <FaSpinner className="animate-spin text-4xl text-indigo-600" />
-            </div> 
+              <FiLoader className="animate-spin text-3xl text-gray-300" />
+            </div>
             : (
               <table className="w-full text-left">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
-                    <th className="p-3 font-semibold">Project Title</th>
-                    <th className="p-3 font-semibold">User Email</th>
-                    <th className="p-3 font-semibold">Amount (NGN)</th>
-                    <th className="p-3 font-semibold">Status</th>
-                    <th className="p-3 font-semibold text-center">Action</th>
+                    <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Project Title</th>
+                    <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">User Email</th>
+                    <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount (NGN)</th>
+                    <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-100">
                   {orders.map(order => (
-                    <tr key={order.id} className="border-b hover:bg-gray-50">
-                      <td className="p-3 font-medium">{order.projectTitle}</td>
-                      <td className="p-3 text-gray-600">{order.userEmail}</td>
-                      <td className="p-3 text-gray-600">₦{order.amount?.toLocaleString()}</td>
-                      <td className="p-3">
-                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${order.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                    <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="p-4 font-medium text-gray-900">{order.projectTitle}</td>
+                      <td className="p-4 text-sm text-gray-600">{order.userEmail}</td>
+                      <td className="p-4 text-sm font-medium text-gray-900">₦{order.amount?.toLocaleString()}</td>
+                      <td className="p-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${order.status === 'completed' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
                           {order.status}
                         </span>
                       </td>
-                      <td className="p-3 text-center">
+                      <td className="p-4 text-right">
                         {order.status !== 'completed' ? (
                           <button
                             onClick={() => handleConfirmPayment(order)}
                             disabled={isUpdating === order.id}
-                            className="flex items-center justify-center gap-2 w-full bg-green-500 text-white font-bold px-4 py-2 rounded-lg hover:bg-green-600 transition disabled:bg-gray-400"
+                            className="inline-flex items-center justify-center gap-2 bg-gray-900 text-white font-medium px-4 py-2 rounded-md hover:bg-black transition disabled:bg-gray-400 text-sm shadow-sm"
                           >
-                            {isUpdating === order.id ? <FaSpinner className="animate-spin" /> : <FaCheckCircle />}
+                            {isUpdating === order.id ? <FiLoader className="animate-spin" /> : <FiCheckCircle />}
                             <span>Confirm Payment</span>
                           </button>
                         ) : (
-                          <span className="text-green-600 font-semibold">Completed</span>
+                          <span className="text-green-600 font-medium text-sm flex items-center justify-end gap-1">
+                            <FiCheckCircle className="w-4 h-4" /> Completed
+                          </span>
                         )}
                       </td>
                     </tr>

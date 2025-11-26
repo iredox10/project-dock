@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
@@ -11,10 +10,10 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="flex bg-gray-100 min-h-screen" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="flex bg-white min-h-screen font-sans text-gray-900">
       <AdminSidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-      <main className={`flex-grow p-4 md:p-8 overflow-y-auto transition-all duration-300 ${isSidebarOpen ? 'lg:ml-0' : 'lg:ml-0'}`}>
-        <div className="max-w-full">
+      <main className="flex-grow p-6 md:p-12 overflow-y-auto w-full">
+        <div className="max-w-7xl mx-auto">
           <Outlet />
         </div>
       </main>

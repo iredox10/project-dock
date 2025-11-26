@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaRobot, FaUniversity, FaBook, FaPlus, FaSpinner, FaMagic, FaGraduationCap } from 'react-icons/fa';
+import { FiArrowLeft, FiCpu, FiHome, FiBook, FiPlus, FiLoader, FiZap, FiAward, FiRefreshCw } from 'react-icons/fi';
 import { db } from '../../firebase/config';
 import { collection, addDoc, serverTimestamp, query, getDocs, where } from 'firebase/firestore';
 
@@ -208,161 +208,149 @@ const AIDepartmentProjectGenerator = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Header */}
-        <div className="mb-6">
-          <Link
-            to="/admin/projects"
-            className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-semibold mb-4"
-          >
-            <FaArrowLeft />
-            Back to Manage Projects
-          </Link>
+    <div className="w-full max-w-5xl mx-auto">
+      <div className="mb-8">
+        <Link to="/admin/projects" className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-900 font-medium transition-colors mb-4 text-sm">
+          <FiArrowLeft className="w-4 h-4" />
+          Back to Projects
+        </Link>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+              <FiCpu className="text-gray-900" />
+              AI Generator
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">Generate departments and projects using AI.</p>
+          </div>
+        </div>
+      </div>
 
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <div className="flex flex-col items-start gap-4 mb-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                  <FaMagic className="text-white text-2xl" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-                    <FaRobot className="text-indigo-600" />
-                    AI Department & Project Generator
-                  </h1>
-                  <p className="text-slate-600 mt-1 text-sm">
-                    Generate departments and projects relevant to Nigerian institutions using AI
-                  </p>
-                </div>
-              </div>
-            </div>
+      <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
+        <div className="flex items-start gap-4 mb-6">
+          <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <FiZap className="text-gray-600 w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-1">Nigerian Academic Context</h3>
+            <p className="text-sm text-gray-500">
+              This tool generates realistic departments and projects commonly found in Nigerian universities,
+              polytechnics, and colleges of education. All content is contextually relevant.
+            </p>
+          </div>
+        </div>
 
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 mb-6">
-              <div className="flex items-start gap-3">
-                <FaGraduationCap className="text-blue-600 text-lg mt-0.5 flex-shrink-0" />
-                <div>
-                  <h3 className="font-bold text-blue-900 mb-1 text-sm">Nigerian Academic Focus</h3>
-                  <p className="text-blue-800 text-xs">
-                    This tool generates realistic departments and projects commonly found in Nigerian universities,
-                    polytechnics, and colleges of education. All content is contextually relevant to the Nigerian academic environment.
-                  </p>
-                </div>
-              </div>
-            </div>
+        {!showResults ? (
+          <div className="text-center py-8">
+            <button
+              onClick={generateDepartmentsAndProjects}
+              disabled={isGenerating}
+              className="bg-gray-900 text-white px-6 py-3 rounded-md font-medium hover:bg-black transition-all flex items-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
+            >
+              {isGenerating ? (
+                <>
+                  <FiLoader className="animate-spin" />
+                  <span>Generating... {generationProgress.current}/{generationProgress.total}</span>
+                </>
+              ) : (
+                <>
+                  <FiCpu />
+                  <span>Generate Content</span>
+                </>
+              )}
+            </button>
 
-            {!showResults ? (
-              <div className="text-center">
-                <button
-                  onClick={generateDepartmentsAndProjects}
-                  disabled={isGenerating}
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-bold text-base hover:from-indigo-700 hover:to-purple-700 transition-all flex items-center gap-3 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isGenerating ? (
-                    <>
-                      <FaSpinner className="animate-spin" />
-                      <span>Generating... {generationProgress.current}/{generationProgress.total}</span>
-                    </>
-                  ) : (
-                    <>
-                      <FaRobot />
-                      <span>Generate Nigerian Departments & Projects</span>
-                    </>
-                  )}
-                </button>
-
-                {error && (
-                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                    {error}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div>
-                {generatedDepartments.length > 0 ? (
-                  <div className="space-y-6">
-                    <div className="bg-green-50 border border-green-200 rounded-xl p-3">
-                      <div className="flex items-center gap-2 text-green-800">
-                        <FaUniversity className="text-green-600" />
-                        <span className="font-semibold text-sm">
-                          Found {generatedDepartments.length} new departments with {generatedProjects.length} projects
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto">
-                      {generatedDepartments.map((dept, index) => (
-                        <div key={index} className="bg-white border border-slate-200 rounded-xl p-3">
-                          <div className="flex items-start justify-between mb-2">
-                            <h3 className="font-bold text-slate-900 text-sm">{dept.name}</h3>
-                            <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">
-                              {dept.level}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-600 mb-2">{dept.description}</p>
-                          <div className="text-xs text-slate-500">
-                            {dept.projects.length} projects
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                      <button
-                        onClick={saveToDatabase}
-                        disabled={isGenerating}
-                        className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 justify-center hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 text-sm"
-                      >
-                        {isGenerating ? (
-                          <>
-                            <FaSpinner className="animate-spin" />
-                            <span>Saving...</span>
-                          </>
-                        ) : (
-                          <>
-                            <FaPlus />
-                            <span>Save All to Database</span>
-                          </>
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setShowResults(false);
-                          setGeneratedDepartments([]);
-                          setGeneratedProjects([]);
-                        }}
-                        className="bg-slate-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-slate-700 transition-all text-sm"
-                      >
-                        Generate New
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <FaUniversity className="text-xl text-slate-400" />
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-900 mb-2">All Departments Already Exist</h3>
-                    <p className="text-slate-600 mb-3 text-sm">
-                      The generated departments already exist in your system. No new departments to add.
-                    </p>
-                    <button
-                      onClick={() => {
-                        setShowResults(false);
-                        setGeneratedDepartments([]);
-                        setGeneratedProjects([]);
-                      }}
-                      className="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-indigo-700 transition-all text-sm"
-                    >
-                      Generate Different Departments
-                    </button>
-                  </div>
-                )}
+            {error && (
+              <div className="mt-6 p-4 bg-red-50 border border-red-100 rounded-md text-red-600 text-sm">
+                {error}
               </div>
             )}
           </div>
-        </div>
+        ) : (
+          <div>
+            {generatedDepartments.length > 0 ? (
+              <div className="space-y-6">
+                <div className="bg-green-50 border border-green-100 rounded-md p-3">
+                  <div className="flex items-center gap-2 text-green-700">
+                    <FiHome className="text-green-600" />
+                    <span className="font-medium text-sm">
+                      Found {generatedDepartments.length} new departments with {generatedProjects.length} projects
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto pr-2">
+                  {generatedDepartments.map((dept, index) => (
+                    <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="font-semibold text-gray-900 text-sm">{dept.name}</h3>
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full border border-gray-200">
+                          {dept.level}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mb-3 line-clamp-2">{dept.description}</p>
+                      <div className="flex items-center gap-1 text-xs text-gray-400">
+                        <FiBook className="w-3 h-3" />
+                        {dept.projects.length} projects
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4 border-t border-gray-100">
+                  <button
+                    onClick={saveToDatabase}
+                    disabled={isGenerating}
+                    className="bg-gray-900 text-white px-5 py-2.5 rounded-md font-medium flex items-center gap-2 justify-center hover:bg-black transition-all disabled:opacity-50 text-sm shadow-sm"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <FiLoader className="animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FiPlus />
+                        <span>Save All to Database</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShowResults(false);
+                      setGeneratedDepartments([]);
+                      setGeneratedProjects([]);
+                    }}
+                    className="bg-white border border-gray-200 text-gray-700 px-5 py-2.5 rounded-md font-medium hover:bg-gray-50 transition-all text-sm flex items-center gap-2 justify-center"
+                  >
+                    <FiRefreshCw className="w-4 h-4" />
+                    Generate New
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FiHome className="text-xl text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">All Departments Exist</h3>
+                <p className="text-gray-500 mb-6 text-sm max-w-md mx-auto">
+                  The generated departments already exist in your system. No new content to add.
+                </p>
+                <button
+                  onClick={() => {
+                    setShowResults(false);
+                    setGeneratedDepartments([]);
+                    setGeneratedProjects([]);
+                  }}
+                  className="bg-gray-900 text-white px-5 py-2.5 rounded-md font-medium hover:bg-black transition-all text-sm"
+                >
+                  Try Again
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

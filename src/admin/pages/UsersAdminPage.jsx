@@ -1,21 +1,21 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Modal, useModal } from '../../components/Modal';
-import { FaSearch, FaEye, FaUserSlash, FaTrash, FaSpinner } from 'react-icons/fa';
-import { databases, DATABASE_ID, COLLECTIONS } from '../../appwrite/config'; // Using Appwrite config
+import { FiSearch, FiEye, FiUserX, FiTrash, FiLoader, FiUserCheck } from 'react-icons/fi';
+import { databases, DATABASE_ID, COLLECTIONS } from '../../appwrite/config';
 import { Query } from 'appwrite';
 
-// Reusable Confirmation Modal - Enhanced for different actions
+// Reusable Confirmation Modal
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, confirmText, confirmColor = 'bg-red-600' }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-      <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-center">
-        <h2 className="text-2xl font-bold mb-4 text-gray-900">{title}</h2>
-        <p className="text-gray-600 mb-6">{message}</p>
-        <div className="flex justify-center gap-4">
-          <button onClick={onClose} className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold">Cancel</button>
-          <button onClick={onConfirm} className={`px-6 py-2 text-white rounded-lg font-semibold ${confirmColor} hover:opacity-90`}>
+    <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300">
+      <div className="bg-white p-8 rounded-lg shadow-xl border border-gray-100 w-full max-w-md text-center transform transition-all">
+        <h2 className="text-xl font-bold mb-2 text-gray-900">{title}</h2>
+        <p className="text-sm text-gray-500 mb-8 leading-relaxed">{message}</p>
+        <div className="flex justify-center gap-3">
+          <button onClick={onClose} className="px-5 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 transition-colors">Cancel</button>
+          <button onClick={onConfirm} className={`px-5 py-2.5 text-white text-sm font-medium rounded-md hover:opacity-90 transition-colors ${confirmColor}`}>
             {confirmText}
           </button>
         </div>
@@ -30,7 +30,6 @@ export const UsersAdminPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isMoreLoading, setIsMoreLoading] = useState(false);
-  const [lastVisible, setLastVisible] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [modalState, setModalState] = useState({ isOpen: false, action: null, user: null });
 
@@ -62,8 +61,6 @@ export const UsersAdminPage = () => {
     if (!hasMore) return;
     setIsMoreLoading(true);
     try {
-      // For Appwrite, we need to use offset for pagination since cursor-based pagination
-      // requires cursor values which are not readily available from the documents
       const offset = users.length;
       const response = await databases.listDocuments(
         DATABASE_ID,
@@ -88,8 +85,6 @@ export const UsersAdminPage = () => {
     if (!user) return;
 
     if (action === 'delete') {
-      // NOTE: This deletes the user's data from Appwrite database, but NOT from Appwrite Authentication.
-      // A Cloud Function is required to safely delete a user from Appwrite Auth.
       try {
         await databases.deleteDocument(
           DATABASE_ID,
@@ -101,8 +96,6 @@ export const UsersAdminPage = () => {
     }
 
     if (action === 'suspend') {
-      // NOTE: This only changes the user's status in Appwrite database.
-      // A Cloud Function is required to truly disable a user in Appwrite Auth.
       try {
         const newStatus = user.status === 'Active' ? 'Suspended' : 'Active';
         await databases.updateDocument(
@@ -128,64 +121,66 @@ export const UsersAdminPage = () => {
     <div className="w-full">
       <Modal {...modal} onClose={closeNotificationModal} />
 
-      <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-6">Manage Users</h1>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Users</h1>
+        <p className="text-sm text-gray-500 mt-1">Manage user accounts and permissions.</p>
+      </div>
 
-      <div className="bg-white p-4 rounded-xl shadow-lg">
-        <div className="mb-4 relative">
-          <input 
-            type="text" 
-            placeholder="Search loaded users by name or email..." 
-            value={searchTerm} 
-            onChange={(e) => setSearchTerm(e.target.value)} 
-            className="w-full p-3 pl-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" 
-          />
-          <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-gray-100">
+          <div className="relative w-full sm:w-96">
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
+            />
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+          </div>
         </div>
 
         {/* Mobile view for users */}
         <div className="md:hidden">
-          {isLoading ? 
-            <div className="flex justify-center items-center py-10">
-              <FaSpinner className="animate-spin text-3xl text-indigo-600" />
-            </div> 
+          {isLoading ?
+            <div className="flex justify-center items-center py-12">
+              <FiLoader className="animate-spin text-2xl text-gray-400" />
+            </div>
             : (
-              <div className="space-y-4">
+              <div className="divide-y divide-gray-100">
                 {filteredUsers.map(user => (
-                  <div key={user.id} className="border rounded-lg p-4 bg-gray-50">
+                  <div key={user.id} className="p-4 bg-white">
                     <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h3 className="font-bold text-gray-800">{user.name}</h3>
-                        <p className="text-sm text-gray-600 mt-1">{user.email}</p>
-                        <p className="text-sm text-gray-500 mt-1">
-                          Registered: {user.createdAt?.toDate().toLocaleDateString() || 'N/A'}
-                        </p>
-                        <div className="mt-2">
-                          <span className={`px-3 py-1 text-xs font-bold rounded-full ${user.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-gray-900 truncate">{user.name}</h3>
+                        <p className="text-xs text-gray-500 mt-0.5 truncate">{user.email}</p>
+                        <div className="mt-2 flex items-center gap-2">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${user.status === 'Active' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
                             {user.status}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {user.createdAt?.toDate().toLocaleDateString() || 'N/A'}
                           </span>
                         </div>
                       </div>
-                      <div className="flex flex-col gap-2 ml-2">
-                        <button 
-                          onClick={() => showModal('Feature Info', 'This would navigate to a user activity page.', 'info')} 
-                          className="text-gray-500 hover:text-gray-700 text-sm" 
-                          title="View Activity"
+                      <div className="flex flex-col gap-2 ml-4">
+                        <button
+                          onClick={() => showModal('Feature Info', 'This would navigate to a user activity page.', 'info')}
+                          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
                         >
-                          <FaEye className="inline mr-1" /> View
+                          <FiEye className="w-4 h-4" />
                         </button>
-                        <button 
-                          onClick={() => openModal('suspend', user)} 
-                          className={`text-sm ${user.status === 'Active' ? 'text-yellow-500 hover:text-yellow-700' : 'text-green-500 hover:text-green-700'}`} 
-                          title={user.status === 'Active' ? 'Suspend User' : 'Activate User'}
+                        <button
+                          onClick={() => openModal('suspend', user)}
+                          className={`p-2 rounded-md transition-colors ${user.status === 'Active' ? 'text-yellow-600 hover:bg-yellow-50' : 'text-green-600 hover:bg-green-50'}`}
                         >
-                          <FaUserSlash className="inline mr-1" /> {user.status === 'Active' ? 'Suspend' : 'Activate'}
+                          {user.status === 'Active' ? <FiUserX className="w-4 h-4" /> : <FiUserCheck className="w-4 h-4" />}
                         </button>
-                        <button 
-                          onClick={() => openModal('delete', user)} 
-                          className="text-red-500 hover:text-red-700 text-sm" 
-                          title="Delete User"
+                        <button
+                          onClick={() => openModal('delete', user)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
                         >
-                          <FaTrash className="inline mr-1" /> Delete
+                          <FiTrash className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -198,54 +193,56 @@ export const UsersAdminPage = () => {
 
         {/* Desktop view for users */}
         <div className="hidden md:block overflow-x-auto">
-          {isLoading ? 
+          {isLoading ?
             <div className="flex justify-center items-center py-20">
-              <FaSpinner className="animate-spin text-4xl text-indigo-600" />
-            </div> 
+              <FiLoader className="animate-spin text-3xl text-gray-300" />
+            </div>
             : (
               <table className="w-full text-left">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
-                    <th className="p-3 font-semibold">User Name</th>
-                    <th className="p-3 font-semibold">Email</th>
-                    <th className="p-3 font-semibold">Registration Date</th>
-                    <th className="p-3 font-semibold">Status</th>
-                    <th className="p-3 font-semibold text-center">Actions</th>
+                    <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">User</th>
+                    <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Joined</th>
+                    <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-100">
                   {filteredUsers.map(user => (
-                    <tr key={user.id} className="border-b hover:bg-gray-50">
-                      <td className="p-3 font-medium text-gray-800">{user.name}</td>
-                      <td className="p-3 text-gray-600">{user.email}</td>
-                      <td className="p-3 text-gray-600">{user.createdAt?.toDate().toLocaleDateString() || 'N/A'}</td>
-                      <td className="p-3">
-                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${user.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="p-4 font-medium text-gray-900">{user.name}</td>
+                      <td className="p-4 text-sm text-gray-600">{user.email}</td>
+                      <td className="p-4 text-sm text-gray-600">{user.createdAt?.toDate().toLocaleDateString() || 'N/A'}</td>
+                      <td className="p-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.status === 'Active' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
                           {user.status}
                         </span>
                       </td>
-                      <td className="p-3 text-center space-x-4">
-                        <button 
-                          onClick={() => showModal('Feature Info', 'This would navigate to a user activity page.', 'info')} 
-                          className="text-gray-500 hover:text-gray-700" 
-                          title="View Activity"
-                        >
-                          <FaEye />
-                        </button>
-                        <button 
-                          onClick={() => openModal('suspend', user)} 
-                          className={`${user.status === 'Active' ? 'text-yellow-500 hover:text-yellow-700' : 'text-green-500 hover:text-green-700'}`} 
-                          title={user.status === 'Active' ? 'Suspend User' : 'Activate User'}
-                        >
-                          <FaUserSlash />
-                        </button>
-                        <button 
-                          onClick={() => openModal('delete', user)} 
-                          className="text-red-500 hover:text-red-700" 
-                          title="Delete User"
-                        >
-                          <FaTrash />
-                        </button>
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => showModal('Feature Info', 'This would navigate to a user activity page.', 'info')}
+                            className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                            title="View Activity"
+                          >
+                            <FiEye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => openModal('suspend', user)}
+                            className={`p-1.5 rounded-md transition-colors ${user.status === 'Active' ? 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'}`}
+                            title={user.status === 'Active' ? 'Suspend User' : 'Activate User'}
+                          >
+                            {user.status === 'Active' ? <FiUserX className="w-4 h-4" /> : <FiUserCheck className="w-4 h-4" />}
+                          </button>
+                          <button
+                            onClick={() => openModal('delete', user)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                            title="Delete User"
+                          >
+                            <FiTrash className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -254,14 +251,14 @@ export const UsersAdminPage = () => {
             )
           }
         </div>
-        {hasMore && !isLoading && 
-          <div className="text-center mt-6">
-            <button 
-              onClick={fetchMoreUsers} 
-              disabled={isMoreLoading} 
-              className="bg-gray-200 text-gray-800 font-bold px-6 py-2 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+        {hasMore && !isLoading &&
+          <div className="p-4 border-t border-gray-100 text-center">
+            <button
+              onClick={fetchMoreUsers}
+              disabled={isMoreLoading}
+              className="text-sm font-medium text-gray-600 hover:text-gray-900 disabled:opacity-50 transition-colors"
             >
-              {isMoreLoading ? 'Loading...' : 'Load More'}
+              {isMoreLoading ? 'Loading...' : 'Load More Users'}
             </button>
           </div>
         }
@@ -273,7 +270,7 @@ export const UsersAdminPage = () => {
         title={`Confirm ${modalState.action === 'delete' ? 'Deletion' : 'Status Change'}`}
         message={`Are you sure you want to ${modalState.action} the user "${modalState.user?.name}"?`}
         confirmText={modalState.action === 'delete' ? 'Delete' : 'Confirm'}
-        confirmColor={modalState.action === 'delete' ? 'bg-red-600' : 'bg-yellow-500'}
+        confirmColor={modalState.action === 'delete' ? 'bg-red-600' : 'bg-yellow-600'}
       />
     </div>
   );

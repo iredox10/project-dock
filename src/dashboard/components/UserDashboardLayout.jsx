@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
-import { FaBook, FaUserCircle, FaSignOutAlt, FaTachometerAlt, FaHeart, FaBars, FaTimes } from 'react-icons/fa';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { FiGrid, FiBook, FiUser, FiLogOut, FiMenu, FiX, FiShoppingBag, FiHeart } from 'react-icons/fi';
 import { authService } from '../../appwrite/auth';
 import { getUserById } from '../../api/projectServices';
 
@@ -18,7 +18,6 @@ const UserSidebar = () => {
     try {
       const user = await authService.getCurrentUser();
       if (user) {
-        // Try to get user details from database
         try {
           const userData = await getUserById(user.$id);
           if (userData && userData.name) {
@@ -27,7 +26,6 @@ const UserSidebar = () => {
             setUserName(user.name || user.email?.split('@')[0] || 'User');
           }
         } catch (dbError) {
-          // User not in database, use auth name
           setUserName(user.name || user.email?.split('@')[0] || 'User');
         }
       } else {
@@ -39,8 +37,8 @@ const UserSidebar = () => {
     }
   };
 
-  const linkClasses = "flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-200 hover:text-gray-900 rounded-lg transition-colors";
-  const activeLinkClasses = "bg-indigo-100 text-indigo-600 font-bold";
+  const linkClasses = "flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-500 rounded-md transition-colors hover:text-gray-900";
+  const activeLinkClasses = "text-gray-900 bg-gray-100";
 
   const handleLogout = async () => {
     try {
@@ -52,135 +50,85 @@ const UserSidebar = () => {
   };
 
   const SidebarContent = () => (
-    <>
-      <div className="p-6 border-b text-center">
-        <FaUserCircle className="mx-auto text-5xl text-gray-400 mb-2" />
-        <h2 className="text-lg font-bold text-gray-800 truncate">{userName || 'Welcome'}</h2>
+    <div className="flex flex-col h-full">
+      <div className="p-6">
+        <h2 className="text-lg font-bold tracking-tight text-gray-900">Dashboard</h2>
+        <p className="text-xs text-gray-500 mt-1 truncate">
+          {userName}
+        </p>
       </div>
-      <nav className="flex-grow p-4 space-y-2">
-        <NavLink 
-          to="/dashboard" 
-          end 
+
+      <nav className="flex-1 px-4 space-y-1">
+        <NavLink
+          to="/dashboard"
+          end
           className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}
           onClick={() => setIsMobileMenuOpen(false)}
         >
-          <FaTachometerAlt />
-          <span>Dashboard</span>
+          <FiGrid className="w-4 h-4" />
+          <span>Overview</span>
         </NavLink>
-        <NavLink 
-          to="/dashboard/my-library" 
+        <NavLink
+          to="/dashboard/my-library"
           className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}
           onClick={() => setIsMobileMenuOpen(false)}
         >
-          <FaHeart />
+          <FiHeart className="w-4 h-4" />
           <span>My Library</span>
         </NavLink>
-        <NavLink 
-          to="/dashboard/my-projects" 
+        <NavLink
+          to="/dashboard/my-projects"
           className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}
           onClick={() => setIsMobileMenuOpen(false)}
         >
-          <FaBook />
-          <span>My Purchased Projects</span>
+          <FiShoppingBag className="w-4 h-4" />
+          <span>Purchases</span>
         </NavLink>
-        <NavLink 
-          to="/dashboard/profile" 
+        <NavLink
+          to="/dashboard/profile"
           className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}
           onClick={() => setIsMobileMenuOpen(false)}
         >
-          <FaUserCircle />
-          <span>Profile Settings</span>
+          <FiUser className="w-4 h-4" />
+          <span>Settings</span>
         </NavLink>
       </nav>
-      <div className="p-4 border-t">
-        <button 
-          onClick={handleLogout} 
-          className="flex items-center gap-3 w-full px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+
+      <div className="p-4 border-t border-gray-100">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-3 py-2 w-full text-sm font-medium text-gray-500 hover:text-red-600 transition-colors"
         >
-          <FaSignOutAlt />
-          <span>Logout</span>
+          <FiLogOut className="w-4 h-4" />
+          <span>Sign out</span>
         </button>
       </div>
-    </>
+    </div>
   );
 
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-64 bg-white border-r flex-shrink-0 flex-col h-screen sticky top-0">
+      <aside className="hidden lg:flex w-64 bg-white border-r border-gray-100 flex-col h-screen sticky top-0">
         <SidebarContent />
       </aside>
 
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b shadow-sm">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-100">
         <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-3">
-            <FaUserCircle className="text-3xl text-gray-400" />
-            <div>
-              <h2 className="font-bold text-gray-800">{userName || 'Dashboard'}</h2>
-              <p className="text-xs text-gray-500">Welcome back</p>
-            </div>
-          </div>
+          <span className="font-bold text-gray-900">Dashboard</span>
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-2 text-gray-500 hover:text-gray-900"
           >
-            {isMobileMenuOpen ? (
-              <FaTimes className="text-2xl text-gray-700" />
-            ) : (
-              <FaBars className="text-2xl text-gray-700" />
-            )}
+            {isMobileMenuOpen ? <FiX className="w-6 h-6" /> : <FiMenu className="w-6 h-6" />}
           </button>
         </div>
 
         {/* Mobile Dropdown Menu */}
         {isMobileMenuOpen && (
-          <div className="border-t bg-white shadow-lg">
-            <div className="p-4 space-y-2 max-h-[calc(100vh-80px)] overflow-y-auto">
-              <NavLink 
-                to="/dashboard" 
-                end 
-                className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <FaTachometerAlt />
-                <span>Dashboard</span>
-              </NavLink>
-              <NavLink 
-                to="/dashboard/my-library" 
-                className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <FaHeart />
-                <span>My Library</span>
-              </NavLink>
-              <NavLink 
-                to="/dashboard/my-projects" 
-                className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <FaBook />
-                <span>My Purchased Projects</span>
-              </NavLink>
-              <NavLink 
-                to="/dashboard/profile" 
-                className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <FaUserCircle />
-                <span>Profile Settings</span>
-              </NavLink>
-              <button 
-                onClick={() => {
-                  handleLogout();
-                  setIsMobileMenuOpen(false);
-                }} 
-                className="flex items-center gap-3 w-full px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              >
-                <FaSignOutAlt />
-                <span>Logout</span>
-              </button>
-            </div>
+          <div className="border-t border-gray-100 bg-white h-[calc(100vh-57px)]">
+            <SidebarContent />
           </div>
         )}
       </div>
@@ -190,10 +138,10 @@ const UserSidebar = () => {
 
 const UserDashboardLayout = () => {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="min-h-screen bg-white flex flex-col lg:flex-row font-sans">
       <UserSidebar />
-      <main className="flex-1 pt-20 lg:pt-0 pb-8 px-4 sm:px-6 lg:px-8 overflow-y-auto">
-        <div className="max-w-7xl mx-auto">
+      <main className="flex-1 pt-20 lg:pt-0 px-4 sm:px-8 py-8 overflow-y-auto">
+        <div className="max-w-5xl mx-auto">
           <Outlet />
         </div>
       </main>

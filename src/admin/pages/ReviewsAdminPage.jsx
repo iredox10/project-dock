@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Modal, useModal } from '../../components/Modal';
-import { FaCheck, FaTrash, FaSpinner } from 'react-icons/fa';
+import { FiCheck, FiTrash, FiLoader, FiMessageSquare } from 'react-icons/fi';
 import { databases, DATABASE_ID, COLLECTIONS } from '../../appwrite/config';
 import { Query } from 'appwrite';
 
-// Note: For this query to work, you will need to create a collection group index in Firestore.
-// The error message in your browser console will provide a direct link to create it.
-// The index will be on the 'reviews' collection group, for the field 'isApproved'.
-
 export const ReviewsAdminPage = () => {
-    const { modal, showModal, closeModal } = useModal();
+  const { modal, showModal, closeModal } = useModal();
   const [reviews, setReviews] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('pending'); // 'pending' or 'approved'
@@ -28,7 +24,7 @@ export const ReviewsAdminPage = () => {
           Query.orderDesc('createdAt')
         ]
       );
-      
+
       const fetchedReviews = response.documents.map(d => ({
         id: d.$id,
         projectId: d.projectId, // Assumes projectId is stored as a field in the review
@@ -75,18 +71,22 @@ export const ReviewsAdminPage = () => {
     <div className="w-full">
       <Modal {...modal} onClose={closeModal} />
 
-      <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-6">Manage Reviews</h1>
-      <div className="bg-white p-4 rounded-xl shadow-lg">
-        <div className="mb-4 border-b pb-4 flex flex-wrap gap-2">
-          <button 
-            onClick={() => setFilter('pending')} 
-            className={`px-4 py-2 rounded-lg font-semibold ${filter === 'pending' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Reviews</h1>
+        <p className="text-sm text-gray-500 mt-1">Moderate user reviews and feedback.</p>
+      </div>
+
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-gray-100 flex gap-2">
+          <button
+            onClick={() => setFilter('pending')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filter === 'pending' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           >
             Pending
           </button>
-          <button 
-            onClick={() => setFilter('approved')} 
-            className={`px-4 py-2 rounded-lg font-semibold ${filter === 'approved' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
+          <button
+            onClick={() => setFilter('approved')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filter === 'approved' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           >
             Approved
           </button>
@@ -94,43 +94,48 @@ export const ReviewsAdminPage = () => {
 
         {/* Mobile view for reviews */}
         <div className="md:hidden">
-          {isLoading ? 
-            <div className="flex justify-center items-center py-10">
-              <FaSpinner className="animate-spin text-3xl text-indigo-600" />
-            </div> 
+          {isLoading ?
+            <div className="flex justify-center items-center py-12">
+              <FiLoader className="animate-spin text-2xl text-gray-400" />
+            </div>
             : (
-              <div className="space-y-4">
+              <div className="divide-y divide-gray-100">
                 {reviews.map(review => (
-                  <div key={review.id} className="border rounded-lg p-4 bg-gray-50">
+                  <div key={review.id} className="p-4 bg-white">
                     <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h3 className="font-bold text-gray-800">{review.userName}</h3>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-gray-900">{review.userName}</h3>
                         <p className="text-sm text-gray-600 mt-1">
                           Rating: <span className="text-yellow-500 font-bold">{'★'.repeat(review.rating)}</span>
                         </p>
-                        <p className="text-sm text-gray-600 mt-2">{review.comment}</p>
+                        <p className="text-sm text-gray-600 mt-2 italic">"{review.comment}"</p>
                       </div>
-                      <div className="flex flex-col gap-2 ml-2">
+                      <div className="flex flex-col gap-2 ml-4">
                         {filter === 'pending' && (
-                          <button 
-                            onClick={() => handleApprove(review)} 
-                            className="text-green-500 hover:text-green-700 text-sm flex items-center" 
+                          <button
+                            onClick={() => handleApprove(review)}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded-md transition-colors"
                             title="Approve"
                           >
-                            <FaCheck className="mr-1" /> Approve
+                            <FiCheck className="w-4 h-4" />
                           </button>
                         )}
-                        <button 
-                          onClick={() => handleDelete(review)} 
-                          className="text-red-500 hover:text-red-700 text-sm flex items-center" 
+                        <button
+                          onClick={() => handleDelete(review)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
                           title="Delete"
                         >
-                          <FaTrash className="mr-1" /> Delete
+                          <FiTrash className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
                   </div>
                 ))}
+                {reviews.length === 0 && (
+                  <div className="p-8 text-center text-gray-500 text-sm">
+                    No {filter} reviews found.
+                  </div>
+                )}
               </div>
             )
           }
@@ -138,32 +143,47 @@ export const ReviewsAdminPage = () => {
 
         {/* Desktop view for reviews */}
         <div className="hidden md:block overflow-x-auto">
-          {isLoading ? 
+          {isLoading ?
             <div className="flex justify-center items-center py-20">
-              <FaSpinner className="animate-spin text-4xl text-indigo-600" />
-            </div> 
+              <FiLoader className="animate-spin text-3xl text-gray-300" />
+            </div>
             : (
               <table className="w-full text-left">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
-                    <th className="p-3 font-semibold">User</th>
-                    <th className="p-3 font-semibold">Comment</th>
-                    <th className="p-3 font-semibold">Rating</th>
-                    <th className="p-3 font-semibold text-center">Actions</th>
+                    <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">User</th>
+                    <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Comment</th>
+                    <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Rating</th>
+                    <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-100">
                   {reviews.map(review => (
-                    <tr key={review.id} className="border-b">
-                      <td className="p-3 font-medium">{review.userName}</td>
-                      <td className="p-3 text-gray-600 w-1/2">{review.comment}</td>
-                      <td className="p-3 text-yellow-500 font-bold">{'★'.repeat(review.rating)}</td>
-                      <td className="p-3 text-center space-x-4">
-                        {filter === 'pending' && <button onClick={() => handleApprove(review)} className="text-green-500 hover:text-green-700" title="Approve"><FaCheck /></button>}
-                        <button onClick={() => handleDelete(review)} className="text-red-500 hover:text-red-700" title="Delete"><FaTrash /></button>
+                    <tr key={review.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="p-4 font-medium text-gray-900">{review.userName}</td>
+                      <td className="p-4 text-sm text-gray-600 max-w-md truncate" title={review.comment}>{review.comment}</td>
+                      <td className="p-4 text-sm text-yellow-500 font-bold">{'★'.repeat(review.rating)}</td>
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {filter === 'pending' && (
+                            <button onClick={() => handleApprove(review)} className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors" title="Approve">
+                              <FiCheck className="w-4 h-4" />
+                            </button>
+                          )}
+                          <button onClick={() => handleDelete(review)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Delete">
+                            <FiTrash className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
+                  {reviews.length === 0 && (
+                    <tr>
+                      <td colspan="4" className="p-8 text-center text-gray-500 text-sm">
+                        No {filter} reviews found.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             )

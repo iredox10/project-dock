@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { FaSpinner, FaSave } from 'react-icons/fa';
+import { FiLoader, FiCheck } from 'react-icons/fi';
 import { authService } from '../../appwrite/auth';
 import { getUserById, updateUser, createUser } from '../../api/projectServices';
 
@@ -20,14 +20,12 @@ export const ProfilePage = () => {
     try {
       const currentUser = await authService.getCurrentUser();
       if (currentUser) {
-        // Try to get full user details from the database
         try {
           const fullUser = await getUserById(currentUser.$id);
           if (fullUser) {
             setUser({ uid: currentUser.$id, email: currentUser.email, ...fullUser });
             setName(fullUser.name || currentUser.name || '');
           } else {
-            // User document doesn't exist, use auth data
             setUser({
               uid: currentUser.$id,
               name: currentUser.name || currentUser.email?.split('@')[0],
@@ -36,7 +34,6 @@ export const ProfilePage = () => {
             setName(currentUser.name || currentUser.email?.split('@')[0] || '');
           }
         } catch (dbError) {
-          // User doesn't exist in database, use auth data
           setUser({
             uid: currentUser.$id,
             name: currentUser.name || currentUser.email?.split('@')[0],
@@ -57,19 +54,16 @@ export const ProfilePage = () => {
     setIsSaving(true);
     setSuccessMessage('');
     setErrorMessage('');
-    
+
     try {
-      // Check if user document exists
       const userData = await getUserById(user.uid);
-      
+
       if (userData) {
-        // Update existing user document
         await updateUser(user.uid, {
           ...userData,
           name
         });
       } else {
-        // Create new user document
         await createUser({
           $id: user.uid,
           email: user.email,
@@ -77,11 +71,10 @@ export const ProfilePage = () => {
           role: 'user'
         });
       }
-      
-      setSuccessMessage('Your profile has been updated successfully!');
+
+      setSuccessMessage('Profile updated successfully');
       setTimeout(() => setSuccessMessage(''), 3000);
-      
-      // Refresh user data
+
       await checkAuthStatus();
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -93,54 +86,66 @@ export const ProfilePage = () => {
   };
 
   if (isLoading) {
-    return <div className="flex justify-center items-center py-20"><FaSpinner className="animate-spin text-4xl text-indigo-600" /></div>;
+    return <div className="flex justify-center items-center h-64"><FiLoader className="animate-spin text-2xl text-gray-400" /></div>;
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl md:text-4xl font-extrabold text-gray-900 mb-2">Profile Settings</h1>
-        <p className="text-sm md:text-base text-gray-600">Update your account information</p>
+    <div className="max-w-2xl">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Settings</h1>
+        <p className="text-gray-500 mt-2">Manage your account settings and preferences.</p>
       </div>
-      <div className="bg-white p-4 md:p-8 rounded-xl shadow-lg max-w-2xl">
-        <form onSubmit={handleUpdateProfile} className="space-y-4 md:space-y-6">
+
+      <div className="bg-white border border-gray-200 rounded-lg p-6 md:p-8">
+        <h2 className="text-lg font-semibold text-gray-900 mb-6">Personal Information</h2>
+
+        <form onSubmit={handleUpdateProfile} className="space-y-6">
           <div>
-            <label className="block font-semibold text-gray-700 mb-1 text-sm md:text-base">Full Name</label>
-            <input 
-              type="text" 
-              value={name} 
-              onChange={(e) => setName(e.target.value)} 
-              className="w-full p-2 md:p-3 border rounded-lg text-sm md:text-base" 
+            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full p-2 border-b border-gray-300 focus:border-gray-900 focus:outline-none transition-colors bg-transparent placeholder-gray-400"
+              placeholder="Enter your full name"
               required
             />
           </div>
+
           <div>
-            <label className="block font-semibold text-gray-700 mb-1 text-sm md:text-base">Email Address</label>
-            <input 
-              type="email" 
-              value={user?.email || ''} 
-              disabled 
-              className="w-full p-2 md:p-3 border rounded-lg bg-gray-100 cursor-not-allowed text-sm md:text-base" 
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+            <input
+              type="email"
+              value={user?.email || ''}
+              disabled
+              className="w-full p-2 border-b border-gray-200 text-gray-500 bg-transparent cursor-not-allowed"
             />
+            <p className="text-xs text-gray-400 mt-1">Email address cannot be changed</p>
           </div>
+
           {successMessage && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 md:p-4">
-              <p className="text-green-600 font-semibold text-sm md:text-base">{successMessage}</p>
+            <div className="flex items-center gap-2 text-green-600 text-sm bg-green-50 p-3 rounded-md">
+              <FiCheck />
+              <span>{successMessage}</span>
             </div>
           )}
+
           {errorMessage && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 md:p-4">
-              <p className="text-red-600 font-semibold text-sm md:text-base">{errorMessage}</p>
+            <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">
+              {errorMessage}
             </div>
           )}
-          <button 
-            type="submit" 
-            disabled={isSaving} 
-            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold px-4 md:px-6 py-2 md:py-3 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 text-sm md:text-base"
-          >
-            {isSaving ? <FaSpinner className="animate-spin" /> : <FaSave />}
-            Save Changes
-          </button>
+
+          <div className="pt-4">
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="flex items-center justify-center gap-2 bg-gray-900 text-white text-sm font-medium px-6 py-2.5 rounded-md hover:bg-black disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            >
+              {isSaving ? <FiLoader className="animate-spin" /> : null}
+              <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
+            </button>
+          </div>
         </form>
       </div>
     </div>

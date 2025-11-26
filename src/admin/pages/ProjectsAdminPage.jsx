@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Modal, useModal } from '../../components/Modal';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaPlus, FaSearch, FaEdit, FaTrash, FaSpinner, FaRobot } from 'react-icons/fa';
+import { FiPlus, FiSearch, FiEdit, FiTrash, FiLoader, FiCpu, FiFilter, FiMoreHorizontal } from 'react-icons/fi';
 import { getAllProjects, getProjectById, createProject, updateProject, deleteProject, getProjectsByDepartment, getProjectsByLevel } from '../../api/projectServices';
 import { Query } from 'appwrite';
 
@@ -11,15 +11,13 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-      <Modal {...modal} onClose={closeModal} />
-
-      <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-center">
-        <h2 className="text-2xl font-bold mb-4 text-gray-900">{title}</h2>
-        <p className="text-gray-600 mb-6">{message}</p>
-        <div className="flex justify-center gap-4">
-          <button onClick={onClose} className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold">Cancel</button>
-          <button onClick={onConfirm} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold">Confirm Delete</button>
+    <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300">
+      <div className="bg-white p-8 rounded-lg shadow-xl border border-gray-100 w-full max-w-md text-center transform transition-all">
+        <h2 className="text-xl font-bold mb-2 text-gray-900">{title}</h2>
+        <p className="text-sm text-gray-500 mb-8 leading-relaxed">{message}</p>
+        <div className="flex justify-center gap-3">
+          <button onClick={onClose} className="px-5 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 transition-colors">Cancel</button>
+          <button onClick={onConfirm} className="px-5 py-2.5 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors">Confirm Delete</button>
         </div>
       </div>
     </div>
@@ -31,14 +29,14 @@ const BulkConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, cou
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-      <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-center">
-        <h2 className="text-2xl font-bold mb-4 text-gray-900">{title}</h2>
-        <p className="text-gray-600 mb-2">{message}</p>
-        <p className="text-lg font-semibold text-red-600 mb-6">{count} project{count !== 1 ? 's' : ''} will be deleted.</p>
-        <div className="flex justify-center gap-4">
-          <button onClick={onClose} className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold">Cancel</button>
-          <button onClick={onConfirm} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold">Confirm Delete</button>
+    <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300">
+      <div className="bg-white p-8 rounded-lg shadow-xl border border-gray-100 w-full max-w-md text-center transform transition-all">
+        <h2 className="text-xl font-bold mb-2 text-gray-900">{title}</h2>
+        <p className="text-sm text-gray-500 mb-2">{message}</p>
+        <p className="text-base font-semibold text-red-600 mb-8">{count} project{count !== 1 ? 's' : ''} will be deleted.</p>
+        <div className="flex justify-center gap-3">
+          <button onClick={onClose} className="px-5 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 transition-colors">Cancel</button>
+          <button onClick={onConfirm} className="px-5 py-2.5 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors">Confirm Delete</button>
         </div>
       </div>
     </div>
@@ -46,7 +44,7 @@ const BulkConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, cou
 };
 
 export const ProjectsAdminPage = () => {
-    const { modal, showModal, closeModal } = useModal();
+  const { modal, showModal, closeModal } = useModal();
   const [projects, setProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -178,74 +176,90 @@ export const ProjectsAdminPage = () => {
 
   return (
     <div className="w-full">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">Manage Projects</h1>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Projects</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage and organize all project uploads.</p>
+        </div>
         <div className="flex flex-wrap gap-3">
-          <Link to="/admin/projects/ai-upload" className="flex items-center gap-2 bg-purple-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-purple-700 transition-all duration-300 text-sm">
-            <FaRobot />
+          <Link to="/admin/projects/ai-upload" className="flex items-center gap-2 bg-gray-900 text-white font-medium px-4 py-2 rounded-md hover:bg-black transition-all duration-300 text-sm shadow-sm">
+            <FiCpu className="w-4 h-4" />
             <span>AI Extract</span>
           </Link>
-          <Link to="/admin/projects/add" className="flex items-center gap-2 bg-indigo-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-indigo-700 transition-all duration-300 text-sm">
-            <FaPlus />
+          <Link to="/admin/projects/add" className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 font-medium px-4 py-2 rounded-md hover:bg-gray-50 transition-all duration-300 text-sm shadow-sm">
+            <FiPlus className="w-4 h-4" />
             <span>Add New</span>
           </Link>
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded-xl shadow-lg">
-        <div className="mb-4 relative">
-          <input type="text" placeholder="Search loaded projects..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full p-3 pl-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-          <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        </div>
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="relative w-full sm:w-96">
+            <input
+              type="text"
+              placeholder="Search projects..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
+            />
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+          </div>
 
-        {/* Mobile view for projects */}
-        <div className="md:hidden">
           {selectedProjects.length > 0 && (
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex justify-between items-center">
-              <span className="text-yellow-800 text-sm">
-                {selectedProjects.length} project{selectedProjects.length !== 1 ? 's' : ''} selected
+            <div className="flex items-center gap-4 bg-gray-50 px-4 py-2 rounded-md border border-gray-200">
+              <span className="text-xs font-medium text-gray-600">
+                {selectedProjects.length} selected
               </span>
               <button
                 onClick={() => setShowBulkConfirmModal(true)}
-                className="flex items-center gap-2 bg-red-600 text-white font-bold px-3 py-2 rounded-lg hover:bg-red-700 transition-all duration-300 text-sm"
+                className="text-red-600 hover:text-red-700 text-xs font-medium flex items-center gap-1"
               >
-                <FaTrash />
+                <FiTrash className="w-3 h-3" />
                 <span>Delete</span>
               </button>
             </div>
           )}
+        </div>
+
+        {/* Mobile view for projects */}
+        <div className="md:hidden">
           {isLoading ? (
-            <div className="flex justify-center items-center py-10"><FaSpinner className="animate-spin text-3xl text-indigo-600" /></div>
+            <div className="flex justify-center items-center py-12"><FiLoader className="animate-spin text-2xl text-gray-400" /></div>
           ) : (
-            <div className="space-y-4">
+            <div className="divide-y divide-gray-100">
               {filteredProjects.map(project => (
-                <div key={project.id} className={`border rounded-lg p-4 ${selectedProjects.includes(project.id) ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'}`}>
-                  <div className="flex items-start justify-between">
+                <div key={project.id} className={`p-4 ${selectedProjects.includes(project.id) ? 'bg-gray-50' : 'bg-white'}`}>
+                  <div className="flex items-start gap-3">
                     <input
                       type="checkbox"
                       checked={selectedProjects.includes(project.id)}
                       onChange={() => handleSelectProject(project.id)}
-                      className="w-5 h-5 mt-1 mr-3"
+                      className="w-4 h-4 mt-1 rounded border-gray-300 text-gray-900 focus:ring-gray-200"
                     />
-                    <div className="flex-1">
-                      <h3 className="font-bold text-gray-800">{project.title}</h3>
-                      <div className="text-sm text-gray-600 mt-1">
-                        <p>Department: {project.department}</p>
-                        <p>Year: {project.year}</p>
-                        <p>Price: ₦{project.priceNGN}</p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 truncate">{project.title}</h3>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                          {project.department}
+                        </span>
+                        <span className="text-xs text-gray-500 py-0.5">
+                          {project.year}
+                        </span>
                       </div>
+                      <p className="text-sm font-medium text-gray-900 mt-2">₦{project.priceNGN}</p>
                     </div>
-                  </div>
-                  <div className="flex justify-end gap-3 mt-3">
-                    <Link to={`/admin/projects/edit/${project.id}`} className="text-blue-500 hover:text-blue-700 text-sm">
-                      <FaEdit className="inline mr-1" /> Edit
-                    </Link>
-                    <button 
-                      onClick={() => handleDeleteClick(project.id)} 
-                      className="text-red-500 hover:text-red-700 text-sm"
-                    >
-                      <FaTrash className="inline mr-1" /> Delete
-                    </button>
+                    <div className="flex flex-col gap-2">
+                      <Link to={`/admin/projects/edit/${project.id}`} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors">
+                        <FiEdit className="w-4 h-4" />
+                      </Link>
+                      <button
+                        onClick={() => handleDeleteClick(project.id)}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                      >
+                        <FiTrash className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -255,55 +269,53 @@ export const ProjectsAdminPage = () => {
 
         {/* Desktop view for projects */}
         <div className="hidden md:block overflow-x-auto">
-          {selectedProjects.length > 0 && (
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex justify-between items-center">
-              <span className="text-yellow-800">
-                {selectedProjects.length} project{selectedProjects.length !== 1 ? 's' : ''} selected
-              </span>
-              <button
-                onClick={() => setShowBulkConfirmModal(true)}
-                className="flex items-center gap-2 bg-red-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-red-700 transition-all duration-300"
-              >
-                <FaTrash />
-                <span>Delete Selected ({selectedProjects.length})</span>
-              </button>
-            </div>
-          )}
           {isLoading ? (
-            <div className="flex justify-center items-center py-20"><FaSpinner className="animate-spin text-4xl text-indigo-600" /></div>
+            <div className="flex justify-center items-center py-20"><FiLoader className="animate-spin text-3xl text-gray-300" /></div>
           ) : (
             <table className="w-full text-left">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  <th className="p-3 w-12">
+                  <th className="p-4 w-12">
                     <input
                       type="checkbox"
                       checked={selectedProjects.length > 0 && selectedProjects.length === filteredProjects.length}
                       onChange={handleSelectAll}
-                      className="w-5 h-5"
+                      className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-200"
                     />
                   </th>
-                  <th className="p-3">Title</th><th className="p-3">Department</th><th className="p-3">Year</th><th className="p-3">Price</th><th className="p-3 text-center">Actions</th>
+                  <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Title</th>
+                  <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Department</th>
+                  <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Year</th>
+                  <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Price</th>
+                  <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-100">
                 {filteredProjects.map(project => (
-                  <tr key={project.id} className={`border-b hover:bg-gray-50 ${selectedProjects.includes(project.id) ? 'bg-blue-50' : ''}`}>
-                    <td className="p-3">
+                  <tr key={project.id} className={`hover:bg-gray-50 transition-colors ${selectedProjects.includes(project.id) ? 'bg-gray-50' : ''}`}>
+                    <td className="p-4">
                       <input
                         type="checkbox"
                         checked={selectedProjects.includes(project.id)}
                         onChange={() => handleSelectProject(project.id)}
-                        className="w-5 h-5"
+                        className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-200"
                       />
                     </td>
-                    <td className="p-3 font-semibold">{project.title}</td>
-                    <td className="p-3">{project.department}</td>
-                    <td className="p-3">{project.year}</td>
-                    <td className="p-3">₦{project.priceNGN}</td>
-                    <td className="p-3 text-center">
-                      <Link to={`/admin/projects/edit/${project.id}`} className="text-blue-500 hover:text-blue-700 mr-4"><FaEdit /></Link>
-                      <button onClick={() => handleDeleteClick(project.id)} className="text-red-500 hover:text-red-700"><FaTrash /></button>
+                    <td className="p-4">
+                      <div className="font-medium text-gray-900 max-w-xs truncate" title={project.title}>{project.title}</div>
+                    </td>
+                    <td className="p-4 text-sm text-gray-600">{project.department}</td>
+                    <td className="p-4 text-sm text-gray-600">{project.year}</td>
+                    <td className="p-4 text-sm font-medium text-gray-900">₦{project.priceNGN}</td>
+                    <td className="p-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link to={`/admin/projects/edit/${project.id}`} className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors">
+                          <FiEdit className="w-4 h-4" />
+                        </Link>
+                        <button onClick={() => handleDeleteClick(project.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors">
+                          <FiTrash className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -312,9 +324,9 @@ export const ProjectsAdminPage = () => {
           )}
         </div>
         {hasMore && !isLoading && (
-          <div className="text-center mt-6">
-            <button onClick={fetchMoreProjects} disabled={isMoreLoading} className="bg-gray-200 text-gray-800 font-bold px-6 py-2 rounded-lg hover:bg-gray-300 disabled:opacity-50">
-              {isMoreLoading ? 'Loading...' : 'Load More'}
+          <div className="p-4 border-t border-gray-100 text-center">
+            <button onClick={fetchMoreProjects} disabled={isMoreLoading} className="text-sm font-medium text-gray-600 hover:text-gray-900 disabled:opacity-50 transition-colors">
+              {isMoreLoading ? 'Loading...' : 'Load More Projects'}
             </button>
           </div>
         )}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaRobot, FaFileUpload, FaCheckCircle, FaTimesCircle, FaSpinner, FaPlus, FaTimes } from 'react-icons/fa';
+import { FiArrowLeft, FiCpu, FiUpload, FiCheckCircle, FiXCircle, FiLoader, FiPlus, FiX, FiFileText, FiAlertCircle } from 'react-icons/fi';
 import { extractProjectFromFile, batchExtractProjects } from '../../appwrite/aiExtractionService';
 import { getStandardizedDepartment } from '../../api/departmentService';
 import { uploadProjectFile } from '../../api/fileStorageService';
@@ -11,43 +11,43 @@ const Modal = ({ isOpen, onClose, title, message, type = 'info' }) => {
   if (!isOpen) return null;
 
   const typeStyles = {
-    success: 'bg-green-50 border-green-500 text-green-900',
-    error: 'bg-red-50 border-red-500 text-red-900',
-    info: 'bg-blue-50 border-blue-500 text-blue-900',
-    warning: 'bg-yellow-50 border-yellow-500 text-yellow-900',
+    success: 'bg-green-50 border-green-200 text-green-900',
+    error: 'bg-red-50 border-red-200 text-red-900',
+    info: 'bg-blue-50 border-blue-200 text-blue-900',
+    warning: 'bg-yellow-50 border-yellow-200 text-yellow-900',
   };
 
   const iconStyles = {
-    success: <FaCheckCircle className="text-green-600 text-3xl" />,
-    error: <FaTimesCircle className="text-red-600 text-3xl" />,
-    info: <FaCheckCircle className="text-blue-600 text-3xl" />,
-    warning: <FaCheckCircle className="text-yellow-600 text-3xl" />,
+    success: <FiCheckCircle className="text-green-600 text-2xl" />,
+    error: <FiXCircle className="text-red-600 text-2xl" />,
+    info: <FiAlertCircle className="text-blue-600 text-2xl" />,
+    warning: <FiAlertCircle className="text-yellow-600 text-2xl" />,
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden border border-gray-100" onClick={(e) => e.stopPropagation()}>
         <div className={`p-6 border-l-4 ${typeStyles[type]}`}>
           <div className="flex items-start gap-4">
             <div className="flex-shrink-0 mt-1">
               {iconStyles[type]}
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-bold mb-2">{title}</h3>
-              <p className="text-sm leading-relaxed">{message}</p>
+              <h3 className="text-lg font-bold mb-2">{title}</h3>
+              <p className="text-sm leading-relaxed opacity-90">{message}</p>
             </div>
             <button
               onClick={onClose}
               className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <FaTimes className="text-xl" />
+              <FiX className="text-xl" />
             </button>
           </div>
         </div>
-        <div className="p-4 bg-gray-50 flex justify-end">
+        <div className="p-4 bg-gray-50 flex justify-end border-t border-gray-100">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-semibold transition-all"
+            className="px-6 py-2 bg-gray-900 text-white rounded-md hover:bg-black font-medium transition-all text-sm"
           >
             Close
           </button>
@@ -327,7 +327,7 @@ export const AIProjectUploadPage = () => {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-5xl mx-auto">
       <Modal
         isOpen={modal.isOpen}
         onClose={closeModal}
@@ -336,43 +336,40 @@ export const AIProjectUploadPage = () => {
         type={modal.type}
       />
 
-      <div className="mb-6">
-        <Link to="/admin/projects" className="flex items-center gap-2 text-gray-600 hover:text-indigo-600 font-semibold">
-          <FaArrowLeft />
-          Back to Manage Projects
+      <div className="mb-8">
+        <Link to="/admin/projects" className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-900 font-medium transition-colors mb-4 text-sm">
+          <FiArrowLeft className="w-4 h-4" />
+          Back to Projects
         </Link>
-      </div>
-
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 flex items-center gap-3">
-            <FaRobot className="text-indigo-600" />
-            AI Project Extractor
-          </h1>
-          <p className="text-gray-600 mt-2">Upload PDF or DOCX files to automatically extract project data using AI</p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+              <FiCpu className="text-gray-900" />
+              AI Project Extractor
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">Upload PDF or DOCX files to automatically extract project data using AI</p>
+          </div>
         </div>
       </div>
 
       {/* Mode Selection */}
-      <div className="bg-white p-4 rounded-xl shadow-lg mb-6">
+      <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm mb-6">
         <div className="flex flex-wrap gap-4">
           <button
             onClick={() => setIsSingleMode(true)}
-            className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-              isSingleMode
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+            className={`px-4 py-2 rounded-md font-medium text-sm transition-all ${isSingleMode
+                ? 'bg-gray-900 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
           >
             Single File Mode
           </button>
           <button
             onClick={() => setIsSingleMode(false)}
-            className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-              !isSingleMode
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+            className={`px-4 py-2 rounded-md font-medium text-sm transition-all ${!isSingleMode
+                ? 'bg-gray-900 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
           >
             Batch Mode
           </button>
@@ -380,13 +377,13 @@ export const AIProjectUploadPage = () => {
       </div>
 
       {/* File Upload Section */}
-      <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg mb-6">
-        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <FaFileUpload className="text-indigo-600" />
+      <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-900">
+          <FiUpload className="text-gray-500" />
           Upload Files
         </h3>
 
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+        <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:bg-gray-50 transition-colors">
           <input
             type="file"
             accept=".pdf,.docx"
@@ -400,11 +397,11 @@ export const AIProjectUploadPage = () => {
             htmlFor="fileInput"
             className="cursor-pointer flex flex-col items-center gap-3"
           >
-            <FaFileUpload className="text-4xl text-gray-400" />
-            <span className="text-base font-semibold text-gray-700">
+            <FiUpload className="text-4xl text-gray-300" />
+            <span className="text-base font-medium text-gray-700">
               Click to select {isSingleMode ? 'a file' : 'files'} (PDF or DOCX)
             </span>
-            <span className="text-sm text-gray-500">
+            <span className="text-xs text-gray-400">
               {isSingleMode ? 'Single file mode' : 'Multiple files supported'}
             </span>
           </label>
@@ -412,11 +409,12 @@ export const AIProjectUploadPage = () => {
 
         {selectedFiles.length > 0 && (
           <div className="mt-4">
-            <p className="font-semibold mb-2">Selected Files ({selectedFiles.length}):</p>
-            <ul className="space-y-1 max-h-32 overflow-y-auto">
+            <p className="font-medium text-sm text-gray-700 mb-2">Selected Files ({selectedFiles.length}):</p>
+            <ul className="space-y-1 max-h-32 overflow-y-auto bg-gray-50 p-3 rounded-md border border-gray-100">
               {selectedFiles.map((file, idx) => (
-                <li key={idx} className="text-sm text-gray-600 truncate">
-                  • {file.name} ({(file.size / 1024).toFixed(2)} KB)
+                <li key={idx} className="text-xs text-gray-600 truncate flex items-center gap-2">
+                  <FiFileText className="w-3 h-3" />
+                  {file.name} ({(file.size / 1024).toFixed(2)} KB)
                 </li>
               ))}
             </ul>
@@ -428,17 +426,17 @@ export const AIProjectUploadPage = () => {
             {isSingleMode ? (
               <button
                 onClick={handleSingleFileExtraction}
-                className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 flex items-center gap-2"
+                className="bg-gray-900 text-white px-6 py-2.5 rounded-md font-medium hover:bg-black flex items-center gap-2 text-sm shadow-sm"
               >
-                <FaRobot />
+                <FiCpu />
                 Extract with AI
               </button>
             ) : (
               <button
                 onClick={handleBatchExtraction}
-                className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 flex items-center gap-2"
+                className="bg-gray-900 text-white px-6 py-2.5 rounded-md font-medium hover:bg-black flex items-center gap-2 text-sm shadow-sm"
               >
-                <FaRobot />
+                <FiCpu />
                 Process Batch
               </button>
             )}
@@ -448,18 +446,15 @@ export const AIProjectUploadPage = () => {
 
       {/* Processing Status */}
       {isProcessing && (
-        <div className="bg-blue-50 border border-blue-200 p-6 rounded-xl mb-6 shadow-sm">
+        <div className="bg-blue-50 border border-blue-100 p-6 rounded-lg mb-6 shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <FaSpinner className="animate-spin text-2xl text-blue-600" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                </div>
+                <FiLoader className="animate-spin text-2xl text-blue-600" />
               </div>
               <div>
-                <p className="font-semibold text-blue-900">AI Processing Project...</p>
-                <p className="text-sm text-blue-700 truncate max-w-full">{currentFile || 'Analyzing content...'}</p>
+                <p className="font-semibold text-blue-900 text-sm">AI Processing Project...</p>
+                <p className="text-xs text-blue-700 truncate max-w-full">{currentFile || 'Analyzing content...'}</p>
               </div>
             </div>
             <div className="sm:ml-auto w-full sm:w-auto">
@@ -468,21 +463,15 @@ export const AIProjectUploadPage = () => {
                   {progress.current} of {progress.total} files processed
                 </div>
               )}
-              <div className="w-full bg-blue-200 rounded-full h-3">
+              <div className="w-full bg-blue-200 rounded-full h-2">
                 <div
-                  className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500 ease-out flex items-center justify-end pr-2"
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out"
                   style={{ width: progress.total > 0 ? `${(progress.current / progress.total) * 100}%` : '0%' }}
-                >
-                  {progress.total > 0 && (
-                    <span className="text-[10px] font-bold text-white whitespace-nowrap">
-                      {Math.round((progress.current / progress.total) * 100)}%
-                    </span>
-                  )}
-                </div>
+                ></div>
               </div>
             </div>
           </div>
-          <div className="mt-4 text-xs text-blue-800 bg-blue-100 p-2 rounded-lg">
+          <div className="mt-4 text-xs text-blue-800 bg-blue-100/50 p-2 rounded-md">
             <p><span className="font-semibold">Note:</span> This process may take 10-30 seconds per document depending on length and complexity.</p>
           </div>
         </div>
@@ -490,46 +479,46 @@ export const AIProjectUploadPage = () => {
 
       {/* Single File: Extracted Data Form */}
       {extractedData && isSingleMode && (
-        <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg mb-6">
-          <h3 className="text-xl font-bold mb-4 text-gray-700">Review & Edit Extracted Data</h3>
+        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
+          <h3 className="text-lg font-semibold mb-6 text-gray-900">Review & Edit Extracted Data</h3>
 
           <div className="grid grid-cols-1 gap-4 mb-6">
             <div>
-              <label className="block font-semibold mb-2">Title *</label>
+              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Title *</label>
               <input
                 type="text"
                 value={extractedData.title}
                 onChange={(e) => handleFieldChange('title', e.target.value)}
-                className="w-full p-3 border rounded-lg"
+                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
                 required
               />
             </div>
             <div>
-              <label className="block font-semibold mb-2">Author</label>
+              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Author</label>
               <input
                 type="text"
                 value={extractedData.author}
                 onChange={(e) => handleFieldChange('author', e.target.value)}
-                className="w-full p-3 border rounded-lg"
+                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
               />
             </div>
             <div>
-              <label className="block font-semibold mb-2">Department *</label>
+              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Department *</label>
               <input
                 type="text"
                 value={extractedData.department}
                 onChange={(e) => handleFieldChange('department', e.target.value)}
-                className="w-full p-3 border rounded-lg"
+                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
                 required
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block font-semibold mb-2">Level</label>
+                <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Level</label>
                 <select
                   value={extractedData.level}
                   onChange={(e) => handleFieldChange('level', e.target.value)}
-                  className="w-full p-3 border rounded-lg bg-white"
+                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
                 >
                   <option>BSc</option>
                   <option>MSc</option>
@@ -539,63 +528,63 @@ export const AIProjectUploadPage = () => {
                 </select>
               </div>
               <div>
-                <label className="block font-semibold mb-2">Year</label>
+                <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Year</label>
                 <input
                   type="number"
                   value={extractedData.year}
                   onChange={(e) => handleFieldChange('year', e.target.value)}
-                  className="w-full p-3 border rounded-lg"
+                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
                 />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block font-semibold mb-2">Pages</label>
+                <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Pages</label>
                 <input
                   type="number"
                   value={extractedData.pages}
                   onChange={(e) => handleFieldChange('pages', e.target.value)}
-                  className="w-full p-3 border rounded-lg"
+                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
                 />
               </div>
               <div>
-                <label className="block font-semibold mb-2">Price (NGN)</label>
+                <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Price (NGN)</label>
                 <input
                   type="number"
                   value={extractedData.priceNGN || ''}
                   onChange={(e) => handleFieldChange('priceNGN', e.target.value)}
-                  className="w-full p-3 border rounded-lg"
+                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
                   placeholder="Enter price"
                 />
               </div>
             </div>
             <div>
-              <label className="block font-semibold mb-2">Chapters</label>
+              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Chapters</label>
               <input
                 type="text"
                 value={extractedData.chapters}
                 onChange={(e) => handleFieldChange('chapters', e.target.value)}
-                className="w-full p-3 border rounded-lg"
+                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
               />
             </div>
           </div>
 
           <div className="mb-6">
-            <label className="block font-semibold mb-2">Abstract</label>
+            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Abstract</label>
             <textarea
               value={extractedData.abstract}
               onChange={(e) => handleFieldChange('abstract', e.target.value)}
-              className="w-full p-3 border rounded-lg"
+              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all resize-y"
               rows="4"
             />
           </div>
 
           <div className="mb-6">
-            <label className="block font-semibold mb-2">Chapter One</label>
+            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Chapter One</label>
             <textarea
               value={extractedData.chapterOne}
               onChange={(e) => handleFieldChange('chapterOne', e.target.value)}
-              className="w-full p-3 border rounded-lg"
+              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all resize-y"
               rows="6"
             />
           </div>
@@ -604,9 +593,9 @@ export const AIProjectUploadPage = () => {
             <button
               onClick={handleSaveExtractedProject}
               disabled={isProcessing}
-              className="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 flex items-center gap-2 disabled:opacity-50"
+              className="bg-green-600 text-white px-8 py-3 rounded-md font-medium hover:bg-green-700 flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-green-100 transition-all"
             >
-              <FaPlus />
+              <FiPlus />
               Save Project to Database
             </button>
           </div>
@@ -615,16 +604,16 @@ export const AIProjectUploadPage = () => {
 
       {/* Batch Mode: Results */}
       {results.length > 0 && !isSingleMode && (
-        <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg">
+        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <h3 className="text-xl font-bold text-gray-700">Batch Processing Results</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Batch Processing Results</h3>
             {results.filter(r => r.success).length > 0 && (
               <button
                 onClick={handleSaveBatchResults}
                 disabled={isProcessing}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 flex items-center gap-2 disabled:opacity-50 text-sm"
+                className="bg-green-600 text-white px-4 py-2 rounded-md font-medium hover:bg-green-700 flex items-center gap-2 disabled:opacity-50 text-sm shadow-sm"
               >
-                <FaPlus />
+                <FiPlus />
                 Save All Successful ({results.filter(r => r.success).length})
               </button>
             )}
@@ -634,26 +623,25 @@ export const AIProjectUploadPage = () => {
             {results.map((result, idx) => (
               <div
                 key={idx}
-                className={`p-4 rounded-lg border ${
-                  result.success
-                    ? 'bg-green-50 border-green-300'
-                    : 'bg-red-50 border-red-300'
-                }`}
+                className={`p-4 rounded-md border ${result.success
+                    ? 'bg-green-50 border-green-100'
+                    : 'bg-red-50 border-red-100'
+                  }`}
               >
                 <div className="flex items-start gap-3">
                   {result.success ? (
-                    <FaCheckCircle className="text-green-600 text-xl mt-1" />
+                    <FiCheckCircle className="text-green-600 text-lg mt-0.5" />
                   ) : (
-                    <FaTimesCircle className="text-red-600 text-xl mt-1" />
+                    <FiXCircle className="text-red-600 text-lg mt-0.5" />
                   )}
                   <div className="flex-1">
-                    <p className="font-semibold truncate">{result.fileName}</p>
+                    <p className="font-medium text-sm text-gray-900 truncate">{result.fileName}</p>
                     {result.success ? (
-                      <p className="text-sm text-gray-700 mt-1">
+                      <p className="text-xs text-gray-600 mt-1">
                         Title: {result.data.title || 'N/A'} | Department: {result.data.department || 'N/A'}
                       </p>
                     ) : (
-                      <p className="text-sm text-red-700 mt-1 truncate">{result.error}</p>
+                      <p className="text-xs text-red-600 mt-1 truncate">{result.error}</p>
                     )}
                   </div>
                 </div>
@@ -664,15 +652,15 @@ export const AIProjectUploadPage = () => {
       )}
 
       {/* API Key Warning */}
-      <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl mt-6">
-        <p className="text-sm text-yellow-800">
+      <div className="bg-yellow-50 border border-yellow-100 p-4 rounded-lg mt-6">
+        <p className="text-xs text-yellow-800">
           <strong>Note:</strong> Make sure you have set your <code>VITE_GEMINI_API_KEY</code> in your .env file.
           You can get a free API key from{' '}
           <a
             href="https://makersuite.google.com/app/apikey"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline font-semibold"
+            className="underline font-medium"
           >
             Google AI Studio
           </a>
