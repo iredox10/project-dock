@@ -7,14 +7,30 @@ import { Query } from 'appwrite';
 
 
 // Reusable Confirmation Modal
-const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
+const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, showDeleteFileOption, onDeleteFileChange, deleteFile }) => {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300">
       <div className="bg-white p-8 rounded-lg shadow-xl border border-gray-100 w-full max-w-md text-center transform transition-all">
         <h2 className="text-xl font-bold mb-2 text-gray-900">{title}</h2>
-        <p className="text-sm text-gray-500 mb-8 leading-relaxed">{message}</p>
+        <p className="text-sm text-gray-500 mb-6 leading-relaxed">{message}</p>
+
+        {showDeleteFileOption && (
+          <div className="mb-6 flex items-center justify-center gap-2">
+            <input
+              type="checkbox"
+              id="deleteFile"
+              checked={deleteFile}
+              onChange={(e) => onDeleteFileChange(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
+            />
+            <label htmlFor="deleteFile" className="text-sm text-gray-700 select-none cursor-pointer">
+              Also delete associated project file?
+            </label>
+          </div>
+        )}
+
         <div className="flex justify-center gap-3">
           <button onClick={onClose} className="px-5 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 transition-colors">Cancel</button>
           <button onClick={onConfirm} className="px-5 py-2.5 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors">Confirm Delete</button>
@@ -25,7 +41,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
 };
 
 // Bulk Delete Confirmation Modal
-const BulkConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, count }) => {
+const BulkConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, count, showDeleteFileOption, onDeleteFileChange, deleteFile }) => {
   if (!isOpen) return null;
 
   return (
@@ -33,7 +49,23 @@ const BulkConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, cou
       <div className="bg-white p-8 rounded-lg shadow-xl border border-gray-100 w-full max-w-md text-center transform transition-all">
         <h2 className="text-xl font-bold mb-2 text-gray-900">{title}</h2>
         <p className="text-sm text-gray-500 mb-2">{message}</p>
-        <p className="text-base font-semibold text-red-600 mb-8">{count} project{count !== 1 ? 's' : ''} will be deleted.</p>
+        <p className="text-base font-semibold text-red-600 mb-6">{count} project{count !== 1 ? 's' : ''} will be deleted.</p>
+
+        {showDeleteFileOption && (
+          <div className="mb-6 flex items-center justify-center gap-2">
+            <input
+              type="checkbox"
+              id="bulkDeleteFile"
+              checked={deleteFile}
+              onChange={(e) => onDeleteFileChange(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
+            />
+            <label htmlFor="bulkDeleteFile" className="text-sm text-gray-700 select-none cursor-pointer">
+              Also delete associated project files?
+            </label>
+          </div>
+        )}
+
         <div className="flex justify-center gap-3">
           <button onClick={onClose} className="px-5 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 transition-colors">Cancel</button>
           <button onClick={onConfirm} className="px-5 py-2.5 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors">Confirm Delete</button>
@@ -55,6 +87,7 @@ export const ProjectsAdminPage = () => {
   const [projectToDelete, setProjectToDelete] = useState(null);
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [showBulkConfirmModal, setShowBulkConfirmModal] = useState(false);
+  const [deleteFileWithProject, setDeleteFileWithProject] = useState(false);
 
   // Inline Editing State
   const [editingId, setEditingId] = useState(null);
@@ -118,16 +151,18 @@ export const ProjectsAdminPage = () => {
 
   const handleDeleteClick = (projectId) => {
     setProjectToDelete(projectId);
+    setDeleteFileWithProject(false); // Reset default
     setShowConfirmModal(true);
   };
 
   const confirmDelete = async () => {
     if (!projectToDelete) return;
     try {
-      await deleteProject(projectToDelete);
+      await deleteProject(projectToDelete, deleteFileWithProject);
       setProjects(projects.filter(p => p.id !== projectToDelete));
       setShowConfirmModal(false);
       setProjectToDelete(null);
+      setDeleteFileWithProject(false);
     } catch (error) {
       console.error("Error deleting project: ", error);
       showModal("Error", "Failed to delete project.", "error");
@@ -156,7 +191,7 @@ export const ProjectsAdminPage = () => {
     try {
       // Delete all selected projects
       const deletePromises = selectedProjects.map(projectId =>
-        deleteProject(projectId)
+        deleteProject(projectId, deleteFileWithProject)
       );
       await Promise.all(deletePromises);
 
@@ -166,6 +201,7 @@ export const ProjectsAdminPage = () => {
       // Clear selection
       setSelectedProjects([]);
       setShowBulkConfirmModal(false);
+      setDeleteFileWithProject(false);
     } catch (error) {
       console.error("Error deleting projects: ", error);
       showModal("Error", "Failed to delete some or all projects.", "error");
@@ -263,7 +299,10 @@ export const ProjectsAdminPage = () => {
                 {selectedProjects.length} selected
               </span>
               <button
-                onClick={() => setShowBulkConfirmModal(true)}
+                onClick={() => {
+                  setDeleteFileWithProject(false);
+                  setShowBulkConfirmModal(true);
+                }}
                 className="text-red-600 hover:text-red-700 text-xs font-medium flex items-center gap-1"
               >
                 <FiTrash className="w-3 h-3" />
@@ -410,6 +449,9 @@ export const ProjectsAdminPage = () => {
         onConfirm={confirmDelete}
         title="Confirm Deletion"
         message="Are you sure you want to permanently delete this project? This action cannot be undone."
+        showDeleteFileOption={true}
+        deleteFile={deleteFileWithProject}
+        onDeleteFileChange={setDeleteFileWithProject}
       />
       <BulkConfirmationModal
         isOpen={showBulkConfirmModal}
@@ -418,6 +460,9 @@ export const ProjectsAdminPage = () => {
         title="Confirm Bulk Deletion"
         message="Are you sure you want to permanently delete the selected projects?"
         count={selectedProjects.length}
+        showDeleteFileOption={true}
+        deleteFile={deleteFileWithProject}
+        onDeleteFileChange={setDeleteFileWithProject}
       />
     </div>
   );

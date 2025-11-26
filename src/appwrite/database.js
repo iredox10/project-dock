@@ -105,8 +105,25 @@ export const projectsService = {
   },
 
   // Delete project
-  async deleteProject(projectId) {
+  async deleteProject(projectId, deleteFile = false) {
     try {
+      if (deleteFile) {
+        try {
+          // Get project to find file ID
+          const project = await this.getProjectById(projectId);
+          const fileId = project.mainFileId || project.fileId;
+
+          if (fileId) {
+            // Import dynamically to avoid circular dependencies if any
+            const { deleteProjectFile } = await import('./storage');
+            await deleteProjectFile(fileId);
+          }
+        } catch (fileError) {
+          console.error('Error deleting project file:', fileError);
+          // Continue with project deletion even if file deletion fails
+        }
+      }
+
       const result = await databases.deleteDocument(
         DATABASE_ID,
         COLLECTIONS.PROJECTS,
