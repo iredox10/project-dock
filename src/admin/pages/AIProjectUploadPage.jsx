@@ -327,6 +327,20 @@ export const AIProjectUploadPage = () => {
     setExtractedData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleRemoveResult = (index) => {
+    const result = results[index];
+    // Remove from results array
+    setResults(prev => prev.filter((_, i) => i !== index));
+    // Remove from originalFilesMap if it exists
+    if (result && result.fileName) {
+      setOriginalFilesMap(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(result.fileName);
+        return newMap;
+      });
+    }
+  };
+
   return (
     <div className="w-full max-w-5xl mx-auto">
       <Modal
