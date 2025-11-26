@@ -69,6 +69,7 @@ export const AIProjectUploadPage = () => {
   const [extractedData, setExtractedData] = useState(null);
   const [isSingleMode, setIsSingleMode] = useState(true);
   const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });
+  const [viewingResult, setViewingResult] = useState(null); // Track which result is being viewed
 
   const showModal = (title, message, type = 'info') => {
     setModal({ isOpen: true, title, message, type });
@@ -358,8 +359,8 @@ export const AIProjectUploadPage = () => {
           <button
             onClick={() => setIsSingleMode(true)}
             className={`px-4 py-2 rounded-md font-medium text-sm transition-all ${isSingleMode
-                ? 'bg-gray-900 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-gray-900 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
           >
             Single File Mode
@@ -367,8 +368,8 @@ export const AIProjectUploadPage = () => {
           <button
             onClick={() => setIsSingleMode(false)}
             className={`px-4 py-2 rounded-md font-medium text-sm transition-all ${!isSingleMode
-                ? 'bg-gray-900 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-gray-900 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
           >
             Batch Mode
@@ -623,22 +624,24 @@ export const AIProjectUploadPage = () => {
             {results.map((result, idx) => (
               <div
                 key={idx}
+                onClick={() => result.success && setViewingResult({ ...result, index: idx })}
                 className={`p-4 rounded-md border ${result.success
-                    ? 'bg-green-50 border-green-100'
-                    : 'bg-red-50 border-red-100'
+                  ? 'bg-green-50 border-green-100 cursor-pointer hover:bg-green-100 transition-colors'
+                  : 'bg-red-50 border-red-100'
                   }`}
               >
                 <div className="flex items-start gap-3">
                   {result.success ? (
-                    <FiCheckCircle className="text-green-600 text-lg mt-0.5" />
+                    <FiCheckCircle className="text-green-600 text-lg mt-0.5 flex-shrink-0" />
                   ) : (
-                    <FiXCircle className="text-red-600 text-lg mt-0.5" />
+                    <FiXCircle className="text-red-600 text-lg mt-0.5 flex-shrink-0" />
                   )}
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm text-gray-900 truncate">{result.fileName}</p>
                     {result.success ? (
                       <p className="text-xs text-gray-600 mt-1">
-                        Title: {result.data.title || 'N/A'} | Department: {result.data.department || 'N/A'}
+                        Title: {result.data?.title || 'N/A'} | Department: {result.data?.department || 'N/A'}
+                        <span className="ml-2 text-blue-600 hover:underline">Click to view details →</span>
                       </p>
                     ) : (
                       <p className="text-xs text-red-600 mt-1 truncate">{result.error}</p>
@@ -647,6 +650,212 @@ export const AIProjectUploadPage = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Detail View Modal for Batch Results */}
+      {viewingResult && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setViewingResult(null)}>
+          <div className="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gray-50 p-6 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Project Details</h3>
+                <p className="text-sm text-gray-500 mt-1 truncate">{viewingResult.fileName}</p>
+              </div>
+              <button
+                onClick={() => setViewingResult(null)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <FiX className="text-2xl" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+              <div className="grid grid-cols-1 gap-4 mb-6">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Title *</label>
+                  <input
+                    type="text"
+                    value={viewingResult.data?.title || ''}
+                    onChange={(e) => {
+                      const updated = { ...viewingResult };
+                      updated.data.title = e.target.value;
+                      setViewingResult(updated);
+                      // Update results array
+                      setResults(prev => {
+                        const newResults = [...prev];
+                        newResults[viewingResult.index] = updated;
+                        return newResults;
+                      });
+                    }}
+                    className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:bg-white transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Author</label>
+                  <input
+                    type="text"
+                    value={viewingResult.data?.author || ''}
+                    onChange={(e) => {
+                      const updated = { ...viewingResult };
+                      updated.data.author = e.target.value;
+                      setViewingResult(updated);
+                      setResults(prev => {
+                        const newResults = [...prev];
+                        newResults[viewingResult.index] = updated;
+                        return newResults;
+                      });
+                    }}
+                    className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:bg-white transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Department *</label>
+                  <input
+                    type="text"
+                    value={viewingResult.data?.department || ''}
+                    onChange={(e) => {
+                      const updated = { ...viewingResult };
+                      updated.data.department = e.target.value;
+                      setViewingResult(updated);
+                      setResults(prev => {
+                        const newResults = [...prev];
+                        newResults[viewingResult.index] = updated;
+                        return newResults;
+                      });
+                    }}
+                    className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:bg-white transition-all"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Level</label>
+                    <select
+                      value={viewingResult.data?.level || 'BSc'}
+                      onChange={(e) => {
+                        const updated = { ...viewingResult };
+                        updated.data.level = e.target.value;
+                        setViewingResult(updated);
+                        setResults(prev => {
+                          const newResults = [...prev];
+                          newResults[viewingResult.index] = updated;
+                          return newResults;
+                        });
+                      }}
+                      className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:bg-white transition-all"
+                    >
+                      <option>BSc</option>
+                      <option>MSc</option>
+                      <option>HND</option>
+                      <option>ND</option>
+                      <option>PhD</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Year</label>
+                    <input
+                      type="number"
+                      value={viewingResult.data?.year || ''}
+                      onChange={(e) => {
+                        const updated = { ...viewingResult };
+                        updated.data.year = e.target.value;
+                        setViewingResult(updated);
+                        setResults(prev => {
+                          const newResults = [...prev];
+                          newResults[viewingResult.index] = updated;
+                          return newResults;
+                        });
+                      }}
+                      className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:bg-white transition-all"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Pages</label>
+                    <input
+                      type="number"
+                      value={viewingResult.data?.pages || ''}
+                      onChange={(e) => {
+                        const updated = { ...viewingResult };
+                        updated.data.pages = e.target.value;
+                        setViewingResult(updated);
+                        setResults(prev => {
+                          const newResults = [...prev];
+                          newResults[viewingResult.index] = updated;
+                          return newResults;
+                        });
+                      }}
+                      className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:bg-white transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Price (NGN)</label>
+                    <input
+                      type="number"
+                      value={viewingResult.data?.priceNGN || ''}
+                      onChange={(e) => {
+                        const updated = { ...viewingResult };
+                        updated.data.priceNGN = e.target.value;
+                        setViewingResult(updated);
+                        setResults(prev => {
+                          const newResults = [...prev];
+                          newResults[viewingResult.index] = updated;
+                          return newResults;
+                        });
+                      }}
+                      className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:bg-white transition-all"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Abstract</label>
+                  <textarea
+                    value={viewingResult.data?.abstract || ''}
+                    onChange={(e) => {
+                      const updated = { ...viewingResult };
+                      updated.data.abstract = e.target.value;
+                      setViewingResult(updated);
+                      setResults(prev => {
+                        const newResults = [...prev];
+                        newResults[viewingResult.index] = updated;
+                        return newResults;
+                      });
+                    }}
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:bg-white transition-all resize-y"
+                    rows="4"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Chapter One</label>
+                  <textarea
+                    value={viewingResult.data?.chapterOne || ''}
+                    onChange={(e) => {
+                      const updated = { ...viewingResult };
+                      updated.data.chapterOne = e.target.value;
+                      setViewingResult(updated);
+                      setResults(prev => {
+                        const newResults = [...prev];
+                        newResults[viewingResult.index] = updated;
+                        return newResults;
+                      });
+                    }}
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:bg-white transition-all resize-y"
+                    rows="6"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+              <button
+                onClick={() => setViewingResult(null)}
+                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 font-medium transition-all text-sm"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

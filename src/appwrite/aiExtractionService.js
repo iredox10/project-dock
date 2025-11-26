@@ -199,12 +199,12 @@ Return the JSON object:`;
       if (result.chapterOne) {
         result.chapterOne = await formatChapterOneContent(result.chapterOne);
       }
-      
+
       // Format Abstract content to follow proper academic structure if it exists
       if (result.abstract) {
         result.abstract = await formatAbstractContent(result.abstract);
       }
-      
+
       // Update chapters field to show range format (e.g., '1-5')
       // Handle cases where projectData.chapters might be null, undefined, or empty
       if (projectData.chapters && projectData.chapters !== null && projectData.chapters !== 'null' && projectData.chapters !== '') {
@@ -221,7 +221,7 @@ Return the JSON object:`;
         // If no chapters data exists, default to '1-5'
         result.chapters = '1-5';
       }
-      
+
       return result;
     } catch (error) {
       console.log(`Model ${modelName} failed:`, error.message);
@@ -427,24 +427,26 @@ export const batchExtractProjects = async (files, onProgress) => {
   for (let i = 0; i < fileArray.length; i++) {
     try {
       const projectData = await extractProjectFromFile(fileArray[i]);
-      results.push({
+      const resultObj = {
         success: true,
         data: projectData,
         fileName: fileArray[i].name
-      });
+      };
+      results.push(resultObj);
 
       if (onProgress) {
-        onProgress(i + 1, fileArray.length, { success: true, fileName: fileArray[i].name });
+        onProgress(i + 1, fileArray.length, resultObj);
       }
     } catch (error) {
-      results.push({
+      const resultObj = {
         success: false,
         error: error.message,
         fileName: fileArray[i].name
-      });
+      };
+      results.push(resultObj);
 
       if (onProgress) {
-        onProgress(i + 1, fileArray.length, { success: false, fileName: fileArray[i].name, error: error.message });
+        onProgress(i + 1, fileArray.length, resultObj);
       }
     }
   }
