@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { FaArrowLeft, FaShieldAlt, FaCheckCircle, FaSpinner, FaCreditCard, FaLock, FaDownload, FaUniversity, FaMobileAlt } from 'react-icons/fa';
+import { FiArrowLeft, FiCheck, FiLoader, FiLock, FiCreditCard, FiSmartphone, FiGlobe } from 'react-icons/fi';
 import { getProjectById, getAllOrders, createOrder, updateProject } from '../api/projectServices';
 import { authService } from '../appwrite/auth';
-import { Query } from 'appwrite';
 import { launchPaystackInline, verifyPaystackPayment, isPaystackConfigured, MICROFINANCE_BANKS } from '../api/paystackService.js';
 import { Modal, useModal } from '../components/Modal';
 
@@ -11,7 +10,7 @@ const PaymentPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { modal, showModal, closeModal } = useModal();
-  
+
   const [project, setProject] = useState(null);
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,18 +27,15 @@ const PaymentPage = () => {
       if (abortController.signal.aborted) return;
 
       try {
-        // Get the current user to verify authentication
         const currentUser = await authService.getCurrentUser();
         setUser(currentUser);
-        
-        // If user is not authenticated, redirect to login
+
         if (!currentUser) {
           const currentURL = encodeURIComponent(`/projects/${projectId}/payment`);
           navigate(`/login?redirect=${currentURL}`);
         }
       } catch (error) {
         console.error('Auth check error:', error);
-        // If there's an error checking auth, also redirect to login
         const currentURL = encodeURIComponent(`/projects/${projectId}/payment`);
         navigate(`/login?redirect=${currentURL}`);
       }
@@ -47,7 +43,6 @@ const PaymentPage = () => {
 
     checkAuthStatus();
 
-    // Cleanup
     return () => {
       abortController.abort();
     };
@@ -58,11 +53,10 @@ const PaymentPage = () => {
       setIsLoading(true);
       try {
         const projectDoc = await getProjectById(projectId);
-        
+
         if (projectDoc) {
           setProject({ id: projectDoc.$id, ...projectDoc });
-          
-          // Check if user already purchased by querying orders collection
+
           if (user) {
             try {
               const { documents: orders } = await getAllOrders({
@@ -94,7 +88,6 @@ const PaymentPage = () => {
   }, [projectId, user]);
 
   const handlePayment = async () => {
-    // Double check auth status before processing payment
     let currentUser = user;
     if (!currentUser) {
       try {
@@ -122,8 +115,7 @@ const PaymentPage = () => {
     try {
       const userName = user.name || user.email?.split('@')[0] || 'User';
       const nameParts = userName.split(' ');
-      
-      // Determine payment channels based on selected method
+
       let channels = ['card', 'bank', 'bank_transfer', 'ussd'];
       if (paymentMethod === 'card') {
         channels = ['card'];
@@ -157,7 +149,6 @@ const PaymentPage = () => {
         },
       });
 
-      // Store reference for potential later verification
       sessionStorage.setItem('payment_reference', reference);
       sessionStorage.setItem('payment_projectId', projectId);
     } catch (error) {
@@ -169,11 +160,9 @@ const PaymentPage = () => {
 
   const handlePaymentSuccess = async (reference) => {
     try {
-      // Verify payment
       const verification = await verifyPaystackPayment(reference);
-      
+
       if (verification.isPaid) {
-        // Create order record matching the existing schema
         const orderData = {
           userId: user.$id,
           projectId: projectId,
@@ -187,10 +176,6 @@ const PaymentPage = () => {
 
         await createOrder(orderData);
 
-        // Note: User purchases are tracked in the orders collection
-        // No need to update user document as it doesn't have purchasedProjects field
-
-        // Update project download count
         const projectData = await getProjectById(projectId);
         await updateProject(projectId, {
           ...projectData,
@@ -198,7 +183,7 @@ const PaymentPage = () => {
         });
 
         showModal('Payment Successful!', 'Your payment was successful. You can now download the project.', 'success');
-        
+
         setTimeout(() => {
           navigate(`/projects/${projectId}/download-file`);
         }, 2000);
@@ -215,19 +200,19 @@ const PaymentPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center pt-20">
-        <FaSpinner className="animate-spin text-5xl text-indigo-600" />
+      <div className="min-h-screen bg-white flex items-center justify-center pt-20">
+        <FiLoader className="animate-spin text-2xl text-gray-400" />
       </div>
     );
   }
 
   if (error || !project) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center px-4 pt-20">
+      <div className="min-h-screen bg-white flex items-center justify-center px-4 pt-20">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">{error || 'Project not found'}</h2>
-          <Link to="/projects" className="text-indigo-600 hover:text-indigo-700 font-semibold">
-            ← Back to Projects
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">{error || 'Project not found'}</h2>
+          <Link to="/projects" className="text-gray-900 underline hover:text-gray-600">
+            Return to Library
           </Link>
         </div>
       </div>
@@ -236,16 +221,17 @@ const PaymentPage = () => {
 
   if (hasPurchased) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center px-4 pt-20">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-          <FaCheckCircle className="text-6xl text-green-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Already Purchased</h2>
-          <p className="text-gray-600 mb-6">You've already purchased this project.</p>
+      <div className="min-h-screen bg-white flex items-center justify-center px-4 pt-20">
+        <div className="max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <FiCheck className="text-2xl text-gray-900" />
+          </div>
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 mb-4">Already Purchased</h2>
+          <p className="text-gray-500 mb-8">You have already purchased this project.</p>
           <Link
             to={`/projects/${projectId}/download-file`}
-            className="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 font-semibold"
+            className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gray-900 hover:bg-black transition-colors"
           >
-            <FaDownload />
             Download Now
           </Link>
         </div>
@@ -254,189 +240,179 @@ const PaymentPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white pt-20 pb-12">
+    <div className="min-h-screen bg-white pt-24 pb-12">
       <Modal {...modal} onClose={closeModal} />
-      
-      <div className="max-w-4xl mx-auto px-4">
-        <Link
-          to={`/projects/${projectId}`}
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-indigo-600 font-semibold mb-6"
-        >
-          <FaArrowLeft />
-          Back to Project
-        </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-5xl mx-auto px-6">
+        <div className="mb-8">
+          <Link
+            to={`/projects/${projectId}`}
+            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+          >
+            <FiArrowLeft />
+            Back to Project
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Payment Form */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-xl p-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-6">Complete Your Purchase</h1>
+          <div className="lg:col-span-7">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-8">Checkout</h1>
 
-              {/* Project Summary */}
-              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-6 mb-8">
-                <h3 className="font-semibold text-gray-900 mb-2">{project.title}</h3>
-                <div className="flex items-center justify-between text-sm text-gray-600">
-                  <span>{project.department} • {project.level}</span>
-                  <span className="font-bold text-2xl text-indigo-600">₦{project.priceNGN?.toLocaleString()}</span>
-                </div>
-              </div>
-
-              {/* Payment Method Selection */}
-              <div className="mb-8">
-                <label className="block font-semibold text-gray-700 mb-4">Payment Method</label>
+            <div className="space-y-8">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Method</h3>
                 <div className="space-y-3">
-                  <button
-                    onClick={() => setPaymentMethod('card')}
-                    className={`w-full flex items-center gap-4 p-4 border-2 rounded-xl transition-all ${
-                      paymentMethod === 'card'
-                        ? 'border-indigo-600 bg-indigo-50'
-                        : 'border-gray-200 hover:border-indigo-300'
-                    }`}
-                  >
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      paymentMethod === 'card' ? 'border-indigo-600' : 'border-gray-300'
-                    }`}>
-                      {paymentMethod === 'card' && (
-                        <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
-                      )}
+                  <label className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${paymentMethod === 'card' ? 'border-gray-900 bg-gray-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="card"
+                      checked={paymentMethod === 'card'}
+                      onChange={() => setPaymentMethod('card')}
+                      className="sr-only"
+                    />
+                    <div className="flex items-center gap-4 w-full">
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === 'card' ? 'border-gray-900' : 'border-gray-300'}`}>
+                        {paymentMethod === 'card' && <div className="w-2 h-2 rounded-full bg-gray-900" />}
+                      </div>
+                      <div className="flex-1">
+                        <span className="block font-medium text-gray-900">Card Payment</span>
+                        <span className="block text-sm text-gray-500">Visa, Mastercard, Verve</span>
+                      </div>
+                      <FiCreditCard className="text-xl text-gray-400" />
                     </div>
-                    <div className="flex-1 text-left">
-                      <div className="font-semibold text-gray-900">Card Payment</div>
-                      <div className="text-sm text-gray-600">Pay with Debit/Credit Card (Visa, Mastercard, Verve)</div>
-                    </div>
-                    <FaCreditCard className="text-2xl text-indigo-600" />
-                  </button>
+                  </label>
 
-                  <button
-                    onClick={() => setPaymentMethod('bank')}
-                    className={`w-full flex items-center gap-4 p-4 border-2 rounded-xl transition-all ${
-                      paymentMethod === 'bank'
-                        ? 'border-indigo-600 bg-indigo-50'
-                        : 'border-gray-200 hover:border-indigo-300'
-                    }`}
-                  >
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      paymentMethod === 'bank' ? 'border-indigo-600' : 'border-gray-300'
-                    }`}>
-                      {paymentMethod === 'bank' && (
-                        <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
-                      )}
+                  <label className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${paymentMethod === 'bank' ? 'border-gray-900 bg-gray-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="bank"
+                      checked={paymentMethod === 'bank'}
+                      onChange={() => setPaymentMethod('bank')}
+                      className="sr-only"
+                    />
+                    <div className="flex items-center gap-4 w-full">
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === 'bank' ? 'border-gray-900' : 'border-gray-300'}`}>
+                        {paymentMethod === 'bank' && <div className="w-2 h-2 rounded-full bg-gray-900" />}
+                      </div>
+                      <div className="flex-1">
+                        <span className="block font-medium text-gray-900">Bank Transfer</span>
+                        <span className="block text-sm text-gray-500">Direct transfer or USSD</span>
+                      </div>
+                      <FiGlobe className="text-xl text-gray-400" />
                     </div>
-                    <div className="flex-1 text-left">
-                      <div className="font-semibold text-gray-900">Bank Transfer / USSD</div>
-                      <div className="text-sm text-gray-600">Pay via Bank Transfer or USSD</div>
-                    </div>
-                    <FaUniversity className="text-2xl text-indigo-600" />
-                  </button>
+                  </label>
 
-                  <button
-                    onClick={() => setPaymentMethod('opay')}
-                    className={`w-full flex items-center gap-4 p-4 border-2 rounded-xl transition-all ${
-                      paymentMethod === 'opay'
-                        ? 'border-indigo-600 bg-indigo-50'
-                        : 'border-gray-200 hover:border-indigo-300'
-                    }`}
-                  >
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      paymentMethod === 'opay' ? 'border-indigo-600' : 'border-gray-300'
-                    }`}>
-                      {paymentMethod === 'opay' && (
-                        <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
-                      )}
+                  <label className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${paymentMethod === 'opay' ? 'border-gray-900 bg-gray-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="opay"
+                      checked={paymentMethod === 'opay'}
+                      onChange={() => setPaymentMethod('opay')}
+                      className="sr-only"
+                    />
+                    <div className="flex items-center gap-4 w-full">
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === 'opay' ? 'border-gray-900' : 'border-gray-300'}`}>
+                        {paymentMethod === 'opay' && <div className="w-2 h-2 rounded-full bg-gray-900" />}
+                      </div>
+                      <div className="flex-1">
+                        <span className="block font-medium text-gray-900">Mobile Money</span>
+                        <span className="block text-sm text-gray-500">OPay, PalmPay, etc.</span>
+                      </div>
+                      <FiSmartphone className="text-xl text-gray-400" />
                     </div>
-                    <div className="flex-1 text-left">
-                      <div className="font-semibold text-gray-900">OPay & Other Microfinance Banks</div>
-                      <div className="text-sm text-gray-600">Pay with OPay, Kuda, Moniepoint, PalmPay, etc.</div>
-                    </div>
-                    <FaMobileAlt className="text-2xl text-indigo-600" />
-                  </button>
+                  </label>
                 </div>
 
-                {/* Bank Selection for OPay method */}
                 {paymentMethod === 'opay' && (
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Your Bank (Optional)
-                    </label>
+                  <div className="mt-4 pl-8">
                     <select
                       value={selectedBank}
                       onChange={(e) => setSelectedBank(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:border-gray-900"
                     >
-                      <option value="">Select a bank...</option>
+                      <option value="">Select your bank (Optional)</option>
                       {MICROFINANCE_BANKS.map((bank) => (
                         <option key={bank} value={bank}>
                           {bank}
                         </option>
                       ))}
                     </select>
-                    <p className="mt-2 text-xs text-gray-500">
-                      Selecting your bank helps streamline the payment process
-                    </p>
                   </div>
                 )}
               </div>
 
-              {/* Pay Button */}
-              <button
-                onClick={handlePayment}
-                disabled={isProcessing}
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-4 px-6 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-              >
-                {isProcessing ? (
-                  <>
-                    <FaSpinner className="animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <FaLock />
-                    Pay ₦{project.priceNGN?.toLocaleString()} Securely
-                  </>
-                )}
-              </button>
-
-              {/* Security Note */}
-              <div className="mt-6 flex items-start gap-3 text-sm text-gray-600">
-                <FaShieldAlt className="text-green-500 text-lg mt-0.5" />
-                <p>
-                  Your payment is secured by Paystack's industry-standard encryption. 
-                  We never store your payment information.
+              <div className="pt-6 border-t border-gray-100">
+                <button
+                  onClick={handlePayment}
+                  disabled={isProcessing}
+                  className="w-full flex items-center justify-center gap-2 bg-gray-900 text-white py-4 px-6 rounded-lg hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                >
+                  {isProcessing ? (
+                    <>
+                      <FiLoader className="animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <FiLock />
+                      Pay ₦{project.priceNGN?.toLocaleString()}
+                    </>
+                  )}
+                </button>
+                <p className="mt-4 text-center text-xs text-gray-400 flex items-center justify-center gap-1">
+                  <FiLock className="w-3 h-3" />
+                  Secured by Paystack
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Order Summary Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-24">
-              <h3 className="font-bold text-gray-900 mb-4">Order Summary</h3>
-              
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Project Price</span>
-                  <span className="font-semibold">₦{project.priceNGN?.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Processing Fee</span>
-                  <span className="font-semibold text-green-600">₦0</span>
-                </div>
-                <div className="border-t pt-3 flex justify-between">
-                  <span className="font-bold text-gray-900">Total</span>
-                  <span className="font-bold text-2xl text-indigo-600">₦{project.priceNGN?.toLocaleString()}</span>
+          {/* Order Summary */}
+          <div className="lg:col-span-5">
+            <div className="bg-gray-50 rounded-xl p-8 sticky top-24">
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">Order Summary</h3>
+
+              <div className="space-y-4 mb-6 pb-6 border-b border-gray-200">
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-1">{project.title}</h4>
+                  <p className="text-sm text-gray-500">{project.department}</p>
                 </div>
               </div>
 
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
-                <div className="flex items-center gap-2 text-sm font-semibold text-green-800">
-                  <FaCheckCircle />
-                  What you'll get:
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between text-gray-600">
+                  <span>Subtotal</span>
+                  <span>₦{project.priceNGN?.toLocaleString()}</span>
                 </div>
-                <ul className="text-sm text-green-700 space-y-1 ml-6">
-                  <li>• Instant download access</li>
-                  <li>• Complete project material</li>
-                  <li>• PDF & DOCX formats</li>
-                  <li>• Lifetime access</li>
+                <div className="flex justify-between text-gray-600">
+                  <span>Processing Fee</span>
+                  <span>₦0.00</span>
+                </div>
+                <div className="flex justify-between font-semibold text-gray-900 pt-3 border-t border-gray-200">
+                  <span>Total</span>
+                  <span className="text-xl">₦{project.priceNGN?.toLocaleString()}</span>
+                </div>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <h4 className="text-sm font-medium text-gray-900 mb-3">Includes:</h4>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li className="flex items-center gap-2">
+                    <FiCheck className="text-gray-900" />
+                    Complete project material
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <FiCheck className="text-gray-900" />
+                    Source code (if applicable)
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <FiCheck className="text-gray-900" />
+                    Instant download
+                  </li>
                 </ul>
               </div>
             </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaFolderOpen, FaUser, FaEnvelope, FaLock, FaSpinner } from 'react-icons/fa';
+import { FiArrowRight, FiLoader } from 'react-icons/fi';
 import { authService } from '../appwrite/auth';
 
 const CleanSignupPage = () => {
@@ -26,7 +26,6 @@ const CleanSignupPage = () => {
       const result = await authService.register(formData.email, formData.password, formData.name);
 
       if (result.success) {
-        // Get redirect URL from query param or fallback to homepage
         const searchParams = new URLSearchParams(window.location.search);
         const redirect = searchParams.get('redirect') || '/';
         navigate(redirect);
@@ -39,7 +38,6 @@ const CleanSignupPage = () => {
         setError('Password must be at least 8 characters.');
       } else {
         setError('Failed to create account. Please try again.');
-        console.error("Signup error:", err);
       }
     } finally {
       setIsLoading(false);
@@ -47,36 +45,28 @@ const CleanSignupPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="max-w-md w-full bg-white p-8 rounded-lg border border-gray-200 shadow-sm">
-        <div className="text-center mb-8">
-          <div className="mx-auto h-12 w-12 bg-indigo-600 rounded-lg flex items-center justify-center mb-4">
-            <FaFolderOpen className="text-white text-xl" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900">Create your account</h2>
-          <p className="text-gray-600 mt-2">
-            Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-indigo-600 hover:text-indigo-500">
-              Sign in
-            </Link>
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-sm">
+        <div className="mb-12 text-center">
+          <Link to="/" className="inline-block text-2xl font-bold tracking-tighter text-gray-900 mb-8">
+            Project Dock
+          </Link>
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 mb-2">Create account</h1>
+          <p className="text-sm text-gray-500">
+            Start your academic journey with us
           </p>
         </div>
 
-        <form onSubmit={handleSignup} className="space-y-4">
+        <form onSubmit={handleSignup} className="space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-md text-sm">
+            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-md">
               {error}
             </div>
           )}
 
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-              Full name
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaUser className="text-gray-400" />
-              </div>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="name" className="sr-only">Full name</label>
               <input
                 id="name"
                 name="name"
@@ -84,20 +74,13 @@ const CleanSignupPage = () => {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="John Doe"
+                className="block w-full px-0 py-3 text-gray-900 bg-transparent border-b border-gray-200 focus:border-gray-900 focus:outline-none placeholder-gray-400 transition-colors"
+                placeholder="Full name"
               />
             </div>
-          </div>
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Email address
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaEnvelope className="text-gray-400" />
-              </div>
+            <div>
+              <label htmlFor="email" className="sr-only">Email address</label>
               <input
                 id="email"
                 name="email"
@@ -105,20 +88,13 @@ const CleanSignupPage = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="you@example.com"
+                className="block w-full px-0 py-3 text-gray-900 bg-transparent border-b border-gray-200 focus:border-gray-900 focus:outline-none placeholder-gray-400 transition-colors"
+                placeholder="Email address"
               />
             </div>
-          </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaLock className="text-gray-400" />
-              </div>
+            <div>
+              <label htmlFor="password" className="sr-only">Password</label>
               <input
                 id="password"
                 name="password"
@@ -126,35 +102,40 @@ const CleanSignupPage = () => {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="••••••••"
+                className="block w-full px-0 py-3 text-gray-900 bg-transparent border-b border-gray-200 focus:border-gray-900 focus:outline-none placeholder-gray-400 transition-colors"
+                placeholder="Password (min. 8 chars)"
               />
             </div>
-            <p className="text-xs text-gray-500 mt-1">Must be at least 6 characters</p>
           </div>
 
-          <div className="text-xs text-gray-600">
+          <div className="text-xs text-gray-500">
             By creating an account, you agree to our{' '}
-            <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Terms of Service
-            </a>
+            <a href="#" className="text-gray-900 hover:underline">Terms of Service</a>
+            {' '}and{' '}
+            <a href="#" className="text-gray-900 hover:underline">Privacy Policy</a>.
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex justify-center items-center gap-2 py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex justify-center items-center gap-2 py-3.5 px-4 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-black focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {isLoading ? (
-              <>
-                <FaSpinner className="animate-spin" />
-                <span>Creating account...</span>
-              </>
+              <FiLoader className="animate-spin" />
             ) : (
-              <span>Create Account</span>
+              <>
+                Create Account <FiArrowRight />
+              </>
             )}
           </button>
         </form>
+
+        <div className="mt-8 text-center text-sm text-gray-500">
+          Already have an account?{' '}
+          <Link to="/login" className="font-medium text-gray-900 hover:underline">
+            Sign in
+          </Link>
+        </div>
       </div>
     </div>
   );
