@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { FaPaperPlane, FaUserGraduate, FaClipboardCheck, FaClock, FaShieldAlt, FaCheckCircle, FaPenFancy } from 'react-icons/fa';
+import { FiSend, FiUser, FiCheckCircle, FiClock, FiShield, FiPenTool, FiBookOpen, FiAward } from 'react-icons/fi';
 
 const CleanHireWriterPage = () => {
   const [searchParams] = useSearchParams();
@@ -63,47 +63,45 @@ ${formData.requirements}
   ];
 
   const guarantees = [
-    { icon: FaUserGraduate, title: 'Expert Writers', desc: 'Field specialists with advanced degrees', color: 'indigo' },
-    { icon: FaClipboardCheck, title: '100% Original', desc: 'Plagiarism-free with report', color: 'emerald' },
-    { icon: FaClock, title: 'On-Time', desc: 'Guaranteed deadline delivery', color: 'blue' },
-    { icon: FaShieldAlt, title: 'Confidential', desc: 'Secure & private', color: 'purple' },
+    { icon: FiAward, title: 'Expert Writers', desc: 'Field specialists with advanced degrees' },
+    { icon: FiCheckCircle, title: '100% Original', desc: 'Plagiarism-free with report' },
+    { icon: FiClock, title: 'On-Time', desc: 'Guaranteed deadline delivery' },
+    { icon: FiShield, title: 'Confidential', desc: 'Secure & private' },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Clean Header */}
-      <div className="bg-white border-b border-gray-200 py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Need a Custom Project?</h1>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Get expert academic writers to craft your project from scratch
+    <div className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <div className="bg-gray-50 border-b border-gray-100 py-20">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight mb-4">Need a Custom Project?</h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            Get expert academic writers to craft your project from scratch. High quality, original content, delivered on time.
           </p>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           {/* Left Column - Info */}
-          <div className="space-y-8">
+          <div className="space-y-10">
             {/* Process Steps */}
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-3">
-                <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                  <FaClipboardCheck className="text-indigo-600" />
-                </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <FiBookOpen className="text-gray-900" />
                 How It Works
               </h2>
 
               <div className="space-y-4">
                 {steps.map((step, index) => (
-                  <div key={index} className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors">
-                    <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <span className="text-indigo-600 font-bold">{step.num}</span>
+                  <div key={index} className="flex items-start gap-4 p-4 rounded-lg border border-gray-100 bg-gray-50/50 hover:bg-gray-50 transition-colors">
+                    <div className="w-8 h-8 bg-gray-900 rounded-md flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">
+                      {step.num}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">{step.title}</h3>
-                      <p className="text-sm text-gray-600">{step.desc}</p>
+                      <h3 className="font-semibold text-gray-900 text-sm">{step.title}</h3>
+                      <p className="text-sm text-gray-600 mt-0.5">{step.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -111,37 +109,36 @@ ${formData.requirements}
             </div>
 
             {/* Guarantees Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              {guarantees.map((item, index) => {
-                const Icon = item.icon;
-                const colors = {
-                  indigo: 'bg-indigo-100 text-indigo-600',
-                  emerald: 'bg-emerald-100 text-emerald-600',
-                  blue: 'bg-blue-100 text-blue-600',
-                  purple: 'bg-purple-100 text-purple-600',
-                };
-
-                return (
-                  <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 hover:shadow-sm transition-shadow">
-                    <div className={`${colors[item.color]} w-10 h-10 rounded-lg flex items-center justify-center mb-3`}>
-                      <Icon className="text-lg" />
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <FiAward className="text-gray-900" />
+                Our Guarantees
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {guarantees.map((item, index) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={index} className="p-4 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
+                      <div className="w-8 h-8 rounded-md bg-gray-100 flex items-center justify-center mb-3">
+                        <Icon className="text-gray-700" />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 text-sm mb-1">{item.title}</h3>
+                      <p className="text-xs text-gray-500 leading-relaxed">{item.desc}</p>
                     </div>
-                    <h3 className="font-semibold text-gray-900 mb-1">{item.title}</h3>
-                    <p className="text-sm text-gray-600">{item.desc}</p>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
 
             {/* Trust Badge */}
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="bg-gray-900 text-white rounded-lg p-6 shadow-sm">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <FaCheckCircle className="text-white text-lg" />
+                <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0">
+                  <FiCheckCircle className="text-white text-xl" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Trusted by 1,000+ Students</h3>
-                  <p className="text-sm text-gray-700">
+                  <h3 className="font-bold text-white mb-1">Trusted by 1,000+ Students</h3>
+                  <p className="text-sm text-gray-300 leading-relaxed">
                     Join successful students who've achieved academic excellence with our writing service.
                   </p>
                 </div>
@@ -150,13 +147,18 @@ ${formData.requirements}
           </div>
 
           {/* Right Column - Form */}
-          <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Request Free Quote</h2>
-            <p className="text-gray-600 mb-6">Fill out the form below to get started</p>
+          <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm sticky top-24">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <FiPenTool className="text-gray-900" />
+                Request Free Quote
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">Fill out the form below to get started</p>
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label htmlFor="topic" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="topic" className="block text-xs font-medium text-gray-700 uppercase mb-1.5">
                   Project Topic
                 </label>
                 <input
@@ -166,14 +168,14 @@ ${formData.requirements}
                   value={formData.topic}
                   onChange={handleChange}
                   placeholder="e.g., The Impact of AI on Modern Banking"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="name" className="block text-xs font-medium text-gray-700 uppercase mb-1.5">
                     Your Name
                   </label>
                   <input
@@ -183,12 +185,12 @@ ${formData.requirements}
                     value={formData.name}
                     onChange={handleChange}
                     placeholder="John Doe"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
                     required
                   />
                 </div>
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="email" className="block text-xs font-medium text-gray-700 uppercase mb-1.5">
                     Email
                   </label>
                   <input
@@ -198,7 +200,7 @@ ${formData.requirements}
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="you@example.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
                     required
                   />
                 </div>
@@ -206,7 +208,7 @@ ${formData.requirements}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="phone" className="block text-xs font-medium text-gray-700 uppercase mb-1.5">
                     Phone
                   </label>
                   <input
@@ -216,12 +218,12 @@ ${formData.requirements}
                     value={formData.phone}
                     onChange={handleChange}
                     placeholder="08012345678"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
                     required
                   />
                 </div>
                 <div>
-                  <label htmlFor="level" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="level" className="block text-xs font-medium text-gray-700 uppercase mb-1.5">
                     Level
                   </label>
                   <select
@@ -229,7 +231,7 @@ ${formData.requirements}
                     name="level"
                     value={formData.level}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
                     required
                   >
                     <option>BSc</option>
@@ -242,7 +244,7 @@ ${formData.requirements}
               </div>
 
               <div>
-                <label htmlFor="requirements" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="requirements" className="block text-xs font-medium text-gray-700 uppercase mb-1.5">
                   Requirements
                 </label>
                 <textarea
@@ -252,21 +254,21 @@ ${formData.requirements}
                   onChange={handleChange}
                   rows="5"
                   placeholder="Include deadline, page count, case study details, and any specific instructions..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all resize-y"
                   required
                 ></textarea>
               </div>
 
               <button
                 type="submit"
-                className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white font-medium py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors"
+                className="w-full flex items-center justify-center gap-2 bg-gray-900 text-white font-medium py-3 px-4 rounded-md hover:bg-black transition-all shadow-sm text-sm"
               >
-                <FaPaperPlane className="text-sm" />
+                <FiSend className="text-sm" />
                 <span>Send via WhatsApp</span>
               </button>
 
-              <p className="text-xs text-center text-gray-500">
-                By submitting, you'll be redirected to WhatsApp to complete your request
+              <p className="text-xs text-center text-gray-400 mt-4">
+                By submitting, you'll be redirected to WhatsApp to complete your request securely.
               </p>
             </form>
           </div>
