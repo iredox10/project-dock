@@ -35,16 +35,23 @@ const CleanDepartmentPage = () => {
   const [projects, setProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isMoreLoading, setIsMoreLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const LIMIT = 20;
 
   useEffect(() => {
     const fetchDepartmentProjects = async () => {
       setIsLoading(true);
       try {
         const response = await getProjectsByDepartment(decodedDeptName, {
-          limit: 100
+          limit: LIMIT,
+          offset: 0
         });
         const fetchedProjects = response.documents.map(d => ({ id: d.$id, ...d }));
         setProjects(fetchedProjects);
+        setHasMore(fetchedProjects.length === LIMIT);
+        setOffset(LIMIT);
       } catch (error) {
         console.error("Error fetching department projects: ", error);
       } finally {
@@ -54,10 +61,30 @@ const CleanDepartmentPage = () => {
     fetchDepartmentProjects();
   }, [decodedDeptName]);
 
+  const fetchMoreProjects = async () => {
+    if (!hasMore) return;
+    setIsMoreLoading(true);
+    try {
+      const response = await getProjectsByDepartment(decodedDeptName, {
+        limit: LIMIT,
+        offset: offset
+      });
+      const newProjects = response.documents.map(d => ({ id: d.$id, ...d }));
+
+      setProjects(prev => [...prev, ...newProjects]);
+      setHasMore(newProjects.length === LIMIT);
+      setOffset(prev => prev + LIMIT);
+    } catch (error) {
+      console.error("Error fetching more projects: ", error);
+    } finally {
+      setIsMoreLoading(false);
+    }
+  };
+
   const filteredProjects = useMemo(() => {
     return projects.filter(p =>
       p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.author.toLowerCase().includes(searchTerm.toLowerCase())
+      (p.author && p.author.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [projects, searchTerm]);
 
@@ -82,7 +109,7 @@ const CleanDepartmentPage = () => {
             Department: {decodedDeptName}
           </h1>
           <p className="text-gray-500 mb-8">
-            {projects.length} research projects available
+            {projects.length}{hasMore ? '+' : ''} research projects available
           </p>
 
           <div className="relative">
@@ -114,9 +141,24 @@ const CleanDepartmentPage = () => {
               <span className="text-sm">Loading projects...</span>
             </div>
           ) : filteredProjects.length > 0 ? (
-            filteredProjects.map(project => (
-              <ProjectCard key={project.id} project={project} />
-            ))
+            <>
+              {filteredProjects.map(project => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+
+              {hasMore && !searchTerm && (
+                <div className="mt-12 text-center">
+                  <button
+                    onClick={fetchMoreProjects}
+                    disabled={isMoreLoading}
+                    className="px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
+                  >
+                    {isMoreLoading && <FiLoader className="animate-spin w-4 h-4" />}
+                    {isMoreLoading ? 'Loading...' : 'Load More Projects'}
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="py-20 text-center text-gray-400 text-sm">
               No projects found matching your criteria.
