@@ -1,70 +1,63 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaFolderOpen, FaFacebook, FaTwitter, FaLinkedin, FaGithub } from 'react-icons/fa';
+import { FaFolderOpen } from 'react-icons/fa';
 
 const CleanFooter = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-white border-t border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand Column */}
-          <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <FaFolderOpen className="text-white" />
+    <footer className="bg-white border-t border-gray-100 pt-16 pb-12">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+          {/* Brand */}
+          <div className="col-span-1 md:col-span-1">
+            <Link to="/" className="flex items-center gap-2 mb-4">
+              <div className="w-6 h-6 bg-gray-900 rounded-md flex items-center justify-center">
+                <FaFolderOpen className="text-white text-xs" />
               </div>
-              <span className="text-xl font-bold text-gray-900">Project Dock</span>
-            </div>
-            <p className="text-gray-600 mb-4 max-w-md">
-              Nigeria's premier academic resource hub, trusted by thousands of students for quality research materials and project excellence.
+              <span className="text-base font-bold text-gray-900">Project Dock</span>
+            </Link>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              The standard for academic research in Nigeria. Verified projects, instant downloads.
             </p>
-            <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-indigo-600 transition-colors">
-                <FaFacebook size={18} />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-indigo-600 transition-colors">
-                <FaTwitter size={18} />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-indigo-600 transition-colors">
-                <FaLinkedin size={18} />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-indigo-600 transition-colors">
-                <FaGithub size={18} />
-              </a>
-            </div>
           </div>
 
-          {/* Quick Links */}
+          {/* Links */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Resources</h3>
-            <ul className="space-y-2">
-              <li><Link to="/projects" className="text-gray-600 hover:text-indigo-600 transition-colors">Projects</Link></li>
-              <li><Link to="/departments" className="text-gray-600 hover:text-indigo-600 transition-colors">Departments</Link></li>
-              <li><Link to="/hire-writer" className="text-gray-600 hover:text-indigo-600 transition-colors">Hire Writer</Link></li>
-              <li><Link to="/about-us" className="text-gray-600 hover:text-indigo-600 transition-colors">About Us</Link></li>
+            <h4 className="text-sm font-semibold text-gray-900 mb-4">Platform</h4>
+            <ul className="space-y-3 text-sm">
+              <li><Link to="/projects" className="text-gray-500 hover:text-gray-900 transition-colors">Browse Projects</Link></li>
+              <li><Link to="/departments" className="text-gray-500 hover:text-gray-900 transition-colors">Departments</Link></li>
+              <li><Link to="/pricing" className="text-gray-500 hover:text-gray-900 transition-colors">Pricing</Link></li>
             </ul>
           </div>
 
-          {/* Support */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Support</h3>
-            <ul className="space-y-2">
-              <li><Link to="/contact" className="text-gray-600 hover:text-indigo-600 transition-colors">Contact</Link></li>
-              <li><Link to="/help" className="text-gray-600 hover:text-indigo-600 transition-colors">Help Center</Link></li>
-              <li><Link to="/terms" className="text-gray-600 hover:text-indigo-600 transition-colors">Terms</Link></li>
-              <li><Link to="/privacy" className="text-gray-600 hover:text-indigo-600 transition-colors">Privacy</Link></li>
+            <h4 className="text-sm font-semibold text-gray-900 mb-4">Support</h4>
+            <ul className="space-y-3 text-sm">
+              <li><Link to="/help" className="text-gray-500 hover:text-gray-900 transition-colors">Help Center</Link></li>
+              <li><Link to="/contact" className="text-gray-500 hover:text-gray-900 transition-colors">Contact Us</Link></li>
+              <li><Link to="/terms" className="text-gray-500 hover:text-gray-900 transition-colors">Terms of Service</Link></li>
+              <li><Link to="/privacy" className="text-gray-500 hover:text-gray-900 transition-colors">Privacy Policy</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-4">Company</h4>
+            <ul className="space-y-3 text-sm">
+              <li><Link to="/about" className="text-gray-500 hover:text-gray-900 transition-colors">About</Link></li>
+              <li><Link to="/careers" className="text-gray-500 hover:text-gray-900 transition-colors">Careers</Link></li>
+              <li><Link to="/blog" className="text-gray-500 hover:text-gray-900 transition-colors">Blog</Link></li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-600 text-sm">
+        <div className="pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-gray-400">
             &copy; {currentYear} Project Dock. All rights reserved.
           </p>
-          <div className="mt-4 md:mt-0 text-sm text-gray-600">
-            Made with ❤️ for Nigerian Students
+          <div className="flex gap-6">
+            {/* Socials can go here if needed, keeping it clean for now */}
           </div>
         </div>
       </div>
