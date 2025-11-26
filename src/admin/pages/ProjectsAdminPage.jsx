@@ -56,6 +56,11 @@ export const ProjectsAdminPage = () => {
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [showBulkConfirmModal, setShowBulkConfirmModal] = useState(false);
 
+  // Inline Editing State
+  const [editingId, setEditingId] = useState(null);
+  const [editValue, setEditValue] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
   const PROJECTS_PER_PAGE = 10;
 
   const fetchProjects = useCallback(async () => {
@@ -164,6 +169,52 @@ export const ProjectsAdminPage = () => {
     } catch (error) {
       console.error("Error deleting projects: ", error);
       showModal("Error", "Failed to delete some or all projects.", "error");
+    }
+  };
+
+  // Inline Editing Functions
+  const handleDoubleClick = (project) => {
+    setEditingId(project.id);
+    setEditValue(project.priceNGN);
+  };
+
+  const handleCancel = () => {
+    setEditingId(null);
+    setEditValue('');
+  };
+
+  const handleSave = async (id) => {
+    if (!editValue || isNaN(editValue)) {
+      handleCancel();
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const updatedProject = await updateProject(id, {
+        priceNGN: parseFloat(editValue)
+      });
+
+      setProjects(prev => prev.map(p =>
+        p.id === id ? { ...p, priceNGN: parseFloat(editValue) } : p
+      ));
+
+      setEditingId(null);
+      setEditValue('');
+      showModal("Success", "Price updated successfully", "success");
+    } catch (error) {
+      console.error("Error updating price:", error);
+      showModal("Error", "Failed to update price", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleKeyDown = (e, id) => {
+    if (e.key === 'Enter') {
+      handleSave(id);
+    } else if (e.key === 'Escape') {
+      handleCancel();
     }
   };
 
@@ -306,7 +357,29 @@ export const ProjectsAdminPage = () => {
                     </td>
                     <td className="p-4 text-sm text-gray-600">{project.department}</td>
                     <td className="p-4 text-sm text-gray-600">{project.year}</td>
-                    <td className="p-4 text-sm font-medium text-gray-900">₦{project.priceNGN}</td>
+                    <td
+                      className="p-4 text-sm font-medium text-gray-900 cursor-pointer hover:bg-gray-100 transition-colors"
+                      onDoubleClick={() => handleDoubleClick(project)}
+                      title="Double click to edit price"
+                    >
+                      {editingId === project.id ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-500">₦</span>
+                          <input
+                            type="number"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={(e) => handleKeyDown(e, project.id)}
+                            onBlur={() => handleSave(project.id)}
+                            autoFocus
+                            className="w-24 px-2 py-1 text-sm border border-indigo-500 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          />
+                          {isSaving && <FiLoader className="animate-spin text-indigo-600 w-3 h-3" />}
+                        </div>
+                      ) : (
+                        `₦${project.priceNGN?.toLocaleString()}`
+                      )}
+                    </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Link to={`/admin/projects/edit/${project.id}`} className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors">
