@@ -109,7 +109,7 @@ Analyze the following text from a research project document and extract the foll
 {
   "title": "The main title of the project/research",
   "author": "Name of the author(s)",
-  "department": "Academic department (e.g., Computer Science, Engineering, etc.)",
+  "department": "ONLY the core department name without any prefixes or suffixes (e.g., 'Computer Science' not 'DEPARTMENT OF COMPUTER SCIENCE' or 'SCHOOL OF COMPUTER SCIENCE'). Remove words like 'DEPARTMENT OF', 'SCHOOL OF', institution names, and any additional location information. Just the pure department name in lowercase.",
   "year": "Year of publication (as a number)",
   "level": "Academic level - one of: BSc, MSc, HND, ND, or PhD",
   "abstract": "The abstract/summary of the project (full text)",
@@ -126,6 +126,7 @@ Important guidelines:
 5. Return ONLY valid JSON, no additional text or explanations
 6. Ensure the year is a valid number (current year or earlier)
 7. Make sure level is one of: BSc, MSc, HND, ND, PhD (default to BSc if unclear)
+8. CRITICAL: For department, extract ONLY the core department name (e.g., "computer science", "pharmaceutical technology", "civil engineering") without any prefixes like "DEPARTMENT OF", "SCHOOL OF", or institution names. Return it in lowercase.
 
 Document text:
 ${text.substring(0, 15000)}
@@ -178,11 +179,19 @@ Return the JSON object:`;
 
       console.log(`Successfully used model: ${modelName}`);
 
+      // Clean up department name - remove common prefixes and convert to lowercase
+      let cleanDepartment = projectData.department || '';
+      cleanDepartment = cleanDepartment
+        .replace(/^(DEPARTMENT OF|DEPT OF|SCHOOL OF|FACULTY OF|COLLEGE OF)\s*/i, '')
+        .replace(/,.*$/, '') // Remove everything after the first comma
+        .trim()
+        .toLowerCase();
+
       // Validate and set defaults
       const result = {
         title: projectData.title || '',
         author: projectData.author || '',
-        department: projectData.department || '',
+        department: cleanDepartment,
         year: Number(projectData.year) || new Date().getFullYear(),
         level: ['BSc', 'MSc', 'HND', 'ND', 'PhD'].includes(projectData.level)
           ? projectData.level

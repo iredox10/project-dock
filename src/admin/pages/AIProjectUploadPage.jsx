@@ -661,6 +661,16 @@ export const AIProjectUploadPage = () => {
                       <p className="text-xs text-red-600 mt-1 truncate">{result.error}</p>
                     )}
                   </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveResult(idx);
+                    }}
+                    className="flex-shrink-0 text-gray-400 hover:text-red-600 transition-colors p-1"
+                    title="Remove from list"
+                  >
+                    <FiX className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             ))}
