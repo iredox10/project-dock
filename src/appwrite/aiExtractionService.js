@@ -84,9 +84,9 @@ export const extractTextFromFile = async (file) => {
 };
 
 /**
- * Parse project data from text using Gemini AI
+ * Parse project data from text using Gemini AI (combined extraction + formatting in one call)
  * @param {string} text - Extracted text from document
- * @returns {Promise<object>} - Parsed project data
+ * @returns {Promise<object>} - Parsed project data with formatted abstract and chapterOne
  */
 export const parseProjectDataWithAI = async (text) => {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -94,48 +94,43 @@ export const parseProjectDataWithAI = async (text) => {
     throw new Error('VITE_GEMINI_API_KEY is not set in environment variables');
   }
 
-  // List of models to try in order
-  const modelsToTry = [
-    'gemini-2.5-flash',
-    'gemini-2.5-pro',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash-latest',
-    'gemini-1.5-pro-latest',
-  ];
+  // Primary model — only fall back if it fails
+  const primaryModel = 'gemini-2.5-flash';
+  const fallbackModels = ['gemini-2.0-flash', 'gemini-1.5-flash-latest'];
 
-  const prompt = `You are an expert at extracting structured data from academic project documents.
-Analyze the following text from a research project document and extract the following information in JSON format:
+  const prompt = `You are an expert at extracting and formatting structured data from academic project documents.
+Analyze the following text from a research project document and return EXACTLY one JSON object (no other text) with these fields:
 
 {
   "title": "The main title of the project/research",
   "author": "Name of the author(s)",
-  "department": "ONLY the core department name without any prefixes or suffixes (e.g., 'Computer Science' not 'DEPARTMENT OF COMPUTER SCIENCE' or 'SCHOOL OF COMPUTER SCIENCE'). Remove words like 'DEPARTMENT OF', 'SCHOOL OF', institution names, and any additional location information. Just the pure department name in lowercase.",
-  "year": "Year of publication (as a number)",
-  "level": "Academic level - one of: BSc, MSc, HND, ND, or PhD",
-  "abstract": "The abstract/summary of the project (full text)",
-  "chapterOne": "The introduction/chapter one content (full text, or first 500 words if too long)",
-  "pages": "Estimated number of pages (as a number)",
-  "chapters": "List of chapter titles separated by commas"
+  "department": "ONLY the core department name in lowercase without prefixes like 'DEPARTMENT OF', 'SCHOOL OF', or institution names (e.g., 'computer science')",
+  "year": 2024,
+  "level": "One of: BSc, MSc, HND, ND, PhD",
+  "pages": 0,
+  "chapters": "Comma-separated list of chapter titles",
+  "abstract": "The raw abstract/summary text",
+  "chapterOne": "The raw introduction/chapter one text",
+  "abstract_formatted": "The abstract reformatted with academic section headings (Background, Objective, Methodology, Results, Conclusion) while preserving ALL original content",
+  "chapterOne_formatted": "Chapter one reformatted with academic section headings (Introduction, Background of Study, Statement of the Problem, Objectives, Significance, Scope) while preserving ALL original content"
 }
 
-Important guidelines:
+Guidelines:
 1. Extract exact text where possible, don't paraphrase
-2. If a field cannot be found, use an empty string "" for text fields or 0 for numeric fields
-3. For the abstract, include the complete abstract section
-4. For chapterOne, include the introduction or first chapter content
-5. Return ONLY valid JSON, no additional text or explanations
-6. Ensure the year is a valid number (current year or earlier)
-7. Make sure level is one of: BSc, MSc, HND, ND, PhD (default to BSc if unclear)
-8. CRITICAL: For department, extract ONLY the core department name (e.g., "computer science", "pharmaceutical technology", "civil engineering") without any prefixes like "DEPARTMENT OF", "SCHOOL OF", or institution names. Return it in lowercase.
+2. If a field cannot be found, use "" for text or 0 for numbers
+3. For abstract_formatted and chapterOne_formatted, keep ALL original content but add section headings to organize it properly
+4. Return ONLY valid JSON, no additional text
+5. Ensure year is a valid number (current year or earlier)
+6. level must be one of: BSc, MSc, HND, ND, PhD (default BSc if unclear)
 
 Document text:
 ${text.substring(0, 15000)}
 
-Return the JSON object:`;
+Return only the JSON object:`;
 
+  const modelsToTry = [primaryModel, ...fallbackModels];
   let lastError;
 
-  // Try each model using direct API calls
   for (const modelName of modelsToTry) {
     try {
       console.log(`Trying model: ${modelName}`);
@@ -144,15 +139,9 @@ Return the JSON object:`;
         `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: prompt
-              }]
-            }]
+            contents: [{ parts: [{ text: prompt }] }]
           })
         }
       );
@@ -169,25 +158,24 @@ Return the JSON object:`;
         throw new Error('No response text from AI');
       }
 
-      // Try to extract JSON from response
-      let jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      // Extract JSON from response
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         throw new Error('AI did not return valid JSON');
       }
 
       const projectData = JSON.parse(jsonMatch[0]);
-
       console.log(`Successfully used model: ${modelName}`);
 
-      // Clean up department name - remove common prefixes and convert to lowercase
+      // Clean up department name
       let cleanDepartment = projectData.department || '';
       cleanDepartment = cleanDepartment
         .replace(/^(DEPARTMENT OF|DEPT OF|SCHOOL OF|FACULTY OF|COLLEGE OF)\s*/i, '')
-        .replace(/,.*$/, '') // Remove everything after the first comma
+        .replace(/,.*$/, '')
         .trim()
         .toLowerCase();
 
-      // Validate and set defaults
+      // Use formatted versions if available, otherwise fall back to raw
       const result = {
         title: projectData.title || '',
         author: projectData.author || '',
@@ -196,38 +184,24 @@ Return the JSON object:`;
         level: ['BSc', 'MSc', 'HND', 'ND', 'PhD'].includes(projectData.level)
           ? projectData.level
           : 'BSc',
-        abstract: projectData.abstract || '',
-        chapterOne: projectData.chapterOne || '',
+        abstract: projectData.abstract_formatted || projectData.abstract || '',
+        chapterOne: projectData.chapterOne_formatted || projectData.chapterOne || '',
         pages: Number(projectData.pages) || 0,
         chapters: projectData.chapters || '1-5',
-        formats: projectData.formats || 'PDF, DOCX',
-        includes: projectData.includes || 'References, Questionnaire'
+        formats: 'PDF, DOCX',
+        includes: 'References, Questionnaire'
       };
 
-      // Format Chapter One content to follow proper academic structure if it exists
-      if (result.chapterOne) {
-        result.chapterOne = await formatChapterOneContent(result.chapterOne);
-      }
-
-      // Format Abstract content to follow proper academic structure if it exists
-      if (result.abstract) {
-        result.abstract = await formatAbstractContent(result.abstract);
-      }
-
-      // Update chapters field to show range format (e.g., '1-5')
-      // Handle cases where projectData.chapters might be null, undefined, or empty
-      if (projectData.chapters && projectData.chapters !== null && projectData.chapters !== 'null' && projectData.chapters !== '') {
-        // Try to extract the last chapter number from the chapters field
+      // Update chapters field to range format (e.g., '1-5')
+      if (projectData.chapters && projectData.chapters !== 'null' && projectData.chapters !== '') {
         const chapterNumbers = projectData.chapters.match(/\d+/g);
         if (chapterNumbers && chapterNumbers.length > 0) {
           const lastChapter = Math.max(...chapterNumbers.map(Number));
           result.chapters = `1-${lastChapter}`;
         } else {
-          // If we can't determine the number of chapters from digits, default to '1-5'
           result.chapters = '1-5';
         }
       } else {
-        // If no chapters data exists, default to '1-5'
         result.chapters = '1-5';
       }
 
@@ -239,7 +213,6 @@ Return the JSON object:`;
     }
   }
 
-  // If all models failed
   throw new Error('Failed to parse project data with AI: ' + (lastError?.message || 'All models failed'));
 };
 
@@ -424,41 +397,68 @@ export const extractProjectFromFile = async (file) => {
 };
 
 /**
- * Batch process multiple files
+ * Batch process multiple files with concurrency control
  * @param {FileList|Array<File>} files - Array of PDF or DOCX files
  * @param {Function} onProgress - Progress callback (index, total, result)
+ * @param {number} concurrency - Max parallel extractions (default 3)
  * @returns {Promise<Array>} - Array of parsed project data
  */
-export const batchExtractProjects = async (files, onProgress) => {
-  const results = [];
+export const batchExtractProjects = async (files, onProgress, concurrency = 3) => {
   const fileArray = Array.from(files);
+  const results = new Array(fileArray.length);
+  let completedCount = 0;
 
-  for (let i = 0; i < fileArray.length; i++) {
+  // Process files in batches with controlled concurrency
+  const processFile = async (file, index) => {
     try {
-      const projectData = await extractProjectFromFile(fileArray[i]);
+      const projectData = await extractProjectFromFile(file);
       const resultObj = {
         success: true,
         data: projectData,
-        fileName: fileArray[i].name
+        fileName: file.name
       };
-      results.push(resultObj);
+      results[index] = resultObj;
+      completedCount++;
 
       if (onProgress) {
-        onProgress(i + 1, fileArray.length, resultObj);
+        onProgress(completedCount, fileArray.length, resultObj);
       }
+      return resultObj;
     } catch (error) {
       const resultObj = {
         success: false,
         error: error.message,
-        fileName: fileArray[i].name
+        fileName: file.name
       };
-      results.push(resultObj);
+      results[index] = resultObj;
+      completedCount++;
 
       if (onProgress) {
-        onProgress(i + 1, fileArray.length, resultObj);
+        onProgress(completedCount, fileArray.length, resultObj);
       }
+      return resultObj;
     }
+  };
+
+  // Simple concurrency limiter
+  const executing = new Set();
+  const enqueue = async (file, index) => {
+    const promise = processFile(file, index);
+    executing.add(promise);
+    promise.finally(() => executing.delete(promise));
+
+    if (executing.size >= concurrency) {
+      await Promise.race(executing);
+    }
+  };
+
+  // Queue all files
+  for (let i = 0; i < fileArray.length; i++) {
+    await enqueue(fileArray[i], i);
   }
+
+  // Wait for remaining
+  await Promise.all(executing);
 
   return results;
 };
