@@ -8,7 +8,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
  */
 
 // Configure PDF.js worker - use CDN for production reliability
-GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs`;
+GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.149/pdf.worker.min.mjs`;
 
 // Initialize Gemini AI - Get API key from environment variable
 const getGeminiAPI = () => {
