@@ -834,6 +834,24 @@ export const AIProjectUploadPage = () => {
                   </div>
                 </div>
                 <div>
+                  <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Chapters</label>
+                  <input
+                    type="text"
+                    value={viewingResult.data?.chapters || ''}
+                    onChange={(e) => {
+                      const updated = { ...viewingResult };
+                      updated.data.chapters = e.target.value;
+                      setViewingResult(updated);
+                      setResults(prev => {
+                        const newResults = [...prev];
+                        newResults[viewingResult.index] = updated;
+                        return newResults;
+                      });
+                    }}
+                    className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:bg-white transition-all"
+                  />
+                </div>
+                <div>
                   <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Abstract</label>
                   <textarea
                     value={viewingResult.data?.abstract || ''}
