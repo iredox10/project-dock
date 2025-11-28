@@ -1,5 +1,4 @@
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import mammoth from 'mammoth';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
@@ -8,8 +7,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
  * Updated to work with Appwrite backend
  */
 
-// Configure PDF.js worker for Vite environment - use local worker
-GlobalWorkerOptions.workerSrc = pdfWorker;
+// Configure PDF.js worker - use CDN for production reliability
+GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs`;
 
 // Initialize Gemini AI - Get API key from environment variable
 const getGeminiAPI = () => {
