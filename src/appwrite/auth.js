@@ -28,7 +28,7 @@ const checkCurrentSession = async () => {
 };
 
 // Register a new user
-const register = async (email, password, name) => {
+const register = async (email, password, name, referralCode = null) => {
   try {
     // Create account
     const userAccount = await account.create(
@@ -48,6 +48,31 @@ const register = async (email, password, name) => {
     // Also add user to users collection for extended profile data
     try {
       const { databases, DATABASE_ID, COLLECTIONS } = await import('./config');
+      const { Query } = await import('appwrite');
+
+      // Generate a unique referral code
+      // Format: First 3 letters of name (or random) + 3 random digits
+      const baseCode = (name.replace(/[^a-zA-Z]/g, '').substring(0, 3) || 'USR').toUpperCase();
+      const randomDigits = Math.floor(100 + Math.random() * 900);
+      const newReferralCode = `${baseCode}${randomDigits}`;
+
+      // Resolve referrer if code provided
+      let referredBy = null;
+      if (referralCode) {
+        try {
+          const referrers = await databases.listDocuments(
+            DATABASE_ID,
+            COLLECTIONS.USERS,
+            [Query.equal('referralCode', referralCode)]
+          );
+          if (referrers.documents.length > 0) {
+            referredBy = referrers.documents[0].$id;
+          }
+        } catch (refError) {
+          console.error('Error resolving referral code:', refError);
+        }
+      }
+
       await databases.createDocument(
         DATABASE_ID,
         COLLECTIONS.USERS,
@@ -58,7 +83,10 @@ const register = async (email, password, name) => {
           role: 'user', // Default role is 'user'
           joinYear: new Date().getFullYear(),
           purchasedProjects: [],
-          favoriteProjects: []
+          favoriteProjects: [],
+          referralCode: newReferralCode,
+          walletBalance: 0.0,
+          referredBy: referredBy
         }
       );
     } catch (dbError) {

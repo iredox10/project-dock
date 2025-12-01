@@ -4,7 +4,8 @@ import { FaSpinner, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import { verifyPaystackPayment } from '../api/paystackService';
 import { getProjectById, getUserById, createUser, updateUser, createOrder, updateProject } from '../api/projectServices';
 import { authService } from '../appwrite/auth';
-import { Query } from 'appwrite';
+import { databases, DATABASE_ID, COLLECTIONS } from '../appwrite/config';
+import { Query, ID } from 'appwrite';
 
 const PaymentVerificationPage = () => {
   const [searchParams] = useSearchParams();
@@ -44,7 +45,7 @@ const PaymentVerificationPage = () => {
         const project = await getProjectById(projectId);
 
         // Create order record matching the existing schema
-        await createOrder({
+        const order = await createOrder({
           userId: user.$id,
           projectId: projectId,
           projectTitle: project.title,
@@ -54,6 +55,51 @@ const PaymentVerificationPage = () => {
           transactionId: reference,
           quantity: 1
         });
+
+        // Process Referral Reward
+        try {
+          // Get full user document to check for referrer
+          const userDoc = await databases.getDocument(DATABASE_ID, COLLECTIONS.USERS, user.$id);
+          
+          if (userDoc.referredBy) {
+            const commissionRate = 0.20; // 20% commission
+            const commissionAmount = (project.priceNGN || 0) * commissionRate;
+            
+            if (commissionAmount > 0) {
+              // Get referrer
+              const referrer = await databases.getDocument(DATABASE_ID, COLLECTIONS.USERS, userDoc.referredBy);
+              
+              // Update referrer wallet
+              await databases.updateDocument(
+                DATABASE_ID, 
+                COLLECTIONS.USERS, 
+                userDoc.referredBy,
+                {
+                  walletBalance: (referrer.walletBalance || 0) + commissionAmount
+                }
+              );
+              
+              // Log referral transaction
+              await databases.createDocument(
+                DATABASE_ID,
+                'referrals', // Using string literal as COLLECTIONS.REFERRALS might not be in config yet
+                ID.unique(),
+                {
+                  referrerId: userDoc.referredBy,
+                  refereeId: user.$id,
+                  amount: commissionAmount,
+                  status: 'paid',
+                  orderId: order.$id
+                }
+              );
+              
+              console.log(`Referral commission of ₦${commissionAmount} paid to ${referrer.name}`);
+            }
+          }
+        } catch (referralError) {
+          console.error('Error processing referral reward:', referralError);
+          // Don't fail the payment verification if referral fails
+        }
 
         // Note: User purchases are tracked in the orders collection
         // No need to update user document as it doesn't have purchasedProjects field

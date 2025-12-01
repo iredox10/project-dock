@@ -31,7 +31,9 @@ export const COLLECTIONS = {
   PROJECTS: 'projects',
   USERS: 'users',
   ORDERS: 'orders',
-  REVIEWS: 'reviews'
+  REVIEWS: 'reviews',
+  REFERRALS: 'referrals',
+  PAYOUTS: 'payouts'
 };
 
 // Bucket ID for file storage

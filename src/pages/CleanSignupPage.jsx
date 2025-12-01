@@ -5,9 +5,18 @@ import { authService } from '../appwrite/auth';
 
 const CleanSignupPage = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', referralCode: '' });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Check for referral code in URL
+  React.useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const ref = searchParams.get('ref');
+    if (ref) {
+      setFormData(prev => ({ ...prev, referralCode: ref }));
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -23,7 +32,12 @@ const CleanSignupPage = () => {
     setError('');
 
     try {
-      const result = await authService.register(formData.email, formData.password, formData.name);
+      const result = await authService.register(
+        formData.email, 
+        formData.password, 
+        formData.name,
+        formData.referralCode
+      );
 
       if (result.success) {
         const searchParams = new URLSearchParams(window.location.search);
@@ -104,6 +118,19 @@ const CleanSignupPage = () => {
                 required
                 className="block w-full px-0 py-3 text-gray-900 bg-transparent border-b border-gray-200 focus:border-gray-900 focus:outline-none placeholder-gray-400 transition-colors"
                 placeholder="Password (min. 8 chars)"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="referralCode" className="sr-only">Referral Code (Optional)</label>
+              <input
+                id="referralCode"
+                name="referralCode"
+                type="text"
+                value={formData.referralCode}
+                onChange={handleChange}
+                className="block w-full px-0 py-3 text-gray-900 bg-transparent border-b border-gray-200 focus:border-gray-900 focus:outline-none placeholder-gray-400 transition-colors"
+                placeholder="Referral Code (Optional)"
               />
             </div>
           </div>

@@ -33,6 +33,7 @@ import AIDepartmentProjectGenerator from './admin/pages/AIDepartmentProjectGener
 import CleanAboutPage from './pages/CleanAboutPage';
 import { OrdersAdminPage } from './admin/pages/OrdersAdminPage';
 import { ReviewsAdminPage } from './admin/pages/ReviewsAdminPage';
+import { PayoutsAdminPage } from './admin/pages/PayoutsAdminPage';
 import { EditProjectPage } from './admin/pages/EditProjectPage';
 
 // Import protected route component
@@ -67,6 +68,7 @@ function App() {
           <Route path="users" element={<UsersAdminPage />} />
           <Route path="orders" element={<OrdersAdminPage />} />
           <Route path="reviews" element={<ReviewsAdminPage />} />
+          <Route path="payouts" element={<PayoutsAdminPage />} />
         </Route>
 
         {/* User Dashboard Routes */}

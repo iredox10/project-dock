@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { FiArrowLeft, FiCheck, FiLoader, FiLock, FiCreditCard, FiSmartphone, FiGlobe } from 'react-icons/fi';
-import { getProjectById, getAllOrders, createOrder, updateProject } from '../api/projectServices';
+import { getProjectById, getAllOrders, createOrder, updateProject, getUserById } from '../api/projectServices';
 import { authService } from '../appwrite/auth';
 import { launchPaystackInline, verifyPaystackPayment, isPaystackConfigured, MICROFINANCE_BANKS } from '../api/paystackService.js';
 import { Modal, useModal } from '../components/Modal';
@@ -13,6 +13,7 @@ const PaymentPage = () => {
 
   const [project, setProject] = useState(null);
   const [user, setUser] = useState(null);
+  const [fullUser, setFullUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
@@ -33,6 +34,14 @@ const PaymentPage = () => {
         if (!currentUser) {
           const currentURL = encodeURIComponent(`/projects/${projectId}/payment`);
           navigate(`/login?redirect=${currentURL}`);
+        } else {
+          // Fetch full user profile to check for referral
+          try {
+            const userDoc = await getUserById(currentUser.$id);
+            setFullUser(userDoc);
+          } catch (e) {
+            console.error('Error fetching full user profile:', e);
+          }
         }
       } catch (error) {
         console.error('Auth check error:', error);
@@ -125,9 +134,15 @@ const PaymentPage = () => {
         channels = ['bank', 'bank_transfer'];
       }
 
+      // Calculate final price with discount
+      let finalAmount = project.priceNGN;
+      if (fullUser?.referredBy) {
+        finalAmount = Math.round(project.priceNGN * 0.9); // 10% discount
+      }
+
       const reference = await launchPaystackInline({
         email: user.email || user.emailAddress,
-        amountNGN: project.priceNGN,
+        amountNGN: finalAmount,
         firstName: nameParts[0] || 'User',
         lastName: nameParts.slice(1).join(' ') || '',
         phone: user.phone || '',
@@ -139,9 +154,11 @@ const PaymentPage = () => {
           userId: user.$id,
           department: project.department,
           level: project.level,
+          originalPrice: project.priceNGN,
+          discountApplied: !!fullUser?.referredBy
         },
         onSuccess: async (response) => {
-          await handlePaymentSuccess(response.reference);
+          await handlePaymentSuccess(response.reference, finalAmount);
         },
         onCancel: () => {
           setIsProcessing(false);
@@ -158,7 +175,7 @@ const PaymentPage = () => {
     }
   };
 
-  const handlePaymentSuccess = async (reference) => {
+  const handlePaymentSuccess = async (reference, amountPaid) => {
     try {
       const verification = await verifyPaystackPayment(reference);
 
@@ -167,7 +184,7 @@ const PaymentPage = () => {
           userId: user.$id,
           projectId: projectId,
           projectTitle: project.title,
-          amount: project.priceNGN,
+          amount: amountPaid || project.priceNGN,
           status: 'completed',
           paymentId: reference,
           transactionId: reference,
@@ -388,13 +405,21 @@ const PaymentPage = () => {
                   <span>Subtotal</span>
                   <span>₦{project.priceNGN?.toLocaleString()}</span>
                 </div>
+                {fullUser?.referredBy && (
+                  <div className="flex justify-between text-green-600 font-medium">
+                    <span>Referral Discount (10%)</span>
+                    <span>-₦{Math.round(project.priceNGN * 0.1)?.toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-gray-600">
                   <span>Processing Fee</span>
                   <span>₦0.00</span>
                 </div>
                 <div className="flex justify-between font-semibold text-gray-900 pt-3 border-t border-gray-200">
                   <span>Total</span>
-                  <span className="text-xl">₦{project.priceNGN?.toLocaleString()}</span>
+                  <span className="text-xl">
+                    ₦{(fullUser?.referredBy ? Math.round(project.priceNGN * 0.9) : project.priceNGN)?.toLocaleString()}
+                  </span>
                 </div>
               </div>
 

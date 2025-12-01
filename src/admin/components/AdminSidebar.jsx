@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
-import { FiGrid, FiFolder, FiUsers, FiLogOut, FiFileText, FiMessageSquare, FiMenu, FiX, FiLayers, FiArrowLeft } from 'react-icons/fi';
+import { FiGrid, FiFolder, FiUsers, FiLogOut, FiFileText, FiMessageSquare, FiMenu, FiX, FiLayers, FiArrowLeft, FiDollarSign } from 'react-icons/fi';
 import { authService } from '../../appwrite/auth';
 import { useNavigate } from 'react-router-dom';
 
@@ -112,6 +112,14 @@ const AdminSidebar = ({ isSidebarOpen, toggleSidebar }) => {
           >
             <FiMessageSquare className="w-5 h-5" />
             <span>Reviews</span>
+          </NavLink>
+          <NavLink
+            to="/admin/payouts"
+            onClick={() => isMobile && toggleSidebar()}
+            className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}
+          >
+            <FiDollarSign className="w-5 h-5" />
+            <span>Payouts</span>
           </NavLink>
         </nav>
 
