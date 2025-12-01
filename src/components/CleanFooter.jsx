@@ -53,9 +53,13 @@ const CleanFooter = () => {
         </div>
 
         <div className="pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-gray-400">
-            &copy; {currentYear} Project Dock. All rights reserved.
-          </p>
+          <div className="flex flex-col md:flex-row items-center gap-2 text-sm text-gray-400">
+            <span>&copy; {currentYear} Project Dock. All rights reserved.</span>
+            <span className="hidden md:inline mx-1">•</span>
+            <span>
+              Built by <a href="https://iredox.tech" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors font-medium">iredox.tech</a>
+            </span>
+          </div>
           <div className="flex gap-6">
             {/* Socials can go here if needed, keeping it clean for now */}
           </div>
