@@ -60,7 +60,6 @@ export const ProfilePage = () => {
 
       if (userData) {
         await updateUser(user.uid, {
-          ...userData,
           name
         });
       } else {

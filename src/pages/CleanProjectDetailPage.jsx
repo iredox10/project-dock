@@ -116,7 +116,8 @@ const CleanProjectDetailPage = () => {
         }
         setIsFavorite(true);
       }
-      await usersService.updateUser(currentUser.$id, { ...userDoc, favoriteProjects: updatedFavorites });
+      // Only send the fields to update, not the entire document with system attributes
+      await usersService.updateUser(currentUser.$id, { favoriteProjects: updatedFavorites });
     } catch (error) {
       console.error('Error updating favorites:', error);
       alert('Failed to update favorites');

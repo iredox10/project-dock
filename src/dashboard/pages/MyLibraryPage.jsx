@@ -115,14 +115,12 @@ const MyLibraryPage = () => {
       if (favoriteIds.includes(projectId)) {
         const updatedFavorites = favoriteIds.filter(id => id !== projectId);
         await updateUser(user.$id, {
-          ...userData,
           favoriteProjects: updatedFavorites
         });
         setFavoriteProjects(prev => prev.filter(p => p.id !== projectId));
       } else {
         const updatedFavorites = [...favoriteIds, projectId];
         await updateUser(user.$id, {
-          ...userData,
           favoriteProjects: updatedFavorites
         });
         const projectData = await getProjectById(projectId);

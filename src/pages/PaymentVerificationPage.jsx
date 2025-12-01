@@ -111,7 +111,6 @@ const PaymentVerificationPage = () => {
           if (projectData.hasOwnProperty('downloadCount')) {
             const newDownloadCount = (projectData.downloadCount || 0) + 1;
             await updateProject(projectId, {
-              ...projectData,
               downloadCount: newDownloadCount
             });
           }

@@ -195,7 +195,6 @@ const PaymentPage = () => {
 
         const projectData = await getProjectById(projectId);
         await updateProject(projectId, {
-          ...projectData,
           downloadCount: (projectData.downloadCount || 0) + 1
         });
 

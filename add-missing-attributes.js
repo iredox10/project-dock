@@ -6,9 +6,14 @@ import { Client, Databases } from 'node-appwrite';
 import 'dotenv/config';
 
 // Appwrite configuration - using server API key
+const endpoint = process.env.APPWRITE_ENDPOINT || process.env.VITE_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1';
+const projectId = process.env.VITE_APPWRITE_PROJECT_ID;
+const apiKey = process.env.APPWRITE_SERVER_API_KEY;
+
 const client = new Client()
-  .setEndpoint(process.env.APPWRITE_ENDPOINT || process.env.VITE_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
-  .setKey(process.env.APPWRITE_SERVER_API_KEY); // Server API key with write permissions
+  .setEndpoint(endpoint)
+  .setProject(projectId)
+  .setKey(apiKey); // Server API key with write permissions
 
 const databases = new Databases(client);
 const DATABASE_ID = process.env.VITE_APPWRITE_DATABASE_ID || 'projectdock_db';
@@ -28,7 +33,8 @@ async function addMissingAttributes() {
         'purchasedProjects',
         1000, // Array stored as JSON string, max 1000 chars
         false, // optional
-        '[]'   // default empty array
+        undefined, // default
+        true // array
       );
       console.log('✅ Added "purchasedProjects" attribute to users collection');
     } catch (error) {
@@ -47,7 +53,8 @@ async function addMissingAttributes() {
         'favoriteProjects',
         1000, // Array stored as JSON string, max 1000 chars
         false, // optional
-        '[]'   // default empty array
+        undefined, // default
+        true // array
       );
       console.log('✅ Added "favoriteProjects" attribute to users collection');
     } catch (error) {
